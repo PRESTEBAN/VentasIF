@@ -1,0 +1,100 @@
+.modal-container {
+  padding: 16px 24px 40px 24px;
+  background: #ffffff;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drag-handle {
+  width: 40px;
+  height: 4px;
+  background-color: #ddd;
+  border-radius: 4px;
+  margin: 0 auto 24px auto;
+}
+
+.modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #590F23;
+  text-align: center;
+  margin: 0 0 28px 0;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-icon {
+  font-size: 18px;
+  color: #590F23;
+  flex-shrink: 0;
+}
+
+.input-icon-right {
+  font-size: 18px;
+  color: #999;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.form-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  color: #333;
+  background: transparent;
+  padding: 6px 0;
+
+  &::placeholder {
+    color: #bbb;
+  }
+}
+
+.input-line {
+  height: 1.5px;
+  background-color: #ddd;
+  margin-top: 6px;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.input-line-error {
+  background-color: #e53935 !important;
+}
+
+.error-msg {
+  font-size: 11px;
+  color: #e53935;
+  margin-top: 4px;
+  display: block;
+}
+
+.btn-ingresar {
+  --background: #590F23;
+  --background-activated: #7A2020;
+  --color: #ffffff;
+  --border-radius: 30px;
+  --box-shadow: 0 4px 15px rgba(89, 15, 35, 0.3);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1.5px;
+  height: 52px;
+  margin-top: 16px;
+}

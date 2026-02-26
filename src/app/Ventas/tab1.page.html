@@ -1,0 +1,336 @@
+<ion-content [fullscreen]="true" class="tab1-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
+
+      <!-- OVERLAY MENU -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
+      <!-- MENU LATERAL -->
+      <div class="menu-lateral" [class.open]="menuAbierto">
+        <div class="menu-header">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+          <p class="menu-titulo">Industrial Fátima</p>
+          <p class="menu-usuario">
+            <ion-icon name="person-circle-outline"></ion-icon>
+            {{ usuarioActual }}
+          </p>
+        </div>
+
+        <div class="menu-items">
+          <p class="menu-seccion">Navegación</p>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <p class="menu-seccion">Gestión</p>
+          <div class="menu-item" (click)="irAClientes()">
+            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+          </div>
+          <div class="menu-item" (click)="irAHistorial()">
+            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+          </div>
+          <div class="menu-item" (click)="irAInventario()">
+            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <div class="menu-item menu-logout" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo"><img src="assets/LOGO_IF.jpg" alt="Logo" /></div>
+        <div class="carrito-btn" (click)="abrirCarrito()">
+          <ion-icon name="cart-outline"></ion-icon>
+          <span class="carrito-badge" *ngIf="carrito.length > 0">{{ carrito.length }}</span>
+        </div>
+      </div>
+
+      <img src="assets/Glaceado.png" class="glaceado" alt="" />
+
+      <div class="main-content">
+
+        <!-- CLIENTE CARD -->
+        <div class="cliente-card">
+          <div class="cliente-top">
+            <p class="cliente-label">Cliente:</p>
+            <div class="cliente-agregar-btn" (click)="abrirAgregarCliente()">
+              <ion-icon name="person-add-outline"></ion-icon>
+            </div>
+          </div>
+          <div class="cliente-search-row">
+            <input type="text" class="cliente-input" placeholder="Cedula, apellido o nombre negocio"
+              [(ngModel)]="busquedaCliente" (keyup.enter)="buscarCliente()" />
+            <div class="search-btn" (click)="buscarCliente()">
+              <ion-icon name="search-outline"></ion-icon>
+            </div>
+          </div>
+          <p class="error-cliente" *ngIf="errorCliente">{{ errorCliente }}</p>
+          <p class="nombre-cliente" *ngIf="clienteSeleccionado">
+            {{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}
+          </p>
+        </div>
+
+        <!-- CARGANDO -->
+        <div class="loading-productos" *ngIf="cargandoProductos">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando productos...</p>
+        </div>
+
+        <!-- GRID PRODUCTOS -->
+        <div class="productos-grid" *ngIf="!cargandoProductos">
+          <div class="producto-card" *ngFor="let producto of productos" [class.bloqueado]="!clienteSeleccionado"
+            (click)="abrirProducto(producto)">
+            <p class="producto-descripcion">{{ producto.descripcion || producto.categoria }}</p>
+            <p class="producto-nombre">{{ producto.nombre }}</p>
+            <p class="producto-stock" [class.stock-bajo]="(producto.stock ?? 0) <= 5">
+              <ion-icon name="cube-outline"></ion-icon>
+              Stock: {{ producto.stock }}
+            </p>
+            <p class="producto-precio">${{ (+producto.precio_x_menor).toFixed(2) }}</p>
+            <div class="lock-overlay" *ngIf="!clienteSeleccionado">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL AGREGAR CLIENTE ===== -->
+  <ion-modal [isOpen]="mostrarAgregarCliente" (didDismiss)="cerrarAgregarCliente()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Ingresar Cliente</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarAgregarCliente()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-content">
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label>Cédula*</label>
+            <input type="text" [(ngModel)]="nuevoCliente.cedula" placeholder="C.I." />
+            <span class="field-error" *ngIf="erroresCliente.cedula">{{ erroresCliente.cedula }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo Cliente:*</label>
+            <div class="switch-row">
+              <span [class.tipo-active]="!nuevoCliente.esParticular">Negocio</span>
+              <div class="switch-track" [class.on]="nuevoCliente.esParticular"
+                (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular">
+                <div class="switch-thumb"></div>
+              </div>
+              <span [class.tipo-active]="nuevoCliente.esParticular">Particular</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Nombre*</label>
+              <input type="text" [(ngModel)]="nuevoCliente.nombre" placeholder="nombre" />
+              <span class="field-error" *ngIf="erroresCliente.nombre">{{ erroresCliente.nombre }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Apellido*</label>
+              <input type="text" [(ngModel)]="nuevoCliente.apellido" placeholder="apellido" />
+              <span class="field-error" *ngIf="erroresCliente.apellido">{{ erroresCliente.apellido }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre de Negocio</label>
+            <input type="text" [(ngModel)]="nuevoCliente.negocio" placeholder="nombre del negocio" />
+          </div>
+
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" [(ngModel)]="nuevoCliente.email" placeholder="E-mail" />
+            <span class="field-error" *ngIf="erroresCliente.email">{{ erroresCliente.email }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Dirección*</label>
+            <input type="text" [(ngModel)]="nuevoCliente.direccion" placeholder="direccion domicilio o negocio" />
+            <span class="field-error" *ngIf="erroresCliente.direccion">{{ erroresCliente.direccion }}</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Sector</label>
+              <input type="text" [(ngModel)]="nuevoCliente.sector" placeholder="sector" />
+            </div>
+            <div class="form-group half">
+              <label>Teléfono*</label>
+              <input type="tel" [(ngModel)]="nuevoCliente.telefono" placeholder="celular" />
+              <span class="field-error" *ngIf="erroresCliente.telefono">{{ erroresCliente.telefono }}</span>
+            </div>
+          </div>
+
+          <span class="field-error" *ngIf="erroresCliente.general">{{ erroresCliente.general }}</span>
+
+          <button class="btn-nativo" (click)="guardarCliente()" [disabled]="guardandoCliente">
+            <ion-spinner name="crescent" *ngIf="guardandoCliente"
+              style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+            {{ guardandoCliente ? 'Guardando...' : 'Guardar Cliente' }}
+          </button>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ===== MODAL PRODUCTO ===== -->
+  <ion-modal [isOpen]="mostrarProducto" (didDismiss)="cerrarProducto()" [breakpoints]="[0, 0.75]"
+    [initialBreakpoint]="0.75">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ productoSeleccionado?.nombre }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarProducto()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-content">
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label>Tipo de Precio:</label>
+            <div class="pago-btns">
+              <button [class.pago-active]="itemProducto.tipoPrecio === 'menor'"
+                (click)="seleccionarTipoPrecio('menor')">
+                Menor ${{ (+(productoSeleccionado?.precio_x_menor || 0)).toFixed(2) }}
+              </button>
+              <button [class.pago-active]="itemProducto.tipoPrecio === 'mayor'"
+                (click)="seleccionarTipoPrecio('mayor')">
+                Mayor ${{ (+(productoSeleccionado?.precio_x_mayor || 0)).toFixed(2) }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Cantidad:</label>
+            <input type="number" [(ngModel)]="itemProducto.cantidad" placeholder="0"
+              (ngModelChange)="calcularSubtotal()" />
+          </div>
+          <div class="form-group">
+            <label>Precio:</label>
+            <input type="number" [(ngModel)]="itemProducto.precio" placeholder="0.00"
+              (ngModelChange)="calcularSubtotal()" />
+          </div>
+          <div class="form-group">
+            <label>Desc (%):</label>
+            <input type="number" [(ngModel)]="itemProducto.descuento" placeholder="0"
+              (ngModelChange)="calcularSubtotal()" />
+          </div>
+
+          <div class="subtotal-row">
+            <span>SubTotal:</span>
+            <span class="subtotal-valor">${{ itemProducto.subtotal.toFixed(2) }}</span>
+          </div>
+
+          <button class="btn-nativo" (click)="agregarAlCarrito()">Agregar</button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ===== MODAL CARRITO ===== -->
+  <ion-modal [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 0.9]"
+    [initialBreakpoint]="0.9">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Carrito</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarCarrito()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-content">
+        <div class="modal-body">
+
+          <div class="carrito-cliente" *ngIf="clienteSeleccionado">
+            <p class="carrito-cli-nombre">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
+            <p class="carrito-cli-cedula">{{ clienteSeleccionado.cedula }}</p>
+          </div>
+
+          <div class="carrito-tabla" *ngIf="carrito.length > 0">
+            <div class="tabla-head">
+              <span>Producto</span><span>Cant.</span><span>Total</span><span></span>
+            </div>
+            <div class="tabla-row" *ngFor="let item of carrito; let i = index">
+              <span>{{ item.nombre }}</span>
+              <span>{{ item.cantidad }}</span>
+              <span>${{ item.subtotal.toFixed(2) }}</span>
+              <button class="btn-eliminar" (click)="eliminarDelCarrito(i)">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+          <p class="carrito-vacio" *ngIf="carrito.length === 0">Sin productos aún</p>
+
+          <div class="pago-section">
+            <p class="pago-label">Forma de Pago:</p>
+            <div class="pago-btns">
+              <button [class.pago-active]="formaPago==='Efectivo'" (click)="formaPago='Efectivo'">Efectivo</button>
+              <button [class.pago-active]="formaPago==='Transferencia'"
+                (click)="formaPago='Transferencia'">Transferencia</button>
+              <button [class.pago-active]="formaPago==='Pendiente'" (click)="formaPago='Pendiente'">Pendiente</button>
+            </div>
+          </div>
+
+          <div class="totales">
+            <div class="total-row"><span>SubTotal:</span><span>${{ calcularTotal().subtotal.toFixed(2) }}</span></div>
+            <div class="total-row"><span>Desc:</span><span>${{ calcularTotal().descuento.toFixed(2) }}</span></div>
+            <div class="total-row iva-row">
+              <span>IVA (%):</span>
+              <div class="iva-input-wrap">
+                <input type="number" [(ngModel)]="ivaPercent" min="0" max="100" class="iva-input" />
+                <span class="iva-symbol">%</span>
+              </div>
+              <span>${{ calcularTotal().iva.toFixed(2) }}</span>
+            </div>
+            <div class="total-row total-final"><span>Total:</span><span>${{ calcularTotal().total.toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <div class="carrito-acciones">
+            <button class="btn-secundario" (click)="guardarPedido()">Guardar</button>
+            <button class="btn-nativo" (click)="finalizarPedido()">Finalizar</button>
+          </div>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+</ion-content>

@@ -32,6 +32,45 @@
  * https://ionicframework.com/docs/theming/dark-mode
  */
 
-/* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import "@ionic/angular/css/palettes/dark.always.css";
+@import "@ionic/angular/css/palettes/dark.class.css";
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+
+html,
+body {
+  background: #BF5A1F !important;
+}
+
+ion-app {
+  background: transparent !important;
+}
+
+ion-router-outlet {
+  background: transparent !important;
+}
+
+
+body.modal-open .tab-bar-inner {
+  display: none !important;
+}
+
+ion-modal ion-toolbar {
+  --background: #6a1822 !important;
+  --color: white !important;
+}
+
+ion-modal ion-title {
+  color: white !important;
+  font-weight: 700 !important;
+}
+
+ion-modal ion-button {
+  --color: white !important;
+}
+
+ion-modal {
+  --ion-toolbar-background: #6a1822 !important;
+  --ion-toolbar-color: white !important;
+  --ion-color-base: #6a1822 !important;
+}

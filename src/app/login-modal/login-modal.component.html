@@ -1,0 +1,46 @@
+<div class="modal-container">
+
+  <div class="drag-handle"></div>
+
+  <h2 class="modal-title">Iniciar Sesión</h2>
+
+  <!-- Usuario -->
+  <div class="form-group">
+    <label class="form-label">Usuario</label>
+    <div class="input-wrapper">
+      <ion-icon name="person-outline" class="input-icon"></ion-icon>
+      <input type="text" class="form-input" placeholder="Ej: EGarcia"
+        [(ngModel)]="usuario" [disabled]="cargando" />
+    </div>
+    <div class="input-line" [class.input-line-error]="errorUsuario"></div>
+    <span class="error-msg" *ngIf="errorUsuario">{{ errorUsuario }}</span>
+  </div>
+
+  <!-- Contraseña -->
+  <div class="form-group">
+    <label class="form-label">Contraseña</label>
+    <div class="input-wrapper">
+      <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+      <input [type]="mostrarPassword ? 'text' : 'password'" class="form-input"
+        placeholder="PIN de 4 dígitos" [(ngModel)]="password"
+        maxlength="4" (input)="limitarPassword($event)" [disabled]="cargando" />
+      <ion-icon [name]="mostrarPassword ? 'eye-off-outline' : 'eye-outline'"
+        class="input-icon-right" (click)="togglePassword()"></ion-icon>
+    </div>
+    <div class="input-line" [class.input-line-error]="errorPassword"></div>
+    <span class="error-msg" *ngIf="errorPassword">{{ errorPassword }}</span>
+  </div>
+
+  <!-- Error general del servidor -->
+  <div class="error-general" *ngIf="errorGeneral">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <span>{{ errorGeneral }}</span>
+  </div>
+
+  <!-- Botón -->
+  <ion-button expand="block" class="btn-ingresar" (click)="login()" [disabled]="cargando">
+    <ion-spinner name="crescent" *ngIf="cargando" style="margin-right: 8px;"></ion-spinner>
+    {{ cargando ? 'INGRESANDO...' : 'INGRESAR' }}
+  </ion-button>
+
+</div>

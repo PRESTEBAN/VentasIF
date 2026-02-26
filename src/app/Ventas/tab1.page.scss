@@ -1,0 +1,306 @@
+.tab1-content { --background: transparent; }
+
+.background-container {
+  position: relative; width: 100%; min-height: 100%;
+  background: linear-gradient(to bottom, #590F23 0%, #7A2020 25%, #A83A1A 60%, #BF5A1F 100%);
+}
+
+.cacao-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; mix-blend-mode: multiply; z-index: 1; pointer-events: none;
+}
+
+.content-wrapper { position: relative; z-index: 2; width: 100%; }
+
+.header-card {
+  background: rgb(246,246,246); width: 100%; height: 11vh;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; box-sizing: border-box; position: relative; z-index: 10;
+}
+
+.menu-btn {
+  display: flex; flex-direction: column; gap: 5px; cursor: pointer; flex-shrink: 0;
+  span { display: block; width: 22px; height: 2px; background-color: #590F23; border-radius: 3px; }
+}
+
+.header-logo {
+  flex: 1; display: flex; justify-content: center;
+  img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+}
+
+.carrito-btn {
+  position: relative; cursor: pointer;
+  ion-icon { font-size: 26px; color: #590F23; }
+}
+
+.carrito-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: #e53935; color: white; font-size: 10px; font-weight: 700;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.glaceado { display: block; width: 100%; height: auto; margin-top: -55px; position: relative; z-index: 3; }
+.main-content { padding: 12px; position: relative; z-index: 4; }
+
+.cliente-card {
+  background: #fff; border-radius: 16px; padding: 14px 16px;
+  margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.cliente-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.cliente-label { font-size: 16px; font-weight: 700; color: #333; margin: 0; }
+
+.cliente-agregar-btn {
+  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 24px; color: #590F23; }
+}
+
+.cliente-search-row { display: flex; gap: 8px; align-items: center; }
+
+.cliente-input {
+  flex: 1; border: 1px solid #eee; border-radius: 10px;
+  padding: 10px 12px; font-size: 14px; color: #444;
+  outline: none; background: #f9f9f9;
+  &::placeholder { color: #bbb; }
+}
+
+.search-btn {
+  width: 42px; height: 42px; border-radius: 10px;
+  background: #590F23; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  ion-icon { font-size: 20px; color: white; }
+}
+
+.error-cliente { font-size: 11px; color: #e53935; margin: 6px 0 0 0; }
+.nombre-cliente { font-size: 15px; font-weight: 700; color: #590F23; margin: 8px 0 0 0; text-align: center; }
+
+.loading-productos {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 40px 0; gap: 12px;
+  p { color: white; font-size: 14px; margin: 0; }
+}
+
+.productos-grid {
+  background: #fff; border-radius: 16px; padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+}
+
+.producto-card {
+  background: #f5ede0; border-radius: 12px; padding: 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  min-height: 100px; cursor: pointer; position: relative; transition: transform 0.1s;
+  &:active:not(.bloqueado) { transform: scale(0.96); }
+}
+
+.bloqueado { cursor: not-allowed; opacity: 0.6; }
+
+.lock-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.3);
+  ion-icon { font-size: 20px; color: #888; }
+}
+
+.producto-descripcion { font-size: 9px; color: #A0522D; margin: 0; width: 100%; text-align: center; }
+.producto-nombre { font-size: 10px; font-weight: 600; color: #7A3B1E; margin: 0; width: 100%; }
+.producto-stock { font-size: 10px; color: #A0522D; margin: 0; width: 100%; display: flex; align-items: center; gap: 2px; }
+.producto-precio { font-size: 11px; font-weight: 700; color: #590F23; margin: 0; width: 100%; }
+.stock-bajo { color: #e53935 !important; font-weight: 700; }
+
+/* MENU LATERAL */
+.menu-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5); z-index: 999;  // <- sube también el overlay
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  &.open { opacity: 1; pointer-events: all; }
+}
+
+.menu-lateral {
+  position: fixed; top: 0; left: -280px; width: 280px; 
+  height: 100vh;
+  padding-bottom: 100px;  // <- espacio para la tab bar
+  background: #fff; z-index: 1000;
+  transition: left 0.3s ease;
+  display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+  &.open { left: 0; }
+}
+
+.menu-header {
+  background: linear-gradient(to bottom, #590F23, #7A2020);
+  padding: 50px 20px 24px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  .menu-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); }
+  .menu-titulo { color: #fff; font-size: 16px; font-weight: 700; margin: 0; }
+}
+
+.menu-usuario {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.85); font-size: 13px;
+  margin: 2px 0 0 0; font-weight: 500;
+  ion-icon { font-size: 16px; }
+}
+
+.menu-items { 
+  padding: 12px 0 100px 0;  // <- 100px al fondo
+  overflow-y: auto;
+  flex: 1;
+}
+
+.menu-seccion {
+  font-size: 10px; font-weight: 700; color: #bbb;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin: 8px 24px 4px 24px; padding: 0;
+}
+
+.menu-item {
+  display: flex; align-items: center; gap: 16px; padding: 12px 24px; cursor: pointer;
+  ion-icon { font-size: 20px; color: #590F23; }
+  span { font-size: 15px; color: #333; font-weight: 500; }
+  &:active { background: #f5f5f5; }
+}
+
+.menu-divider { height: 1px; background: #eee; margin: 8px 24px; }
+
+.menu-items { padding: 12px 0; }
+
+.menu-logout {
+  ion-icon { color: #e53935; }
+  span { color: #e53935; font-weight: 600; }
+}
+
+/* MODALES */
+.modal-content { --background: #ffffff; }
+.modal-body { padding: 20px; }
+.form-row { display: flex; gap: 12px; }
+
+.form-group {
+  display: flex; flex-direction: column; margin-bottom: 14px;
+  &.half { flex: 1; }
+  label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; }
+  input {
+    border: 1px solid #e0e0e0; border-radius: 10px;
+    padding: 10px 12px; font-size: 14px; color: #333;
+    outline: none; background: #f9f9f9;
+    &::placeholder { color: #bbb; }
+    &:focus { border-color: #590F23; }
+  }
+}
+
+.custom-tab-bar {
+  z-index: 500 !important;
+}
+
+.field-error { font-size: 10px; color: #e53935; margin-top: 3px; }
+
+.switch-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  span { font-size: 12px; color: #999; }
+  .tipo-active { color: #590F23; font-weight: 700; }
+}
+
+.switch-track {
+  width: 42px; height: 24px; border-radius: 12px;
+  background: #ddd; position: relative; cursor: pointer; transition: background 0.3s;
+  &.on { background: #590F23; .switch-thumb { left: 20px; } }
+}
+
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 18px; height: 18px;
+  border-radius: 50%; background: white; transition: left 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.subtotal-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; border-top: 1px solid #f0f0f0; margin-bottom: 16px;
+  span { font-size: 15px; font-weight: 600; color: #333; }
+  .subtotal-valor { color: #590F23; font-size: 18px; }
+}
+
+.btn-nativo {
+  width: 100%; padding: 14px; background: #590F23; color: white;
+  border: none; border-radius: 30px; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 8px; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+  &:disabled { opacity: 0.6; }
+}
+
+.btn-secundario {
+  width: 100%; padding: 14px; background: #888; color: white;
+  border: none; border-radius: 30px; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 8px; -webkit-appearance: none;
+}
+
+.carrito-cliente {
+  text-align: center; margin-bottom: 12px;
+  .carrito-cli-nombre { font-size: 17px; font-weight: 700; color: #333; margin: 0; }
+  .carrito-cli-cedula { font-size: 12px; color: #999; margin: 2px 0 0 0; }
+}
+
+.carrito-tabla { border-radius: 10px; overflow: hidden; border: 1px solid #f0f0f0; margin-bottom: 16px; }
+
+.tabla-head {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  background: #590F23; padding: 8px 12px;
+  span { font-size: 12px; font-weight: 700; color: white; }
+}
+
+.tabla-row {
+  display: grid; grid-template-columns: 2fr 1fr 1fr;
+  padding: 8px 12px; border-bottom: 1px solid #f5f5f5;
+  &:last-child { border-bottom: none; }
+  span { font-size: 12px; color: #444; }
+}
+
+.carrito-vacio { text-align: center; color: #bbb; font-size: 14px; padding: 20px 0; }
+
+.pago-section { margin-bottom: 16px; }
+.pago-label { font-size: 13px; font-weight: 700; color: #333; margin: 0 0 8px 0; }
+
+.pago-btns {
+  display: flex; gap: 6px;
+  button {
+    flex: 1; padding: 8px 4px; border: 1px solid #590F23;
+    border-radius: 20px; background: white;
+    color: #590F23; font-size: 11px; font-weight: 600; cursor: pointer;
+    &.pago-active { background: #590F23; color: white; }
+  }
+}
+
+.totales { margin-bottom: 16px; }
+
+.total-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; border-bottom: 1px solid #f5f5f5;
+  span { font-size: 13px; color: #555; }
+}
+
+.total-final {
+  border-bottom: none; padding-top: 10px;
+  span { font-size: 16px; font-weight: 700; color: #590F23; }
+}
+
+.carrito-acciones { display: flex; gap: 10px; }
+
+.tabla-head { grid-template-columns: 2fr 1fr 1fr 32px; }
+.tabla-row  { grid-template-columns: 2fr 1fr 1fr 32px; }
+
+.btn-eliminar {
+  background: transparent; border: none; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 16px; color: #e53935; }
+}
+.iva-row { align-items: center; }
+
+.iva-input-wrap {
+  display: flex; align-items: center; gap: 2px;
+  border: 1px solid #e0e0e0; border-radius: 8px;
+  padding: 2px 6px; background: #f9f9f9;
+}
+
+.iva-input {
+  width: 40px; border: none; background: transparent;
+  font-size: 13px; color: #333; outline: none; text-align: center;
+}
+
+.iva-symbol { font-size: 12px; color: #888; }
