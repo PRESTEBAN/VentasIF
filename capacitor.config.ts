@@ -4,8 +4,8 @@ const config: CapacitorConfig = {
   appId: 'io.ionic.starter',
   appName: 'VentasIF',
   webDir: 'www',
-   server: {
-    allowNavigation: ['ventasif-if-api.onrender.com']
+  server: {
+    androidScheme: 'https'
   }
 };
 

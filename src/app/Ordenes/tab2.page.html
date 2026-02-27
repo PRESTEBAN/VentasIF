@@ -1,17 +1,110 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<div class="menu-lateral" [class.open]="menuAbierto">
+  <div class="menu-header">
+    <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+    <p class="menu-titulo">Industrial Fátima</p>
+    <p class="menu-usuario">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      {{ usuarioActual }}
+    </p>
+  </div>
+  <div class="menu-items">
+    <p class="menu-seccion">Navegación</p>
+    <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+      <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+    </div>
+    <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+      <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+    </div>
+    <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+      <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+    </div>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+    <div class="menu-divider"></div>
+
+    <p class="menu-seccion">Gestión</p>
+    <div class="menu-item" (click)="irAClientes()">
+      <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+    </div>
+    <div class="menu-item" (click)="irAHistorial()">
+      <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+    </div>
+    <div class="menu-item" (click)="irAInventario()">
+      <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <div class="menu-item menu-logout" (click)="cerrarSesion()">
+      <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+    </div>
+  </div>
+</div>
+
+<ion-content [fullscreen]="true" class="tab2-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
+
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo"><img src="assets/LOGO_IF.jpg" alt="Logo" /></div>
+        <div class="carrito-btn" (click)="irAlCarrito()">
+          <ion-icon name="cart-outline"></ion-icon>
+        </div>
+      </div>
+
+      <img src="assets/Glaceado.png" class="glaceado" alt="" />
+
+      <div class="main-content">
+
+        <div class="loading-ordenes" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando órdenes...</p>
+        </div>
+
+        <div class="sin-ordenes" *ngIf="!cargando && ordenes.length === 0">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Sin órdenes pendientes
+        </div>
+
+        <div class="orden-card" *ngFor="let orden of ordenes">
+          <div class="orden-header">
+            <div>
+              <p class="orden-cliente">{{ orden.cliente }}</p>
+              <p class="orden-cedula">{{ orden.cedula }}</p>
+            </div>
+            <div class="orden-total">${{ (+orden.total).toFixed(2) }}</div>
+          </div>
+
+          <div class="orden-detalle">
+            <div class="detalle-row tabla-head">
+              <span>Producto</span><span>Cant.</span>
+            </div>
+            <div class="detalle-row" *ngFor="let item of orden.detalles">
+              <span>{{ item.nombre }}</span>
+              <span>{{ item.cantidad }}</span>
+            </div>
+          </div>
+
+          <div class="orden-checks">
+            <label class="check-item" [class.checked]="orden.listo_conductor">
+              <input type="checkbox" [checked]="orden.listo_conductor" (change)="marcarListo(orden)"
+                [disabled]="orden.listo_conductor || actualizando[orden.venta_id]" />
+              <span>Pedido Listo</span>
+            </label>
+            <label class="check-item" [class.checked]="orden.entregado_vendedor">
+              <input type="checkbox" [checked]="orden.entregado_vendedor" (change)="marcarEntregado(orden)"
+                [disabled]="orden.entregado_vendedor || actualizando[orden.venta_id]" />
+              <span>Pedido Entregado</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </ion-content>

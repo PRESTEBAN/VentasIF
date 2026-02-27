@@ -1,0 +1,167 @@
+:host {
+  display: block;
+  position: relative;
+}
+
+.tab2-content { --background: transparent; }
+
+.background-container {
+  position: relative; width: 100%; min-height: 100%;
+  background: linear-gradient(to bottom, #590F23 0%, #7A2020 25%, #A83A1A 60%, #BF5A1F 100%);
+}
+
+.cacao-bg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover; mix-blend-mode: multiply; z-index: 1; pointer-events: none;
+}
+
+.content-wrapper { position: relative; z-index: 2; width: 100%; }
+
+.header-card {
+  background: rgb(246,246,246); width: 100%; height: 11vh;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; box-sizing: border-box; position: relative; z-index: 10;
+}
+
+.menu-btn {
+  display: flex; flex-direction: column; gap: 5px; cursor: pointer; flex-shrink: 0;
+  span { display: block; width: 22px; height: 2px; background-color: #590F23; border-radius: 3px; }
+}
+
+.header-logo {
+  flex: 1; display: flex; justify-content: center;
+  img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+}
+
+.carrito-btn {
+  position: relative; cursor: pointer;
+  ion-icon { font-size: 26px; color: #590F23; }
+}
+
+.carrito-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: #e53935; color: white; font-size: 10px; font-weight: 700;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ===== GLACEADO igual que tab1 ===== */
+.glaceado { display: block; width: 100%; height: auto; margin-top: -55px; position: relative; z-index: 3; }
+
+.main-content { padding: 12px; position: relative; z-index: 4; }
+
+.loading-ordenes {
+  display: flex; flex-direction: column; align-items: center; padding: 40px 0; gap: 12px;
+  p { color: white; font-size: 14px; margin: 0; }
+}
+
+.sin-ordenes {
+  text-align: center; color: white; font-size: 16px; padding: 60px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  ion-icon { font-size: 48px; opacity: 0.7; }
+}
+
+.orden-card {
+  background: #fff; border-radius: 16px; padding: 14px 16px;
+  margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.orden-header {
+  display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;
+}
+
+.orden-cliente { font-size: 15px; font-weight: 700; color: #333; margin: 0; }
+.orden-cedula { font-size: 11px; color: #999; margin: 2px 0 0 0; }
+.orden-total { font-size: 16px; font-weight: 700; color: #590F23; }
+
+.orden-detalle { margin-bottom: 12px; border: 1px solid #f0f0f0; border-radius: 10px; overflow: hidden; }
+
+.detalle-row {
+  display: grid; grid-template-columns: 2fr 1fr;
+  padding: 6px 12px; border-bottom: 1px solid #f5f5f5;
+  &:last-child { border-bottom: none; }
+  span { font-size: 12px; color: #444; }
+  &.tabla-head {
+    background: #590F23;
+    span { color: white; font-weight: 700; }
+  }
+}
+
+.orden-checks { display: flex; gap: 16px; }
+
+.check-item {
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
+  input[type="checkbox"] { width: 18px; height: 18px; accent-color: #590F23; cursor: pointer; }
+  span { font-size: 13px; color: #555; font-weight: 500; }
+  &.checked span { color: #2e7d32; font-weight: 700; }
+}
+
+/* ===== MENU LATERAL ===== */
+.menu-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5); z-index: 1999;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  &.open { opacity: 1; pointer-events: all; }
+}
+
+.menu-lateral {
+  position: fixed; top: 0; left: -280px; width: 280px;
+  height: 100vh; padding-bottom: 100px;
+  background: #fff; z-index: 2000;
+  transition: left 0.3s ease;
+  display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+  &.open { left: 0; }
+}
+
+.menu-header {
+  background: linear-gradient(to bottom, #590F23, #7A2020);
+  padding: 50px 20px 24px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  .menu-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); }
+  .menu-titulo { color: #fff; font-size: 16px; font-weight: 700; margin: 0; }
+}
+
+.menu-usuario {
+  display: flex; align-items: center; gap: 6px;
+  color: rgba(255,255,255,0.85); font-size: 13px; margin: 2px 0 0 0;
+  ion-icon { font-size: 16px; }
+}
+
+.menu-items {
+  padding: 12px 0 100px 0;
+  overflow-y: auto; flex: 1;
+}
+
+.menu-seccion {
+  font-size: 10px; font-weight: 700; color: #bbb;
+  text-transform: uppercase; letter-spacing: 1px;
+  margin: 8px 24px 4px 24px; padding: 0;
+}
+
+.menu-item {
+  display: flex; align-items: center; gap: 16px; padding: 12px 24px; cursor: pointer;
+  ion-icon { font-size: 20px; color: #590F23; }
+  span { font-size: 15px; color: #333; font-weight: 500; }
+  &:active { background: #f5f5f5; }
+}
+
+.menu-divider { height: 1px; background: #eee; margin: 8px 24px; }
+
+.menu-logout {
+  ion-icon { color: #e53935; }
+  span { color: #e53935; font-weight: 600; }
+}
+
+/* ===== MODAL CARRITO ===== */
+.modal-content { --background: #ffffff; }
+.modal-body { padding: 20px; }
+
+.carrito-vacio { text-align: center; color: #bbb; font-size: 14px; padding: 20px 0; }
+
+.btn-nativo {
+  width: 100%; padding: 14px; background: #590F23; color: white;
+  border: none; border-radius: 30px; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 8px; -webkit-appearance: none;
+  display: flex; align-items: center; justify-content: center;
+  &:disabled { opacity: 0.6; }
+}

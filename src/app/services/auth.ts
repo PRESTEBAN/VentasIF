@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { timeout } from 'rxjs/operators';
 
 export interface LoginResponse {
   token: string;
@@ -25,7 +26,9 @@ export class AuthService {
 
   // ── Login ────────────────────────────────────────────────────────────────
   login(username: string, pin: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { username, pin });
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { username, pin }).pipe(
+      timeout(10000)
+    );
   }
 
   // ── Guardar sesión en localStorage ───────────────────────────────────────
