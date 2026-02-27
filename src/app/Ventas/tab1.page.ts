@@ -42,6 +42,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   mostrarCarrito = false;
   carrito: any[] = [];
   formaPago = 'Efectivo';
+  montoRecibido: number = 0;
 
   productos: Producto[] = [];
   cargandoProductos = false;
@@ -153,7 +154,6 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (encontrado) {
       this.clienteSeleccionado = encontrado;
       this.errorCliente = '';
-      // Cargar carrito guardado del cliente
       this.cargarCarritoGuardado(encontrado.id!);
     } else {
       this.clienteSeleccionado = null;
@@ -161,7 +161,6 @@ export class Tab1Page implements OnInit, OnDestroy {
     }
   }
 
-  // Carga el carrito guardado en BD para este cliente
   cargarCarritoGuardado(clienteId: number) {
     this.carritoPendiente.getByCliente(clienteId).subscribe({
       next: (data) => {
@@ -170,14 +169,15 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.ivaPercent = data.iva_percent ?? 15;
           this.formaPago = data.forma_pago ?? 'Efectivo';
         } else {
-          // No hay carrito guardado, limpiar
           this.carrito = [];
           this.ivaPercent = 15;
           this.formaPago = 'Efectivo';
         }
+        this.montoRecibido = 0;
       },
       error: () => {
         this.carrito = [];
+        this.montoRecibido = 0;
       }
     });
   }
@@ -314,7 +314,11 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // ---- CARRITO ----
   abrirCarrito() { this.mostrarCarrito = true; }
-  cerrarCarrito() { this.mostrarCarrito = false; }
+
+  cerrarCarrito() {
+    this.mostrarCarrito = false;
+    this.montoRecibido = 0;
+  }
 
   calcularTotal() {
     const subtotal = this.carrito.reduce((acc, i) => acc + i.subtotal, 0);
@@ -323,7 +327,11 @@ export class Tab1Page implements OnInit, OnDestroy {
     return { subtotal, descuento, iva, total: subtotal + iva };
   }
 
-  // Guarda el carrito en BD sin finalizar
+  calcularVuelto(): number {
+    const total = this.calcularTotal().total;
+    return Math.max(0, this.montoRecibido - total);
+  }
+
   async guardarPedido() {
     if (!this.clienteSeleccionado || this.carrito.length === 0) return;
     this.guardandoCarrito = true;
@@ -390,11 +398,11 @@ export class Tab1Page implements OnInit, OnDestroy {
 
     this.ventasRutaService.create(payload).subscribe({
       next: () => {
-        // Eliminar carrito guardado en BD al finalizar
         this.carritoPendiente.eliminar(this.clienteSeleccionado!.id!).subscribe();
         this.carrito = [];
         this.clienteSeleccionado = null;
         this.busquedaCliente = '';
+        this.montoRecibido = 0;
         this.cerrarCarrito();
       },
       error: (err) => {

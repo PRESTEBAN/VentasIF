@@ -263,7 +263,7 @@
 
   <!-- ===== MODAL CARRITO ===== -->
   <ion-modal [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 0.9]"
-    [initialBreakpoint]="0.9">
+    [initialBreakpoint]="1">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -305,6 +305,18 @@
               <button [class.pago-active]="formaPago==='Transferencia'"
                 (click)="formaPago='Transferencia'">Transferencia</button>
               <button [class.pago-active]="formaPago==='Pendiente'" (click)="formaPago='Pendiente'">Pendiente</button>
+            </div>
+
+            <!-- RECIBE / VUELTO — solo visible en Efectivo -->
+            <div class="recibe-vuelto" *ngIf="formaPago === 'Efectivo'">
+              <div class="recibe-row">
+                <label>Recibe:</label>
+                <input type="number" [(ngModel)]="montoRecibido" placeholder="0.00" class="recibe-input" min="0" />
+              </div>
+              <div class="recibe-row">
+                <label>Vuelto:</label>
+                <span class="vuelto-valor">${{ calcularVuelto().toFixed(2) }}</span>
+              </div>
             </div>
           </div>
 
