@@ -121,7 +121,7 @@
         <div class="productos-grid" *ngIf="!cargandoProductos">
           <div
             class="producto-card"
-            *ngFor="let producto de productos"
+            *ngFor="let producto of productos"
             [class.bloqueado]="!clienteSeleccionado"
             (click)="abrirProducto(producto)"
           >
