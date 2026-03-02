@@ -94,6 +94,7 @@ export class Tab2Page implements OnInit {
   irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
   irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
+    irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
 
   // ---- CARRITO ----
   irAlCarrito() {

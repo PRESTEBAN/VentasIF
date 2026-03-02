@@ -5,35 +5,51 @@ const routes: Routes = [
   {
     path: '',
     redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: 'login',
-    loadChildren: () => import('./login/login.module').then(m => m.LoginPageModule)
+    loadChildren: () =>
+      import('./login/login.module').then((m) => m.LoginPageModule),
   },
   {
     path: 'tabs',
-    loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
+    loadChildren: () =>
+      import('./tabs/tabs.module').then((m) => m.TabsPageModule),
   },
   {
     path: 'clientes',
-    loadChildren: () => import('./clientes/clientes.module').then(m => m.ClientesPageModule)
+    loadChildren: () =>
+      import('./clientes/clientes.module').then((m) => m.ClientesPageModule),
   },
   {
     path: 'historial',
-    loadChildren: () => import('./historial/historial.module').then(m => m.HistorialPageModule)
+    loadChildren: () =>
+      import('./historial/historial.module').then((m) => m.HistorialPageModule),
   },
   {
     path: 'inventario',
-    loadChildren: () => import('./inventario/inventario.module').then(m => m.InventarioPageModule)
+    loadChildren: () =>
+      import('./inventario/inventario.module').then(
+        (m) => m.InventarioPageModule,
+      ),
   },
-
+  {
+    path: 'egresos',
+    loadChildren: () =>
+      import('./egresos/egresos.module').then((m) => m.EgresosPageModule),
+  },
+  {
+    path: 'egresos',
+    loadChildren: () =>
+      import('./egresos/egresos.module').then((m) => m.EgresosPageModule),
+  },
 ];
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })
+    RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules }),
   ],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

@@ -1,0 +1,179 @@
+<ion-content [fullscreen]="true" class="egresos-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
+
+      <!-- OVERLAY MENU -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
+      <div class="menu-lateral" [class.open]="menuAbierto">
+        <div class="menu-header">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+          <p class="menu-titulo">Industrial Fátima</p>
+          <p class="menu-usuario">
+            <ion-icon name="person-circle-outline"></ion-icon>
+            {{ usuarioActual }}
+          </p>
+        </div>
+
+        <div class="menu-items">
+          <p class="menu-seccion">Navegación</p>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
+          >
+            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+          </div>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
+          >
+            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+          </div>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
+          >
+            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <p class="menu-seccion">Gestión</p>
+          <div class="menu-item" (click)="irAClientes()">
+            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+          </div>
+          <div class="menu-item" (click)="irAHistorial()">
+            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+          </div>
+          <div class="menu-item" (click)="irAInventario()">
+            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+          </div>
+          <div class="menu-item menu-item-active" (click)="irAEgresos()">
+            <ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span>
+          </div>
+
+          <div class="menu-divider"></div>
+
+          <div class="menu-item menu-logout" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon
+            ><span>Cerrar Sesión</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
+        </div>
+        <div class="header-right" (click)="abrirModal()">
+          <ion-icon name="add-circle-outline"></ion-icon>
+        </div>
+      </div>
+
+      <!-- GLACEADO -->
+      <img src="assets/Glaceado.png" class="glaceado" alt="" />
+
+      <!-- MAIN -->
+      <div class="main-content">
+
+        <!-- TÍTULO -->
+        <div class="page-header">
+          <h1 class="page-title">Egresos</h1>
+          <p class="page-dia">{{ diaSemana }}</p>
+          <p class="page-fecha">{{ fechaHoy }}</p>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-egresos" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando egresos...</p>
+        </div>
+
+        <!-- TABLA -->
+        <div class="tabla-wrapper" *ngIf="!cargando">
+
+          <div class="sin-egresos" *ngIf="egresos.length === 0">
+            <ion-icon name="trending-down-outline"></ion-icon>
+            <p>No hay egresos registrados hoy</p>
+          </div>
+
+          <table class="egresos-tabla" *ngIf="egresos.length > 0">
+            <thead>
+              <tr>
+                <th>Detalle</th>
+                <th>creado_por</th>
+                <th>beneficiario</th>
+                <th class="col-valor">Valor</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let egreso of egresos; let i = index"
+                  [class.fila-par]="i % 2 === 0"
+                  (click)="seleccionarEgreso(egreso)">
+                <td>{{ egreso.detalle }}</td>
+                <td>{{ egreso.creadoPor }}</td>
+                <td>{{ egreso.beneficiario }}</td>
+                <td class="col-valor">${{ egreso.valor | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="fila-total">
+                <td colspan="3">Total</td>
+                <td class="col-valor">${{ totalEgresos | number:'1.2-2' }}</td>
+              </tr>
+            </tfoot>
+          </table>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL AÑADIR EGRESO (overlay centrado) ===== -->
+  <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+
+      <h2 class="modal-titulo">Añadir Egreso</h2>
+
+      <div class="form-group">
+        <label>Detalle:</label>
+        <input type="text" [(ngModel)]="nuevoEgreso.detalle" placeholder="detalle del egreso" />
+        <span class="field-error" *ngIf="errores.detalle">{{ errores.detalle }}</span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Responsable:</label>
+          <input type="text" [(ngModel)]="nuevoEgreso.creadoPor" placeholder="PPanjon" />
+          <span class="field-error" *ngIf="errores.creadoPor">{{ errores.creadoPor }}</span>
+        </div>
+        <div class="form-group half">
+          <label>Beneficiario:</label>
+          <input type="text" [(ngModel)]="nuevoEgreso.beneficiario" placeholder="Carro" />
+          <span class="field-error" *ngIf="errores.beneficiario">{{ errores.beneficiario }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Valor:</label>
+        <div class="valor-input-wrap">
+          <span class="valor-prefix">$</span>
+          <input type="number" [(ngModel)]="nuevoEgreso.valor" placeholder="0.00" />
+        </div>
+        <span class="field-error" *ngIf="errores.valor">{{ errores.valor }}</span>
+      </div>
+
+      <button class="btn-anadir" (click)="guardarEgreso()" [disabled]="guardando">
+        <ion-spinner name="crescent" *ngIf="guardando" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+        {{ guardando ? 'Guardando...' : 'Añadir' }}
+      </button>
+
+    </div>
+  </div>
+
+</ion-content>

@@ -138,11 +138,17 @@
   margin: 8px 24px 4px 24px; padding: 0;
 }
 
+
 .menu-item {
   display: flex; align-items: center; gap: 16px; padding: 12px 24px; cursor: pointer;
   ion-icon { font-size: 20px; color: #590F23; }
   span { font-size: 15px; color: #333; font-weight: 500; }
   &:active { background: #f5f5f5; }
+}
+.menu-item-active {
+  background: #FDF0F3;
+  ion-icon { color: #590F23; }
+  span { color: #590F23; font-weight: 700; }
 }
 
 .menu-divider { height: 1px; background: #eee; margin: 8px 24px; }
