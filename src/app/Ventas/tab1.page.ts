@@ -37,7 +37,8 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   mostrarProducto = false;
   productoSeleccionado: Producto | null = null;
-  itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'menor' };
+  // CAMBIO: tipoPrecio default 'mayor', precio inicia en precio_x_mayor
+  itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'mayor' };
 
   mostrarCarrito = false;
   carrito: any[] = [];
@@ -46,7 +47,8 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   productos: Producto[] = [];
   cargandoProductos = false;
-  ivaPercent: number = 15;
+  // CAMBIO: IVA inicia en 0
+  ivaPercent: number = 0;
 
   guardandoCarrito = false;
 
@@ -167,14 +169,18 @@ export class Tab1Page implements OnInit, OnDestroy {
       next: (data) => {
         if (data && data.items && data.items.length > 0) {
           this.carrito = data.items;
-          this.ivaPercent = data.iva_percent ?? 15;
+          // CAMBIO: default 0 en lugar de 15
+          this.ivaPercent = data.iva_percent ?? 0;
           this.formaPago = data.forma_pago ?? 'Efectivo';
+          // CAMBIO: restaurar monto_recibido guardado
+          this.montoRecibido = data.monto_recibido ?? 0;
         } else {
           this.carrito = [];
-          this.ivaPercent = 15;
+          // CAMBIO: default 0 en lugar de 15
+          this.ivaPercent = 0;
           this.formaPago = 'Efectivo';
+          this.montoRecibido = 0;
         }
-        this.montoRecibido = 0;
       },
       error: () => {
         this.carrito = [];
@@ -274,12 +280,13 @@ export class Tab1Page implements OnInit, OnDestroy {
   abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
     this.productoSeleccionado = producto;
+    // CAMBIO: default tipoPrecio 'mayor' y precio inicia en precio_x_mayor
     this.itemProducto = {
       cantidad: 0,
-      precio: +producto.precio_x_menor,
+      precio: +producto.precio_x_mayor,
       descuento: 0,
       subtotal: 0,
-      tipoPrecio: 'menor'
+      tipoPrecio: 'mayor'
     };
     this.mostrarProducto = true;
   }
@@ -336,11 +343,14 @@ export class Tab1Page implements OnInit, OnDestroy {
   async guardarPedido() {
     if (!this.clienteSeleccionado || this.carrito.length === 0) return;
     this.guardandoCarrito = true;
+    // CAMBIO: se guardan también monto_recibido y vuelto en carritos_pendientes
     this.carritoPendiente.guardar({
       cliente_id: this.clienteSeleccionado.id!,
       items: this.carrito,
       iva_percent: this.ivaPercent,
-      forma_pago: this.formaPago
+      forma_pago: this.formaPago,
+      monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+      vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
     }).subscribe({
       next: async () => {
         this.guardandoCarrito = false;
@@ -379,6 +389,7 @@ export class Tab1Page implements OnInit, OnDestroy {
       'Pendiente': 'credito'
     };
 
+    // CAMBIO: se agregan monto_recibido y vuelto al payload de ventas_ruta
     const payload = {
       cliente_id: this.clienteSeleccionado.id,
       subtotal: totales.subtotal,
@@ -389,6 +400,8 @@ export class Tab1Page implements OnInit, OnDestroy {
       saldo_generado: this.formaPago === 'Pendiente' ? totales.total : 0,
       iva: totales.iva,
       notas: null,
+      monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+      vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
       productos: this.carrito.map(item => ({
         producto_id: item.producto_id,
         cantidad: item.cantidad,

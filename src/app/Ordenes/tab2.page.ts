@@ -98,7 +98,6 @@ export class Tab2Page implements OnInit {
 
   // ---- CARRITO ----
   irAlCarrito() {
-    // Le dice al tab1 que abra el carrito cuando llegue
     this.carritoEstado.solicitarAbrirCarrito();
     this.router.navigate(['/tabs/tab1']);
   }

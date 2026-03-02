@@ -26,6 +26,8 @@ export class CarritoPendienteService {
     items: any[];
     iva_percent: number;
     forma_pago: string;
+    monto_recibido?: number | null;
+    vuelto?: number | null;
   }): Observable<any> {
     return this.http.post(this.url, payload, { headers: this.getHeaders() });
   }

@@ -88,12 +88,12 @@
         </div>
 
         <div class="orden-card" *ngFor="let orden of ordenes">
+          <!-- CAMBIO: se eliminó el div orden-total con el precio -->
           <div class="orden-header">
             <div>
               <p class="orden-cliente">{{ orden.cliente }}</p>
               <p class="orden-cedula">{{ orden.cedula }}</p>
             </div>
-            <div class="orden-total">${{ (+orden.total).toFixed(2) }}</div>
           </div>
 
           <div class="orden-detalle">
