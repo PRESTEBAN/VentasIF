@@ -1,13 +1,368 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>clientes</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content [fullscreen]="true" class="clientes-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">clientes</ion-title>
-    </ion-toolbar>
-  </ion-header>
+      <!-- OVERLAY MENU -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
+      <!-- MENU LATERAL -->
+      <div class="menu-lateral" [class.open]="menuAbierto">
+        <div class="menu-header">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+          <p class="menu-titulo">Industrial Fátima</p>
+          <p class="menu-usuario">
+            <ion-icon name="person-circle-outline"></ion-icon>
+            {{ usuarioActual }}
+          </p>
+        </div>
+        <div class="menu-items">
+          <p class="menu-seccion">Navegación</p>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+          </div>
+          <div class="menu-divider"></div>
+          <p class="menu-seccion">Gestión</p>
+          <div class="menu-item menu-item-active" (click)="cerrarMenu()">
+            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+          </div>
+          <div class="menu-item" (click)="irAHistorial()">
+            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+          </div>
+          <div class="menu-item" (click)="irAEgresos()">
+            <ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span>
+          </div>
+          <div class="menu-item" (click)="irAInventario()">
+            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item menu-logout" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
+        </div>
+        <div class="header-right" (click)="abrirAgregarCliente()">
+          <ion-icon name="person-add-outline"></ion-icon>
+        </div>
+      </div>
+
+      <!-- GLACEADO -->
+      <img src="assets/Glaceado.png" class="glaceado" alt="" />
+
+      <!-- MAIN -->
+      <div class="main-content">
+
+        <h1 class="page-title">Clientes</h1>
+
+        <!-- BUSCADOR + ORDENAR -->
+        <div class="toolbar-row">
+          <div class="search-bar">
+            <ion-icon name="search-outline"></ion-icon>
+            <input
+              type="text"
+              placeholder="Nombre, cédula o negocio..."
+              [(ngModel)]="busqueda"
+              (ngModelChange)="aplicarFiltroYOrden()"
+            />
+            <ion-icon
+              name="close-circle"
+              class="clear-icon"
+              *ngIf="busqueda"
+              (click)="busqueda = ''; aplicarFiltroYOrden()"
+            ></ion-icon>
+          </div>
+
+          <!-- Botón ordenar -->
+          <div class="orden-btn" (click)="toggleOrdenMenu()">
+            <ion-icon name="funnel-outline"></ion-icon>
+          </div>
+        </div>
+
+        <!-- MENÚ DE ORDEN -->
+        <div class="orden-menu" *ngIf="mostrarOrdenMenu">
+          <p class="orden-titulo">Ordenar por</p>
+          <div class="orden-opciones">
+            <div
+              class="orden-opcion"
+              *ngFor="let op of opcionesOrden"
+              [class.activo]="ordenActual === op.valor"
+              (click)="seleccionarOrden(op.valor)"
+            >
+              <span>{{ op.label }}</span>
+              <ion-icon
+                *ngIf="ordenActual === op.valor"
+                [name]="direccionOrden === 'asc' ? 'arrow-up-outline' : 'arrow-down-outline'"
+              ></ion-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-clientes" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando clientes...</p>
+        </div>
+
+        <!-- LISTA -->
+        <div class="clientes-lista" *ngIf="!cargando">
+
+          <div class="sin-clientes" *ngIf="clientesFiltrados.length === 0">
+            <ion-icon name="people-outline"></ion-icon>
+            <p>No se encontraron clientes</p>
+          </div>
+
+          <div
+            class="cliente-card"
+            *ngFor="let cliente of clientesFiltrados"
+            (click)="verDetalle(cliente)"
+          >
+            <div class="cliente-avatar">
+              <ion-icon name="person-circle-outline"></ion-icon>
+            </div>
+            <div class="cliente-info">
+              <p class="cli-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</p>
+              <p class="cli-negocio">{{ cliente.nombre_negocio || '—' }}</p>
+              <p class="cli-cedula">{{ cliente.cedula }}</p>
+            </div>
+            <div class="cliente-saldo">
+              <p class="saldo-label">Saldo:</p>
+              <p class="saldo-valor"
+                [class.saldo-rojo]="(cliente.saldo || 0) > 0"
+                [class.saldo-verde]="(cliente.saldo || 0) === 0"
+              >${{ (cliente.saldo || 0) | number:'1.2-2' }}</p>
+            </div>
+            <ion-icon name="chevron-forward-outline" class="cli-arrow"></ion-icon>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL AGREGAR CLIENTE ===== -->
+  <ion-modal [isOpen]="mostrarAgregarCliente" (didDismiss)="cerrarAgregarCliente()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Nuevo Cliente</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarAgregarCliente()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-form-content">
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label>Cédula*</label>
+            <input type="text" [(ngModel)]="nuevoCliente.cedula" placeholder="C.I." />
+            <span class="field-error" *ngIf="errores.cedula">{{ errores.cedula }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo Cliente:*</label>
+            <div class="switch-row">
+              <span [class.tipo-active]="!nuevoCliente.esParticular">Negocio</span>
+              <div class="switch-track" [class.on]="nuevoCliente.esParticular"
+                (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular">
+                <div class="switch-thumb"></div>
+              </div>
+              <span [class.tipo-active]="nuevoCliente.esParticular">Particular</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Nombre*</label>
+              <input type="text" [(ngModel)]="nuevoCliente.nombre" placeholder="nombre" />
+              <span class="field-error" *ngIf="errores.nombre">{{ errores.nombre }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Apellido*</label>
+              <input type="text" [(ngModel)]="nuevoCliente.apellido" placeholder="apellido" />
+              <span class="field-error" *ngIf="errores.apellido">{{ errores.apellido }}</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre de Negocio</label>
+            <input type="text" [(ngModel)]="nuevoCliente.negocio" placeholder="nombre del negocio" />
+          </div>
+
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" [(ngModel)]="nuevoCliente.email" placeholder="E-mail" />
+            <span class="field-error" *ngIf="errores.email">{{ errores.email }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Dirección*</label>
+            <input type="text" [(ngModel)]="nuevoCliente.direccion" placeholder="dirección" />
+            <span class="field-error" *ngIf="errores.direccion">{{ errores.direccion }}</span>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Sector</label>
+              <input type="text" [(ngModel)]="nuevoCliente.sector" placeholder="sector" />
+            </div>
+            <div class="form-group half">
+              <label>Teléfono*</label>
+              <input type="tel" [(ngModel)]="nuevoCliente.telefono" placeholder="celular" />
+              <span class="field-error" *ngIf="errores.telefono">{{ errores.telefono }}</span>
+            </div>
+          </div>
+
+          <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
+
+          <button class="btn-nativo" (click)="guardarCliente()" [disabled]="guardando">
+            <ion-spinner name="crescent" *ngIf="guardando" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+            {{ guardando ? 'Guardando...' : 'Guardar Cliente' }}
+          </button>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ===== MODAL DETALLE CLIENTE (deslizable desde abajo) ===== -->
+  <ion-modal
+    [isOpen]="mostrarDetalle"
+    (didDismiss)="cerrarDetalle()"
+    [breakpoints]="[0, 0.92]"
+    [initialBreakpoint]="0.92"
+  >
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="start">
+            <ion-button (click)="cerrarDetalle()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <ion-buttons slot="end">
+            <ion-button (click)="editarCliente()">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </ion-button>
+            <ion-button (click)="verSaldo()">
+              <ion-icon name="cash-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="detalle-content" *ngIf="clienteDetalle">
+        <div class="detalle-body">
+
+          <!-- Avatar -->
+          <div class="detalle-avatar">
+            <ion-icon name="person-circle-outline"></ion-icon>
+          </div>
+
+          <!-- Nombre y datos básicos -->
+          <h2 class="detalle-nombre">{{ clienteDetalle.nombre }} {{ clienteDetalle.apellido }}</h2>
+          <p class="detalle-sub" *ngIf="clienteDetalle.nombre_negocio">{{ clienteDetalle.nombre_negocio }}</p>
+          <p class="detalle-sub">{{ clienteDetalle.cedula }}</p>
+          <p class="detalle-sub">{{ clienteDetalle.tipo_cliente | titlecase }}</p>
+
+          <!-- Info de contacto -->
+          <div class="detalle-info-card">
+            <div class="info-fila" *ngIf="clienteDetalle.email">
+              <span class="info-lbl">E-mail:</span>
+              <span class="info-val">{{ clienteDetalle.email }}</span>
+            </div>
+            <div class="info-fila">
+              <span class="info-lbl">Teléfono:</span>
+              <span class="info-val">{{ clienteDetalle.telefono }}</span>
+            </div>
+            <div class="info-fila">
+              <span class="info-lbl">Dirección:</span>
+              <span class="info-val">{{ clienteDetalle.direccion }}</span>
+            </div>
+            <div class="info-fila" *ngIf="clienteDetalle.sector">
+              <span class="info-lbl">Sector:</span>
+              <span class="info-val">{{ clienteDetalle.sector }}</span>
+            </div>
+            <div class="info-fila" *ngIf="clienteDetalle.notas">
+              <span class="info-lbl">Notas:</span>
+              <span class="info-val">{{ clienteDetalle.notas }}</span>
+            </div>
+          </div>
+
+          <!-- Resumen financiero -->
+          <div class="detalle-financiero">
+            <div class="fin-item">
+              <span class="fin-lbl">Saldo pendiente</span>
+              <span class="fin-val" [class.saldo-rojo]="(clienteDetalle.saldo || 0) > 0"
+                                    [class.saldo-verde]="(clienteDetalle.saldo || 0) === 0">
+                ${{ (clienteDetalle.saldo || 0) | number:'1.2-2' }}
+              </span>
+            </div>
+            <div class="fin-item" *ngIf="(clienteDetalle.limite_credito || 0) > 0">
+              <span class="fin-lbl">Límite crédito</span>
+              <span class="fin-val">${{ (clienteDetalle.limite_credito || 0) | number:'1.2-2' }}</span>
+            </div>
+            <div class="fin-item" *ngIf="(clienteDetalle.credito_disponible || 0) > 0">
+              <span class="fin-lbl">Crédito disponible</span>
+              <span class="fin-val saldo-verde">${{ (clienteDetalle.credito_disponible || 0) | number:'1.2-2' }}</span>
+            </div>
+            <div class="fin-item" *ngIf="clienteDetalle.ultima_compra">
+              <span class="fin-lbl">Última compra</span>
+              <span class="fin-val">{{ clienteDetalle.ultima_compra | date:'dd/MM/yyyy' }}</span>
+            </div>
+          </div>
+
+          <!-- Tabla movimientos / saldo -->
+          <div class="movimientos-tabla" *ngIf="movimientos.length > 0">
+            <div class="mov-head">
+              <span>Detalle</span>
+              <span>Estado</span>
+              <span class="col-right">Valor.</span>
+              <span class="col-right">Saldo</span>
+            </div>
+            <div class="mov-row" *ngFor="let mov of movimientos">
+              <span class="mov-detalle">{{ mov.detalle }}</span>
+              <span class="mov-estado"
+                [class.estado-c]="mov.estado === 'C'"
+                [class.estado-a]="mov.estado === 'A'"
+                [class.estado-p]="mov.estado === 'P'"
+              >{{ mov.estado }}</span>
+              <span class="col-right mov-valor"
+                [class.valor-rojo]="mov.valor > 0"
+                [class.valor-verde]="mov.valor <= 0"
+              >${{ mov.valor | number:'1.2-2' }}</span>
+              <span class="col-right mov-saldo">${{ mov.saldo | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <div class="sin-movimientos" *ngIf="movimientos.length === 0 && !cargandoMovimientos">
+            <p>Sin movimientos registrados</p>
+          </div>
+
+          <div class="loading-mov" *ngIf="cargandoMovimientos">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>
