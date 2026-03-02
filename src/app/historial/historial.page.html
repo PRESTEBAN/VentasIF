@@ -56,13 +56,14 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
-        <div class="header-right"></div>
+        <!-- Botón basurero esquina superior derecha -->
+        <div class="delete-btn" (click)="toggleModoEliminacion()" [class.delete-btn-active]="modoEliminacion">
+          <ion-icon [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"></ion-icon>
+        </div>
       </div>
 
-      <!-- GLACEADO -->
       <img src="assets/Glaceado.png" class="glaceado" alt="" />
 
-      <!-- MAIN -->
       <div class="main-content">
 
         <!-- TÍTULO -->
@@ -75,7 +76,6 @@
           <button class="nav-btn" (click)="semanaAnterior()">
             <ion-icon name="chevron-back-outline"></ion-icon>
           </button>
-
           <div class="dias-scroll">
             <div
               class="dia-item"
@@ -89,13 +89,12 @@
               <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
             </div>
           </div>
-
           <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
             <ion-icon name="chevron-forward-outline"></ion-icon>
           </button>
         </div>
 
-        <!-- MES/AÑO clickeable para date picker -->
+        <!-- MES/AÑO -->
         <div class="mes-anio-btn" (click)="abrirDatePicker()">
           <ion-icon name="calendar-outline"></ion-icon>
           <span>{{ fechaSeleccionada | date:'MMMM yyyy':'':'es' | titlecase }}</span>
@@ -116,6 +115,19 @@
           </div>
         </div>
 
+        <!-- BARRA ELIMINACIÓN -->
+        <div class="barra-eliminacion" *ngIf="modoEliminacion">
+          <span class="barra-texto">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            {{ ventasSeleccionadas.size }} seleccionada(s)
+          </span>
+          <button class="btn-eliminar-confirm" (click)="confirmarEliminacion()" [disabled]="ventasSeleccionadas.size === 0 || eliminando">
+            <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:4px"></ion-spinner>
+            <ion-icon name="trash-outline" *ngIf="!eliminando"></ion-icon>
+            {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
+          </button>
+        </div>
+
         <!-- LOADING -->
         <div class="loading-ventas" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
@@ -134,7 +146,16 @@
             class="venta-card"
             *ngFor="let venta of ventas"
             (click)="verVenta(venta)"
+            [class.venta-seleccionada]="estaSeleccionada(venta.id)"
           >
+            <!-- Checkbox en modo eliminación -->
+            <div class="venta-check" *ngIf="modoEliminacion">
+              <ion-icon
+                [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'"
+                [class.checked]="estaSeleccionada(venta.id)"
+              ></ion-icon>
+            </div>
+
             <!-- Avatar -->
             <div class="venta-avatar">
               <ion-icon name="person-circle-outline"></ion-icon>
@@ -158,7 +179,7 @@
             </div>
 
             <!-- Flecha -->
-            <ion-icon name="chevron-forward-outline" class="venta-arrow"></ion-icon>
+            <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
           </div>
 
         </div>
@@ -184,27 +205,30 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-content class="detalle-modal-content" *ngIf="ventaDetalle">
-        <div class="detalle-body">
+      <ion-content class="detalle-modal-content">
 
-          <!-- Avatar -->
+        <!-- LOADING DETALLE -->
+        <div class="loading-detalle" *ngIf="cargandoDetalle">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando detalle...</p>
+        </div>
+
+        <div class="detalle-body" *ngIf="ventaDetalle && !cargandoDetalle">
+
           <div class="detalle-avatar">
             <ion-icon name="person-circle-outline"></ion-icon>
           </div>
 
-          <!-- Info cliente -->
           <h2 class="detalle-nombre">{{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}</h2>
           <p class="detalle-negocio">{{ ventaDetalle.clienteNegocio || '—' }}</p>
           <p class="detalle-cedula">{{ ventaDetalle.clienteCedula }}</p>
           <p class="detalle-tipo">{{ ventaDetalle.tipoCliente || 'Negocio' }}</p>
 
-          <!-- Tipo de pago badge -->
           <div class="detalle-pago-row">
             <span class="pago-label">Tipo de pago:</span>
             <span class="pago-badge">{{ ventaDetalle.formaPago }}</span>
           </div>
 
-          <!-- Tabla productos -->
           <table class="detalle-tabla">
             <thead>
               <tr>
@@ -219,10 +243,12 @@
                 <td class="col-center">{{ item.cantidad }}</td>
                 <td class="col-right">${{ item.subtotal | number:'1.2-2' }}</td>
               </tr>
+              <tr *ngIf="ventaDetalle.items.length === 0">
+                <td colspan="3" style="text-align:center; color:#aaa; padding: 16px 0;">Sin productos</td>
+              </tr>
             </tbody>
           </table>
 
-          <!-- Totales -->
           <div class="detalle-totales">
             <div class="total-fila">
               <span class="total-lbl">SubTotal:</span>
