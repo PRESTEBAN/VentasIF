@@ -29,13 +29,13 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   private readonly API = 'https://ventasif-if-api.onrender.com/api/v1';
 
-  menuAbierto    = false;
-  usuarioActual  = '';
+  menuAbierto   = false;
+  usuarioActual = '';
 
   private pollingInterval: any = null;
   private readonly POLLING_MS  = 15000;
 
-  // ---- CALENDARIO (igual que historial) ----
+  // ---- CALENDARIO ----
   fechaSeleccionada: Date = new Date();
   semanaActual: Date[]    = [];
   mostrarDatePicker       = false;
@@ -52,11 +52,12 @@ export class EgresosPage implements OnInit, OnDestroy {
   // ---- MODAL ----
   mostrarModal = false;
   guardando    = false;
+  mostrarBeneficiarioDropdown = false;
+  mostrarResponsableDropdown  = false;
   nuevoEgreso: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
   errores: any = {};
 
-  // Opciones extra para beneficiario
-  readonly OPCIONES_EXTRA = ['Vehiculo', 'Fabrica'];
+  readonly OPCIONES_ESPECIALES = ['Vehiculo', 'Fabrica'];
 
   constructor(
     public router: Router,
@@ -76,26 +77,16 @@ export class EgresosPage implements OnInit, OnDestroy {
     this.iniciarPolling();
   }
 
-  ionViewWillLeave() {
-    this.detenerPolling();
-  }
-
-  ngOnDestroy() {
-    this.detenerPolling();
-  }
+  ionViewWillLeave() { this.detenerPolling(); }
+  ngOnDestroy()      { this.detenerPolling(); }
 
   iniciarPolling() {
     this.detenerPolling();
-    this.pollingInterval = setInterval(() => {
-      this.cargarEgresosSilencioso();
-    }, this.POLLING_MS);
+    this.pollingInterval = setInterval(() => this.cargarEgresosSilencioso(), this.POLLING_MS);
   }
 
   detenerPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
   cargarEgresosSilencioso() {
@@ -104,11 +95,7 @@ export class EgresosPage implements OnInit, OnDestroy {
       .subscribe({
         next: (data) => {
           const idsActuales = new Set(this.egresos.map(e => e.id));
-          data.forEach(egreso => {
-            if (!idsActuales.has(egreso.id)) {
-              this.egresos = [...this.egresos, egreso];
-            }
-          });
+          data.forEach(e => { if (!idsActuales.has(e.id)) this.egresos = [...this.egresos, e]; });
         },
         error: () => {}
       });
@@ -119,71 +106,50 @@ export class EgresosPage implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  // ---- USUARIOS ----
+  // ---- USUARIOS — filtra Admin ----
   cargarUsuarios() {
     this.http.get<Usuario[]>(`${this.API}/egresos/usuarios`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => {
-          this.usuarios = data;
-          // Por defecto responsable = usuario Admin
-          const admin = data.find(u => u.username?.toLowerCase() === 'admin');
-          if (admin && !this.nuevoEgreso.responsable) {
-            this.nuevoEgreso.responsable = admin.username;
-          }
+          // Excluir usuario admin de ambos selectores
+          this.usuarios = data.filter(u =>
+            u.username?.toLowerCase() !== 'admin' &&
+            u.nombre?.toLowerCase()   !== 'admin'
+          );
         },
         error: () => {}
       });
   }
 
-  // Opciones beneficiario = usuarios + Vehiculo + Fabrica
-  get opcionesBeneficiario(): string[] {
-    const usernames = this.usuarios.map(u => u.username);
-    return [...usernames, ...this.OPCIONES_EXTRA];
-  }
+  // Beneficiario = usuarios (sin admin) + Vehículo + Fábrica
+  get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
   // ---- CALENDARIO ----
   generarSemana(fecha: Date) {
     const dias: Date[] = [];
     for (let i = -3; i <= 3; i++) {
-      const d = new Date(fecha);
-      d.setDate(fecha.getDate() + i);
-      dias.push(d);
+      const d = new Date(fecha); d.setDate(fecha.getDate() + i); dias.push(d);
     }
     this.semanaActual = dias;
   }
 
   semanaAnterior() {
-    const nueva = new Date(this.fechaSeleccionada);
-    nueva.setDate(nueva.getDate() - 7);
-    this.fechaSeleccionada = nueva;
-    this.generarSemana(nueva);
-    this.cargarEgresos();
+    const nueva = new Date(this.fechaSeleccionada); nueva.setDate(nueva.getDate() - 7);
+    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos();
   }
 
   semanaSiguiente() {
-    const nueva = new Date(this.fechaSeleccionada);
-    nueva.setDate(nueva.getDate() + 7);
-    this.fechaSeleccionada = nueva;
-    this.generarSemana(nueva);
-    this.cargarEgresos();
+    const nueva = new Date(this.fechaSeleccionada); nueva.setDate(nueva.getDate() + 7);
+    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos();
   }
 
   esSemanaActual(): boolean {
     return this.formatearFecha(this.fechaSeleccionada) >= this.formatearFecha(new Date());
   }
 
-  seleccionarDia(dia: Date) {
-    this.fechaSeleccionada = new Date(dia);
-    this.cargarEgresos();
-  }
-
-  esDiaSeleccionado(dia: Date): boolean {
-    return dia.toDateString() === this.fechaSeleccionada.toDateString();
-  }
-
-  esHoy(dia: Date): boolean {
-    return dia.toDateString() === new Date().toDateString();
-  }
+  seleccionarDia(dia: Date) { this.fechaSeleccionada = new Date(dia); this.cargarEgresos(); }
+  esDiaSeleccionado(dia: Date): boolean { return dia.toDateString() === this.fechaSeleccionada.toDateString(); }
+  esHoy(dia: Date): boolean { return dia.toDateString() === new Date().toDateString(); }
 
   abrirDatePicker()  { this.mostrarDatePicker = true;  }
   cerrarDatePicker() { this.mostrarDatePicker = false; }
@@ -193,96 +159,71 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (!valor) return;
     const [anio, mes, dia] = valor.split('-').map(Number);
     const nueva = new Date(anio, mes - 1, dia);
-    this.fechaSeleccionada = nueva;
-    this.generarSemana(nueva);
-    this.cargarEgresos();
-    this.cerrarDatePicker();
+    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos(); this.cerrarDatePicker();
   }
 
   formatearFecha(fecha: Date): string {
     const d = fecha.getDate().toString().padStart(2, '0');
     const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
-    const a = fecha.getFullYear();
-    return `${a}-${m}-${d}`;
+    return `${fecha.getFullYear()}-${m}-${d}`;
   }
 
   // ---- EGRESOS ----
   cargarEgresos() {
-    this.cargando = true;
-    this.egresos  = [];
-    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
-
-    this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${fechaStr}`, { headers: this.getHeaders() })
-      .subscribe({
-        next: (data) => {
-          this.egresos  = data;
-          this.cargando = false;
-        },
-        error: () => {
-          this.egresos  = [];
-          this.cargando = false;
-        }
-      });
+    this.cargando = true; this.egresos = [];
+    this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${this.formatearFecha(this.fechaSeleccionada)}`, { headers: this.getHeaders() })
+      .subscribe({ next: (data) => { this.egresos = data; this.cargando = false; }, error: () => { this.egresos = []; this.cargando = false; } });
   }
 
   // ---- MODAL ----
   abrirModal() {
-    // Responsable por defecto = Admin
-    const admin = this.usuarios.find(u => u.username?.toLowerCase() === 'admin');
-    this.nuevoEgreso = {
-      detalle:      '',
-      responsable:  admin ? admin.username : (this.usuarios[0]?.username || ''),
-      beneficiario: '',
-      valor:        0
-    };
+    this.nuevoEgreso = { detalle: '', responsable: this.usuarios[0]?.username || '', beneficiario: '', valor: 0 };
     this.errores = {};
     this.mostrarModal = true;
   }
 
+  toggleResponsable() { this.mostrarResponsableDropdown = !this.mostrarResponsableDropdown; }
+
+  seleccionarResponsable(valor: string) {
+    this.nuevoEgreso.responsable = valor;
+    this.mostrarResponsableDropdown = false;
+  }
+
+  toggleBeneficiario() { this.mostrarBeneficiarioDropdown = !this.mostrarBeneficiarioDropdown; }
+
+  seleccionarBeneficiario(valor: string) {
+    this.nuevoEgreso.beneficiario = valor;
+    this.mostrarBeneficiarioDropdown = false;
+  }
+
+  getLabelBeneficiario(username: string): string {
+    const u = this.usuarios.find(u => u.username === username);
+    return u ? `${u.nombre} ${u.apellido}` : username;
+  }
+
   cerrarModal() {
     this.mostrarModal = false;
+    this.mostrarBeneficiarioDropdown = false;
+    this.mostrarResponsableDropdown  = false;
     this.errores = {};
   }
 
   guardarEgreso() {
     this.errores = {};
     let valido = true;
-
-    if (!this.nuevoEgreso.detalle.trim()) {
-      this.errores.detalle = 'El detalle es requerido'; valido = false;
-    }
-    if (!this.nuevoEgreso.responsable) {
-      this.errores.responsable = 'El responsable es requerido'; valido = false;
-    }
-    if (!this.nuevoEgreso.beneficiario) {
-      this.errores.beneficiario = 'El beneficiario es requerido'; valido = false;
-    }
-    if (!this.nuevoEgreso.valor || this.nuevoEgreso.valor <= 0) {
-      this.errores.valor = 'Ingresa un valor válido'; valido = false;
-    }
-
+    if (!this.nuevoEgreso.detalle.trim())    { this.errores.detalle      = 'El detalle es requerido'; valido = false; }
+    if (!this.nuevoEgreso.responsable)       { this.errores.responsable  = 'Requerido'; valido = false; }
+    if (!this.nuevoEgreso.beneficiario)      { this.errores.beneficiario = 'Requerido'; valido = false; }
+    if (!this.nuevoEgreso.valor || this.nuevoEgreso.valor <= 0) { this.errores.valor = 'Ingresa un valor válido'; valido = false; }
     if (!valido) return;
 
     this.guardando = true;
-    this.http.post<Egreso>(
-      `${this.API}/egresos`,
-      {
-        detalle:     this.nuevoEgreso.detalle.trim(),
-        responsable: this.nuevoEgreso.responsable,
-        beneficiario: this.nuevoEgreso.beneficiario,
-        valor:       this.nuevoEgreso.valor
-      },
+    this.http.post<Egreso>(`${this.API}/egresos`,
+      { detalle: this.nuevoEgreso.detalle.trim(), responsable: this.nuevoEgreso.responsable, beneficiario: this.nuevoEgreso.beneficiario, valor: this.nuevoEgreso.valor },
       { headers: this.getHeaders() }
     ).subscribe({
-      next: () => {
-        this.guardando = false;
-        this.cerrarModal();
-        this.cargarEgresos();
-      },
-      error: () => {
-        this.guardando = false;
-        this.errores.general = 'Error al guardar, intenta de nuevo';
-      }
+      next: () => { this.guardando = false; this.cerrarModal(); this.cargarEgresos(); },
+      error: () => { this.guardando = false; this.errores.general = 'Error al guardar, intenta de nuevo'; }
     });
   }
 
@@ -290,14 +231,9 @@ export class EgresosPage implements OnInit, OnDestroy {
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
 
-  cerrarSesion() {
-    this.authService.logout();
-    this.menuAbierto = false;
-    this.router.navigate(['/login']);
-  }
-
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);  }
-  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);   }
+  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']);  }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']);   }
+  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']);    }
 }

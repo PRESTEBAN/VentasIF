@@ -320,6 +320,33 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.calcularSubtotal();
   }
 
+  onCantidadChange(valor: number) {
+    const maxStock = this.productoSeleccionado?.stock ?? 0;
+    if (valor > maxStock) {
+      this.itemProducto.cantidad = maxStock;
+    } else if (valor < 0) {
+      this.itemProducto.cantidad = 0;
+    } else {
+      this.itemProducto.cantidad = valor;
+    }
+    this.calcularSubtotal();
+  }
+
+  incrementarCantidad() {
+    const maxStock = this.productoSeleccionado?.stock ?? 0;
+    if (this.itemProducto.cantidad < maxStock) {
+      this.itemProducto.cantidad++;
+      this.calcularSubtotal();
+    }
+  }
+
+  decrementarCantidad() {
+    if (this.itemProducto.cantidad > 0) {
+      this.itemProducto.cantidad--;
+      this.calcularSubtotal();
+    }
+  }
+
   cerrarProducto() { this.mostrarProducto = false; }
 
   calcularSubtotal() {
@@ -482,6 +509,7 @@ export class Tab1Page implements OnInit, OnDestroy {
         this.busquedaCliente = '';
         this.montoRecibido = 0;
         this.cerrarCarrito();
+        // Recargar stock desde BD después de finalizar la venta
         this.cargarProductos();
       },
       error: (err) => {
