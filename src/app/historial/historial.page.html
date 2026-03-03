@@ -3,10 +3,8 @@
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
 
-      <!-- OVERLAY MENU -->
       <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
 
-      <!-- MENU LATERAL -->
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
           <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
@@ -48,7 +46,6 @@
         </div>
       </div>
 
-      <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -56,7 +53,6 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
-        <!-- Botón basurero esquina superior derecha -->
         <div class="delete-btn" (click)="toggleModoEliminacion()" [class.delete-btn-active]="modoEliminacion">
           <ion-icon [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"></ion-icon>
         </div>
@@ -66,12 +62,10 @@
 
       <div class="main-content">
 
-        <!-- TÍTULO -->
         <div class="page-header">
           <h1 class="page-title">Historial de ventas</h1>
         </div>
 
-        <!-- SELECTOR DE SEMANA -->
         <div class="semana-selector">
           <button class="nav-btn" (click)="semanaAnterior()">
             <ion-icon name="chevron-back-outline"></ion-icon>
@@ -94,14 +88,12 @@
           </button>
         </div>
 
-        <!-- MES/AÑO -->
         <div class="mes-anio-btn" (click)="abrirDatePicker()">
           <ion-icon name="calendar-outline"></ion-icon>
           <span>{{ fechaSeleccionada | date:'MMMM yyyy':'':'es' | titlecase }}</span>
           <ion-icon name="chevron-down-outline"></ion-icon>
         </div>
 
-        <!-- DATE PICKER OVERLAY -->
         <div class="datepicker-overlay" *ngIf="mostrarDatePicker" (click)="cerrarDatePicker()">
           <div class="datepicker-card" (click)="$event.stopPropagation()">
             <p class="dp-titulo">Seleccionar fecha</p>
@@ -115,7 +107,6 @@
           </div>
         </div>
 
-        <!-- BARRA ELIMINACIÓN -->
         <div class="barra-eliminacion" *ngIf="modoEliminacion">
           <span class="barra-texto">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
@@ -128,13 +119,11 @@
           </button>
         </div>
 
-        <!-- LOADING -->
         <div class="loading-ventas" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando ventas...</p>
         </div>
 
-        <!-- LISTA DE VENTAS -->
         <div class="ventas-lista" *ngIf="!cargando">
 
           <div class="sin-ventas" *ngIf="ventas.length === 0">
@@ -148,7 +137,6 @@
             (click)="verVenta(venta)"
             [class.venta-seleccionada]="estaSeleccionada(venta.id)"
           >
-            <!-- Checkbox en modo eliminación -->
             <div class="venta-check" *ngIf="modoEliminacion">
               <ion-icon
                 [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'"
@@ -156,19 +144,18 @@
               ></ion-icon>
             </div>
 
-            <!-- Avatar -->
             <div class="venta-avatar">
               <ion-icon name="person-circle-outline"></ion-icon>
             </div>
 
-            <!-- Info cliente -->
             <div class="venta-info">
               <p class="venta-nombre">{{ venta.clienteNombre }} {{ venta.clienteApellido }}</p>
+              <!-- NÚMERO DE ORDEN en el card -->
+              <p class="venta-orden">#{{ venta.ordenId }}</p>
               <p class="venta-negocio">{{ venta.clienteNegocio || '—' }}</p>
               <p class="venta-cedula">{{ venta.clienteCedula }}</p>
             </div>
 
-            <!-- Estado + total -->
             <div class="venta-derecha">
               <p
                 class="venta-estado"
@@ -178,7 +165,6 @@
               <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
             </div>
 
-            <!-- Flecha -->
             <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
           </div>
 
@@ -187,7 +173,7 @@
     </div>
   </div>
 
-  <!-- ===== MODAL DETALLE VENTA ===== -->
+  <!-- MODAL DETALLE VENTA -->
   <ion-modal
     [isOpen]="mostrarDetalle"
     (didDismiss)="cerrarDetalle()"
@@ -207,7 +193,6 @@
 
       <ion-content class="detalle-modal-content">
 
-        <!-- LOADING DETALLE -->
         <div class="loading-detalle" *ngIf="cargandoDetalle">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando detalle...</p>
@@ -220,6 +205,8 @@
           </div>
 
           <h2 class="detalle-nombre">{{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}</h2>
+          <!-- NÚMERO DE ORDEN en el modal -->
+          <p class="detalle-orden">#{{ ventaDetalle.ordenId }}</p>
           <p class="detalle-negocio">{{ ventaDetalle.clienteNegocio || '—' }}</p>
           <p class="detalle-cedula">{{ ventaDetalle.clienteCedula }}</p>
           <p class="detalle-tipo">{{ ventaDetalle.tipoCliente || 'Negocio' }}</p>

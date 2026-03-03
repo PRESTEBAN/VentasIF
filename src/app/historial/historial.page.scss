@@ -234,6 +234,8 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+.venta-orden { font-size: 11px; font-weight: 700; color: #590F23; margin-top: 1px !important; }
+
 .venta-negocio {
   font-size: 11px; color: #888;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -335,7 +337,8 @@
   ion-icon { font-size: 62px; color: #A0522D; }
 }
 
-.detalle-nombre { font-size: 22px; font-weight: 800; color: #2D1B0E; margin: 0 0 4px 0; text-align: center; }
+.detalle-nombre { font-size: 22px; font-weight: 800; color: #2D1B0E; margin: 0 0 2px 0; text-align: center; }
+.detalle-orden  { font-size: 15px; font-weight: 700; color: #590F23; margin: 0 0 4px 0; text-align: center; }
 .detalle-negocio { font-size: 13px; color: #888; margin: 0 0 2px 0; text-align: center; }
 .detalle-cedula  { font-size: 12px; color: #AAA; margin: 0 0 2px 0; text-align: center; }
 .detalle-tipo    { font-size: 12px; color: #AAA; margin: 0 0 14px 0; text-align: center; }

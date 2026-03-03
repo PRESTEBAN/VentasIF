@@ -6,6 +6,7 @@ import { AlertController } from '@ionic/angular';
 
 export interface VentaHistorial {
   id: number;
+  ordenId: number;
   clienteNombre: string;
   clienteApellido: string;
   clienteNegocio: string | null;
@@ -74,7 +75,6 @@ export class HistorialPage implements OnInit {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  // ---- SEMANA ----
   generarSemana(fecha: Date) {
     const dias: Date[] = [];
     for (let i = -3; i <= 3; i++) {
@@ -121,7 +121,6 @@ export class HistorialPage implements OnInit {
     return dia.toDateString() === new Date().toDateString();
   }
 
-  // ---- DATE PICKER ----
   abrirDatePicker() { this.mostrarDatePicker = true; }
   cerrarDatePicker() { this.mostrarDatePicker = false; }
 
@@ -136,7 +135,6 @@ export class HistorialPage implements OnInit {
     this.cerrarDatePicker();
   }
 
-  // ---- CARGA DE VENTAS ----
   cargarVentas() {
     this.cargando = true;
     this.ventas = [];
@@ -165,9 +163,11 @@ export class HistorialPage implements OnInit {
     const estado: 'Entregado' | 'Pendiente' = estadoRaw === 'entregado' ? 'Entregado' : 'Pendiente';
 
     const rawItems = v.items || v.detalle || v.detalles || [];
+    const ventaId = v.venta_id || v.id;
 
     return {
-      id: v.venta_id || v.id,
+      id: ventaId,
+      ordenId: ventaId,
       clienteNombre: nombre,
       clienteApellido: apellido,
       clienteNegocio: v.nombre_negocio || null,
@@ -195,7 +195,6 @@ export class HistorialPage implements OnInit {
     return `${a}-${m}-${d}`;
   }
 
-  // ---- VER DETALLE ----
   verVenta(venta: VentaHistorial) {
     if (this.modoEliminacion) {
       this.toggleSeleccion(venta.id);
@@ -223,7 +222,6 @@ export class HistorialPage implements OnInit {
     this.ventaDetalle = null;
   }
 
-  // ---- MODO ELIMINACIÓN ----
   toggleModoEliminacion() {
     this.modoEliminacion = !this.modoEliminacion;
     if (!this.modoEliminacion) {
@@ -279,7 +277,6 @@ export class HistorialPage implements OnInit {
     eliminarUno(0);
   }
 
-  // ---- MENU ----
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
 
