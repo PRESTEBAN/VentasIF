@@ -73,41 +73,26 @@
         <div class="toolbar-row">
           <div class="search-bar">
             <ion-icon name="search-outline"></ion-icon>
-            <input
-              type="text"
-              placeholder="Nombre, cédula o negocio..."
-              [(ngModel)]="busqueda"
-              (ngModelChange)="aplicarFiltroYOrden()"
-            />
-            <ion-icon
-              name="close-circle"
-              class="clear-icon"
-              *ngIf="busqueda"
-              (click)="busqueda = ''; aplicarFiltroYOrden()"
-            ></ion-icon>
+            <input type="text" placeholder="Nombre, cédula o negocio..."
+              [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltroYOrden()" />
+            <ion-icon name="close-circle" class="clear-icon" *ngIf="busqueda"
+              (click)="busqueda = ''; aplicarFiltroYOrden()"></ion-icon>
           </div>
-
-          <!-- Botón ordenar -->
           <div class="orden-btn" (click)="toggleOrdenMenu()">
             <ion-icon name="funnel-outline"></ion-icon>
           </div>
         </div>
 
-        <!-- MENÚ DE ORDEN -->
+        <!-- MENÚ ORDEN -->
         <div class="orden-menu" *ngIf="mostrarOrdenMenu">
           <p class="orden-titulo">Ordenar por</p>
           <div class="orden-opciones">
-            <div
-              class="orden-opcion"
-              *ngFor="let op of opcionesOrden"
-              [class.activo]="ordenActual === op.valor"
-              (click)="seleccionarOrden(op.valor)"
-            >
+            <div class="orden-opcion" *ngFor="let op of opcionesOrden"
+              [class.activo]="ordenActual === op.valor" (click)="seleccionarOrden(op.valor)">
               <span>{{ op.label }}</span>
-              <ion-icon
-                *ngIf="ordenActual === op.valor"
-                [name]="direccionOrden === 'asc' ? 'arrow-up-outline' : 'arrow-down-outline'"
-              ></ion-icon>
+              <ion-icon *ngIf="ordenActual === op.valor"
+                [name]="direccionOrden === 'asc' ? 'arrow-up-outline' : 'arrow-down-outline'">
+              </ion-icon>
             </div>
           </div>
         </div>
@@ -120,17 +105,11 @@
 
         <!-- LISTA -->
         <div class="clientes-lista" *ngIf="!cargando">
-
           <div class="sin-clientes" *ngIf="clientesFiltrados.length === 0">
             <ion-icon name="people-outline"></ion-icon>
             <p>No se encontraron clientes</p>
           </div>
-
-          <div
-            class="cliente-card"
-            *ngFor="let cliente of clientesFiltrados"
-            (click)="verDetalle(cliente)"
-          >
+          <div class="cliente-card" *ngFor="let cliente of clientesFiltrados" (click)="verDetalle(cliente)">
             <div class="cliente-avatar">
               <ion-icon name="person-circle-outline"></ion-icon>
             </div>
@@ -143,41 +122,38 @@
               <p class="saldo-label">Saldo:</p>
               <p class="saldo-valor"
                 [class.saldo-rojo]="(cliente.saldo || 0) > 0"
-                [class.saldo-verde]="(cliente.saldo || 0) === 0"
-              >${{ (cliente.saldo || 0) | number:'1.2-2' }}</p>
+                [class.saldo-verde]="(cliente.saldo || 0) === 0">
+                ${{ (cliente.saldo || 0) | number:'1.2-2' }}
+              </p>
             </div>
             <ion-icon name="chevron-forward-outline" class="cli-arrow"></ion-icon>
           </div>
-
         </div>
+
       </div>
     </div>
   </div>
 
-  <!-- ===== MODAL AGREGAR CLIENTE ===== -->
+  <!-- ===== MODAL NUEVO CLIENTE ===== -->
   <ion-modal [isOpen]="mostrarAgregarCliente" (didDismiss)="cerrarAgregarCliente()">
     <ng-template>
       <ion-header>
         <ion-toolbar>
           <ion-title>Nuevo Cliente</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarAgregarCliente()">
-              <ion-icon name="close-outline"></ion-icon>
-            </ion-button>
+            <ion-button (click)="cerrarAgregarCliente()"><ion-icon name="close-outline"></ion-icon></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-
           <div class="form-group">
             <label>Cédula*</label>
             <input type="text" [(ngModel)]="nuevoCliente.cedula" placeholder="C.I." />
             <span class="field-error" *ngIf="errores.cedula">{{ errores.cedula }}</span>
           </div>
-
           <div class="form-group">
-            <label>Tipo Cliente:*</label>
+            <label>Tipo Cliente*</label>
             <div class="switch-row">
               <span [class.tipo-active]="!nuevoCliente.esParticular">Negocio</span>
               <div class="switch-track" [class.on]="nuevoCliente.esParticular"
@@ -187,7 +163,6 @@
               <span [class.tipo-active]="nuevoCliente.esParticular">Particular</span>
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group half">
               <label>Nombre*</label>
@@ -200,24 +175,20 @@
               <span class="field-error" *ngIf="errores.apellido">{{ errores.apellido }}</span>
             </div>
           </div>
-
           <div class="form-group">
             <label>Nombre de Negocio</label>
             <input type="text" [(ngModel)]="nuevoCliente.negocio" placeholder="nombre del negocio" />
           </div>
-
           <div class="form-group">
             <label>E-mail</label>
             <input type="email" [(ngModel)]="nuevoCliente.email" placeholder="E-mail" />
             <span class="field-error" *ngIf="errores.email">{{ errores.email }}</span>
           </div>
-
           <div class="form-group">
             <label>Dirección*</label>
             <input type="text" [(ngModel)]="nuevoCliente.direccion" placeholder="dirección" />
             <span class="field-error" *ngIf="errores.direccion">{{ errores.direccion }}</span>
           </div>
-
           <div class="form-row">
             <div class="form-group half">
               <label>Sector</label>
@@ -229,60 +200,43 @@
               <span class="field-error" *ngIf="errores.telefono">{{ errores.telefono }}</span>
             </div>
           </div>
-
           <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
-
           <button class="btn-nativo" (click)="guardarCliente()" [disabled]="guardando">
             <ion-spinner name="crescent" *ngIf="guardando" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
             {{ guardando ? 'Guardando...' : 'Guardar Cliente' }}
           </button>
-
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
 
-  <!-- ===== MODAL DETALLE CLIENTE (deslizable desde abajo) ===== -->
-  <ion-modal
-    [isOpen]="mostrarDetalle"
-    (didDismiss)="cerrarDetalle()"
-    [breakpoints]="[0, 0.92]"
-    [initialBreakpoint]="0.92"
-  >
+  <!-- ===== MODAL DETALLE CLIENTE ===== -->
+  <ion-modal [isOpen]="mostrarDetalle" (didDismiss)="cerrarDetalle()"
+    [breakpoints]="[0, 0.92]" [initialBreakpoint]="0.92">
     <ng-template>
       <ion-header>
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-button (click)="cerrarDetalle()">
-              <ion-icon name="close-outline"></ion-icon>
-            </ion-button>
+            <ion-button (click)="cerrarDetalle()"><ion-icon name="close-outline"></ion-icon></ion-button>
           </ion-buttons>
           <ion-buttons slot="end">
-            <ion-button (click)="editarCliente()">
-              <ion-icon name="pencil-outline"></ion-icon>
-            </ion-button>
-            <ion-button (click)="verSaldo()">
-              <ion-icon name="cash-outline"></ion-icon>
-            </ion-button>
+            <ion-button (click)="abrirEditar()"><ion-icon name="pencil-outline"></ion-icon></ion-button>
+            <ion-button (click)="abrirAbono()"><ion-icon name="cash-outline"></ion-icon></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
-
       <ion-content class="detalle-content" *ngIf="clienteDetalle">
         <div class="detalle-body">
 
-          <!-- Avatar -->
           <div class="detalle-avatar">
             <ion-icon name="person-circle-outline"></ion-icon>
           </div>
-
-          <!-- Nombre y datos básicos -->
           <h2 class="detalle-nombre">{{ clienteDetalle.nombre }} {{ clienteDetalle.apellido }}</h2>
           <p class="detalle-sub" *ngIf="clienteDetalle.nombre_negocio">{{ clienteDetalle.nombre_negocio }}</p>
           <p class="detalle-sub">{{ clienteDetalle.cedula }}</p>
           <p class="detalle-sub">{{ clienteDetalle.tipo_cliente | titlecase }}</p>
 
-          <!-- Info de contacto -->
+          <!-- Info contacto -->
           <div class="detalle-info-card">
             <div class="info-fila" *ngIf="clienteDetalle.email">
               <span class="info-lbl">E-mail:</span>
@@ -310,8 +264,9 @@
           <div class="detalle-financiero">
             <div class="fin-item">
               <span class="fin-lbl">Saldo pendiente</span>
-              <span class="fin-val" [class.saldo-rojo]="(clienteDetalle.saldo || 0) > 0"
-                                    [class.saldo-verde]="(clienteDetalle.saldo || 0) === 0">
+              <span class="fin-val"
+                [class.saldo-rojo]="(clienteDetalle.saldo || 0) > 0"
+                [class.saldo-verde]="(clienteDetalle.saldo || 0) === 0">
                 ${{ (clienteDetalle.saldo || 0) | number:'1.2-2' }}
               </span>
             </div>
@@ -329,36 +284,166 @@
             </div>
           </div>
 
-          <!-- Tabla movimientos / saldo -->
-          <div class="movimientos-tabla" *ngIf="movimientos.length > 0">
-            <div class="mov-head">
-              <span>Detalle</span>
-              <span>Estado</span>
-              <span class="col-right">Valor.</span>
-              <span class="col-right">Saldo</span>
-            </div>
-            <div class="mov-row" *ngFor="let mov of movimientos">
-              <span class="mov-detalle">{{ mov.detalle }}</span>
-              <span class="mov-estado"
-                [class.estado-c]="mov.estado === 'C'"
-                [class.estado-a]="mov.estado === 'A'"
-                [class.estado-p]="mov.estado === 'P'"
-              >{{ mov.estado }}</span>
-              <span class="col-right mov-valor"
-                [class.valor-rojo]="mov.valor > 0"
-                [class.valor-verde]="mov.valor <= 0"
-              >${{ mov.valor | number:'1.2-2' }}</span>
-              <span class="col-right mov-saldo">${{ mov.saldo | number:'1.2-2' }}</span>
-            </div>
-          </div>
-
-          <div class="sin-movimientos" *ngIf="movimientos.length === 0 && !cargandoMovimientos">
-            <p>Sin movimientos registrados</p>
-          </div>
-
+          <!-- Tabla movimientos -->
           <div class="loading-mov" *ngIf="cargandoMovimientos">
             <ion-spinner name="crescent"></ion-spinner>
           </div>
+
+          <div class="movimientos-tabla" *ngIf="!cargandoMovimientos && movimientos.length > 0">
+            <div class="mov-head">
+              <span>Detalle</span>
+              <span class="col-center">Est.</span>
+              <span class="col-right">Valor</span>
+              <span class="col-right">Saldo</span>
+              <span class="col-right">Fecha</span>
+            </div>
+            <div class="mov-row"
+              *ngFor="let mov of movimientos"
+              [class.fila-cancelado]="mov.estado === 'cancelado'"
+              [class.fila-abono]="mov.estado === 'abono'"
+              [class.fila-pendiente]="mov.estado === 'pendiente'"
+            >
+              <span class="mov-detalle">{{ mov.detalle }}</span>
+              <span class="mov-estado col-center"
+                [class.estado-c]="mov.estado === 'cancelado'"
+                [class.estado-a]="mov.estado === 'abono'"
+                [class.estado-p]="mov.estado === 'pendiente'"
+              >{{ estadoLabel(mov.estado) }}</span>
+              <span class="col-right mov-valor"
+                [class.valor-rojo]="mov.valor > 0"
+                [class.valor-verde]="mov.valor < 0"
+              >${{ (mov.valor < 0 ? -mov.valor : mov.valor) | number:'1.2-2' }}</span>
+              <span class="col-right mov-saldo">${{ mov.saldo_acumulado | number:'1.2-2' }}</span>
+              <span class="col-right mov-fecha">{{ mov.fecha | date:'dd/MM/yy' }}</span>
+            </div>
+          </div>
+
+          <div class="sin-movimientos" *ngIf="!cargandoMovimientos && movimientos.length === 0">
+            <p>Sin movimientos registrados</p>
+          </div>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ===== MODAL EDITAR CLIENTE ===== -->
+  <ion-modal [isOpen]="mostrarEditar" (didDismiss)="cerrarEditar()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Editar Cliente</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarEditar()"><ion-icon name="close-outline"></ion-icon></ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-form-content">
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Cédula*</label>
+              <input type="text" [(ngModel)]="editCliente.cedula" placeholder="C.I." />
+              <span class="field-error" *ngIf="erroresEditar.cedula">{{ erroresEditar.cedula }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Tipo Cliente*</label>
+              <div class="switch-row">
+                <span [class.tipo-active]="!editCliente.esParticular">Neg.</span>
+                <div class="switch-track" [class.on]="editCliente.esParticular"
+                  (click)="editCliente.esParticular = !editCliente.esParticular">
+                  <div class="switch-thumb"></div>
+                </div>
+                <span [class.tipo-active]="editCliente.esParticular">Part.</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Nombre*</label>
+              <input type="text" [(ngModel)]="editCliente.nombre" placeholder="nombre" />
+              <span class="field-error" *ngIf="erroresEditar.nombre">{{ erroresEditar.nombre }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Apellido*</label>
+              <input type="text" [(ngModel)]="editCliente.apellido" placeholder="apellido" />
+              <span class="field-error" *ngIf="erroresEditar.apellido">{{ erroresEditar.apellido }}</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Nombre de Negocio</label>
+            <input type="text" [(ngModel)]="editCliente.negocio" placeholder="nombre del negocio" />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" [(ngModel)]="editCliente.email" placeholder="E-mail" />
+            <span class="field-error" *ngIf="erroresEditar.email">{{ erroresEditar.email }}</span>
+          </div>
+          <div class="form-group">
+            <label>Dirección*</label>
+            <input type="text" [(ngModel)]="editCliente.direccion" placeholder="dirección" />
+            <span class="field-error" *ngIf="erroresEditar.direccion">{{ erroresEditar.direccion }}</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Sector</label>
+              <input type="text" [(ngModel)]="editCliente.sector" placeholder="sector" />
+            </div>
+            <div class="form-group half">
+              <label>Teléfono*</label>
+              <input type="tel" [(ngModel)]="editCliente.telefono" placeholder="celular" />
+              <span class="field-error" *ngIf="erroresEditar.telefono">{{ erroresEditar.telefono }}</span>
+            </div>
+          </div>
+          <span class="field-error" *ngIf="erroresEditar.general">{{ erroresEditar.general }}</span>
+          <button class="btn-nativo" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
+            <ion-spinner name="crescent" *ngIf="guardandoEdicion" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+            {{ guardandoEdicion ? 'Guardando...' : 'Guardar' }}
+          </button>
+          <button class="btn-eliminar" (click)="confirmarEliminar()">
+            Eliminar cliente
+          </button>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ===== MODAL ABONO ===== -->
+  <ion-modal
+    [isOpen]="mostrarAbono"
+    (didDismiss)="cerrarAbono()"
+    [breakpoints]="[0, 0.45]"
+    [initialBreakpoint]="0.45"
+  >
+    <ng-template>
+      <ion-content class="modal-form-content">
+        <div class="modal-body abono-body">
+
+          <h2 class="abono-titulo">Abono</h2>
+          <p class="abono-cliente">{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</p>
+
+          <div class="form-group">
+            <label>N° Orden:</label>
+            <input type="number" [(ngModel)]="abonoData.ventaId" placeholder="000000" />
+            <span class="field-error" *ngIf="erroresAbono.ventaId">{{ erroresAbono.ventaId }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Valor:</label>
+            <div class="valor-wrap">
+              <span class="valor-prefix">$</span>
+              <input type="number" [(ngModel)]="abonoData.monto" placeholder="0.00" step="0.01" />
+            </div>
+            <span class="field-error" *ngIf="erroresAbono.monto">{{ erroresAbono.monto }}</span>
+          </div>
+
+          <span class="field-error" *ngIf="erroresAbono.general">{{ erroresAbono.general }}</span>
+          <p class="abono-exito" *ngIf="mensajeAbono">{{ mensajeAbono }}</p>
+
+          <button class="btn-nativo" (click)="guardarAbono()" [disabled]="guardandoAbono">
+            <ion-spinner name="crescent" *ngIf="guardandoAbono" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+            {{ guardandoAbono ? 'Registrando...' : 'Guardar' }}
+          </button>
 
         </div>
       </ion-content>
