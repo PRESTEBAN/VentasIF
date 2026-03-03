@@ -65,7 +65,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
-    this.cargarProductos();
     this.cargarClientes();
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
@@ -75,7 +74,11 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
   }
 
-  ionViewWillEnter() { }
+  // Se ejecuta cada vez que el usuario entra a esta pantalla
+  // Recarga productos y stock desde la BD para mantener sincronía
+  ionViewWillEnter() {
+    this.cargarProductos();
+  }
 
   ngOnDestroy() {
     if (this.carritoSub) this.carritoSub.unsubscribe();
@@ -93,10 +96,20 @@ export class Tab1Page implements OnInit, OnDestroy {
         }));
         this.inventarioService.getBodega().subscribe({
           next: (inventario) => {
-            this.productos = productosNormalizados.map(p => {
+            const productosConStock = productosNormalizados.map(p => {
               const inv = inventario.find(i => i.producto_id === p.id);
               return { ...p, stock: inv ? inv.stock_actual : 0 };
             });
+
+            // Restar el stock de los productos que ya están en el carrito
+            // para que la UI sea consistente después de recargar
+            this.productos = productosConStock.map(p => {
+              const enCarrito = this.carrito
+                .filter(item => item.producto_id === p.id)
+                .reduce((acc, item) => acc + item.cantidad, 0);
+              return { ...p, stock: (p.stock ?? 0) - enCarrito };
+            });
+
             this.cargandoProductos = false;
           },
           error: () => {
@@ -170,6 +183,8 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.ivaPercent = data.iva_percent ?? 0;
           this.formaPago = data.forma_pago ?? 'Efectivo';
           this.montoRecibido = data.monto_recibido ?? 0;
+          // Recargar productos para reflejar el stock con el carrito cargado
+          this.cargarProductos();
         } else {
           this.carrito = [];
           this.ivaPercent = 0;
@@ -272,8 +287,20 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   // ---- PRODUCTO ----
-  abrirProducto(producto: Producto) {
+  async abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
+
+    if ((producto.stock ?? 0) <= 0) {
+      const toast = await this.toastCtrl.create({
+        message: 'Sin stock disponible',
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger'
+      });
+      await toast.present();
+      return;
+    }
+
     this.productoSeleccionado = producto;
     this.itemProducto = {
       cantidad: 0,
@@ -302,6 +329,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   agregarAlCarrito() {
     if (this.itemProducto.cantidad <= 0 || this.itemProducto.precio <= 0) return;
+
     this.carrito.push({
       producto_id: this.productoSeleccionado!.id,
       nombre: this.productoSeleccionado!.nombre,
@@ -311,6 +339,16 @@ export class Tab1Page implements OnInit, OnDestroy {
       descuento: this.itemProducto.descuento,
       subtotal: this.itemProducto.subtotal
     });
+
+    // Actualizar stock local inmediatamente para respuesta visual instantánea
+    const idx = this.productos.findIndex(p => p.id === this.productoSeleccionado!.id);
+    if (idx !== -1) {
+      this.productos[idx] = {
+        ...this.productos[idx],
+        stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad
+      };
+    }
+
     this.cerrarProducto();
   }
 
@@ -381,6 +419,17 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   eliminarDelCarrito(index: number) {
+    const item = this.carrito[index];
+
+    // Devolver stock local al eliminar del carrito
+    const idx = this.productos.findIndex(p => p.id === item.producto_id);
+    if (idx !== -1) {
+      this.productos[idx] = {
+        ...this.productos[idx],
+        stock: (this.productos[idx].stock ?? 0) + item.cantidad
+      };
+    }
+
     this.carrito.splice(index, 1);
   }
 
@@ -433,6 +482,7 @@ export class Tab1Page implements OnInit, OnDestroy {
         this.busquedaCliente = '';
         this.montoRecibido = 0;
         this.cerrarCarrito();
+        this.cargarProductos();
       },
       error: (err) => {
         console.error('Error guardando pedido:', err);

@@ -2,14 +2,9 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-      <!-- OVERLAY MENU -->
-      <div
-        class="menu-overlay"
-        [class.open]="menuAbierto"
-        (click)="cerrarMenu()"
-      ></div>
 
-      <!-- MENU LATERAL -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
           <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
@@ -19,30 +14,18 @@
             {{ usuarioActual }}
           </p>
         </div>
-
         <div class="menu-items">
           <p class="menu-seccion">Navegación</p>
-          <div
-            class="menu-item"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
-          >
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
             <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
           </div>
-          <div
-            class="menu-item"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
-          >
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
             <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
           </div>
-          <div
-            class="menu-item menu-item-active"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
-          >
+          <div class="menu-item menu-item-active" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
             <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
           </div>
-
           <div class="menu-divider"></div>
-
           <p class="menu-seccion">Gestión</p>
           <div class="menu-item" (click)="irAClientes()">
             <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
@@ -54,15 +37,11 @@
             <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
           </div>
           <div class="menu-item" (click)="irAEgresos()">
-            <ion-icon name="trending-down-outline"></ion-icon
-            ><span>Egresos</span>
+            <ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span>
           </div>
-
           <div class="menu-divider"></div>
-
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
-            <ion-icon name="log-out-outline"></ion-icon
-            ><span>Cerrar Sesión</span>
+            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
           </div>
         </div>
       </div>
@@ -75,166 +54,176 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
+        <div class="reload-btn" (click)="cargarDatos()">
+          <ion-icon name="refresh-outline"></ion-icon>
+        </div>
       </div>
 
-      <!-- GLACEADO -->
       <img src="assets/Glaceado.png" class="glaceado" alt="" />
 
-      <!-- MAIN CONTENT -->
+      <!-- MAIN -->
       <div class="main-content">
+
         <!-- TÍTULO -->
         <div class="page-header">
           <h1 class="page-title">Cierre de caja</h1>
-          <p class="page-dia">{{ diaSemana }}</p>
-          <p class="page-fecha">{{ fechaHoy }}</p>
-        </div>
-
-        <!-- CARD 1: Resumen de ventas -->
-        <div class="cierre-card">
-          <div class="fila-dato">
-            <span class="dato-label">Ventas realizadas:</span>
-            <span class="dato-valor">{{ ventasRealizadas }} ventas</span>
-          </div>
-          <div class="fila-dato">
-            <span class="dato-label">Total Efectivo:</span>
-            <span class="dato-valor"
-              >${{ totalEfectivo | number:'1.2-2' }}</span
-            >
-          </div>
-          <div class="fila-dato">
-            <span class="dato-label">Total Transferencias:</span>
-            <span class="dato-valor"
-              >${{ totalTransferencias | number:'1.2-2' }}</span
-            >
-          </div>
-          <div class="fila-dato destacado-rojo">
-            <span class="dato-label">Total Pendientes:</span>
-            <span class="dato-valor"
-              >${{ totalPendientes | number:'1.2-2' }}</span
-            >
-          </div>
-          <div class="fila-dato destacado-verde">
-            <span class="dato-label">Total Ingresos:</span>
-            <span class="dato-valor"
-              >${{ totalIngresosVentas | number:'1.2-2' }}</span
-            >
+          <div class="fecha-badge">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>{{ diaSemana }}, {{ fechaHoy }}</span>
           </div>
         </div>
 
-        <!-- CARD 2: Adelantos / Egresos -->
-        <div class="cierre-card">
-          <div class="fila-dato">
-            <span class="dato-label">Adelantos:</span>
-            <span class="dato-valor">${{ adelantos | number:'1.2-2' }}</span>
-          </div>
-          <div class="fila-dato">
-            <span class="dato-label">Egresos:</span>
-            <span class="dato-valor">${{ egresos | number:'1.2-2' }}</span>
-          </div>
-          <div class="fila-dato destacado-rojo">
-            <span class="dato-label">Total Ingresos:</span>
-            <span class="dato-valor"
-              >${{ totalIngresosEgresos | number:'1.2-2' }}</span
-            >
-          </div>
+        <!-- LOADING -->
+        <div class="loading-cierre" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando datos del día...</p>
         </div>
 
-        <!-- FILA TOTAL GENERAL -->
-        <div class="total-general">
-          <span class="total-label">TOTAL:</span>
-          <span class="total-valor">${{ totalGeneral | number:'1.2-2' }}</span>
-        </div>
+        <div *ngIf="!cargando">
 
-        <!-- CARD 3: Desglose de billetes/monedas -->
-        <div class="cierre-card card-desglose">
-          <div class="fila-input">
-            <span class="input-label">Total Billetes:</span>
-            <div class="input-wrap">
-              <input
-                type="number"
-                [(ngModel)]="billetes"
-                (ngModelChange)="recalcularTotal()"
-                placeholder="0.00"
-              />
+          <!-- CARD 1: Ventas -->
+          <div class="cierre-card">
+            <div class="card-header-row">
+              <div class="card-icono verde">
+                <ion-icon name="trending-up-outline"></ion-icon>
+              </div>
+              <p class="card-titulo">Ventas del día</p>
+              <span class="badge-ventas">{{ ventasRealizadas }} ventas</span>
+            </div>
+            <div class="fila-dato">
+              <span class="dato-label"><ion-icon name="cash-outline" class="fila-icon"></ion-icon>Efectivo</span>
+              <span class="dato-valor">${{ totalEfectivo | number:'1.2-2' }}</span>
+            </div>
+            <div class="fila-dato">
+              <span class="dato-label"><ion-icon name="swap-horizontal-outline" class="fila-icon"></ion-icon>Transferencias</span>
+              <span class="dato-valor">${{ totalTransferencias | number:'1.2-2' }}</span>
+            </div>
+            <div class="fila-dato">
+              <span class="dato-label"><ion-icon name="document-text-outline" class="fila-icon"></ion-icon>Cheques</span>
+              <span class="dato-valor">${{ totalCheques | number:'1.2-2' }}</span>
+            </div>
+            <div class="fila-dato rojo">
+              <span class="dato-label"><ion-icon name="time-outline" class="fila-icon"></ion-icon>Pendientes</span>
+              <span class="dato-valor">${{ totalPendientes | number:'1.2-2' }}</span>
+            </div>
+            <div class="fila-separador"></div>
+            <div class="fila-dato bold-row">
+              <span class="dato-label">Total Ingresos</span>
+              <span class="dato-valor verde-txt">${{ totalIngresosVentas | number:'1.2-2' }}</span>
             </div>
           </div>
-          <div class="fila-input">
-            <span class="input-label">Total Monedas:</span>
-            <div class="input-wrap">
-              <input
-                type="number"
-                [(ngModel)]="monedas"
-                (ngModelChange)="recalcularTotal()"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          <div class="fila-input">
-            <span class="input-label">Total Transferencias:</span>
-            <div class="input-wrap">
-              <input
-                type="number"
-                [(ngModel)]="transferenciasDesglose"
-                (ngModelChange)="recalcularTotal()"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
-          <div class="fila-dato fila-total-desglose">
-            <span class="dato-label">Total:</span>
-            <span class="dato-valor"
-              >${{ totalDesglose | number:'1.2-2' }}</span
-            >
-          </div>
-        </div>
 
-        <!-- BOTÓN REVISAR -->
-        <button class="btn-revisar" (click)="revisar()">Revisar</button>
+          <!-- CARD 2: Egresos -->
+          <div class="cierre-card">
+            <div class="card-header-row">
+              <div class="card-icono rojo">
+                <ion-icon name="trending-down-outline"></ion-icon>
+              </div>
+              <p class="card-titulo">Egresos del día</p>
+            </div>
+            <div class="fila-dato bold-row">
+              <span class="dato-label">Total Egresos</span>
+              <span class="dato-valor rojo-txt">${{ totalEgresos | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- TOTAL GENERAL -->
+          <div class="total-general-card">
+            <p class="total-general-label">TOTAL EN CAJA</p>
+            <p class="total-general-valor">${{ totalGeneral | number:'1.2-2' }}</p>
+          </div>
+
+          <!-- CARD 3: Conteo físico -->
+          <div class="cierre-card card-desglose">
+            <div class="card-header-row">
+              <div class="card-icono azul">
+                <ion-icon name="calculator-outline"></ion-icon>
+              </div>
+              <p class="card-titulo">Conteo físico</p>
+            </div>
+            <div class="fila-input">
+              <span class="input-label"><ion-icon name="wallet-outline" class="fila-icon"></ion-icon>Billetes</span>
+              <div class="input-wrap">
+                <span class="input-prefix">$</span>
+                <input type="number" [(ngModel)]="billetes" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="fila-input">
+              <span class="input-label"><ion-icon name="ellipse-outline" class="fila-icon"></ion-icon>Monedas</span>
+              <div class="input-wrap">
+                <span class="input-prefix">$</span>
+                <input type="number" [(ngModel)]="monedas" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="fila-input">
+              <span class="input-label"><ion-icon name="phone-portrait-outline" class="fila-icon"></ion-icon>Transferencias</span>
+              <div class="input-wrap">
+                <span class="input-prefix">$</span>
+                <input type="number" [(ngModel)]="transferenciasDesglose" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="fila-separador"></div>
+            <div class="fila-dato bold-row">
+              <span class="dato-label">Total contado</span>
+              <span class="dato-valor azul-txt">${{ totalDesglose | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <button class="btn-revisar" (click)="revisar()">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            Revisar Cierre
+          </button>
+
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ===== MODAL RESULTADO (overlay centrado) ===== -->
-  <div
-    class="resultado-overlay"
-    *ngIf="mostrarResultado"
-    (click)="cerrarResultado()"
-  >
+  <!-- ===== MODAL RESULTADO ===== -->
+  <div class="resultado-overlay" *ngIf="mostrarResultado" (click)="cerrarResultado()">
     <div class="resultado-card" (click)="$event.stopPropagation()">
-      <h2 class="resultado-titulo">Resultado</h2>
 
       <!-- CUADRADO -->
-      <div class="resultado-estado" *ngIf="estadoCierre === 'cuadrado'">
-        <p class="estado-cuadrado">CUADRADO!!!</p>
+      <ng-container *ngIf="estadoCierre === 'cuadrado'">
+        <div class="resultado-icono-wrap ok">
+          <ion-icon name="checkmark-outline"></ion-icon>
+        </div>
+        <h2 class="resultado-titulo ok">¡CUADRADO!</h2>
+        <p class="resultado-sub ok">Todo en orden 🎉</p>
+      </ng-container>
+
+      <!-- SOBRA / FALTA -->
+      <ng-container *ngIf="estadoCierre !== 'cuadrado'">
+        <div class="resultado-icono-wrap error">
+          <ion-icon name="alert-outline"></ion-icon>
+        </div>
+        <h2 class="resultado-titulo error">NO CUADRA</h2>
+        <div class="diferencia-badge" [class.sobra]="estadoCierre === 'sobra'" [class.falta]="estadoCierre === 'falta'">
+          <ion-icon [name]="estadoCierre === 'sobra' ? 'arrow-up-outline' : 'arrow-down-outline'"></ion-icon>
+          {{ estadoCierre === 'sobra' ? 'Sobran' : 'Faltan' }} ${{ diferencia | number:'1.2-2' }}
+        </div>
+      </ng-container>
+
+      <div class="resultado-detalle">
+        <div class="detalle-fila">
+          <span>Esperado</span>
+          <span class="detalle-val">${{ totalGeneral | number:'1.2-2' }}</span>
+        </div>
+        <div class="detalle-fila">
+          <span>Contado</span>
+          <span class="detalle-val">${{ totalDesglose | number:'1.2-2' }}</span>
+        </div>
       </div>
 
-      <!-- SOBRAN -->
-      <div class="resultado-estado" *ngIf="estadoCierre === 'sobra'">
-        <p class="estado-etiqueta">NO CUADRA:</p>
-        <p class="estado-etiqueta">DIFERENCIA:</p>
-        <p class="estado-diferencia">
-          Sobran: ${{ diferencia | number:'1.2-2' }}
-        </p>
-      </div>
-
-      <!-- FALTAN -->
-      <div class="resultado-estado" *ngIf="estadoCierre === 'falta'">
-        <p class="estado-etiqueta">NO CUADRA:</p>
-        <p class="estado-etiqueta">DIFERENCIA:</p>
-        <p class="estado-diferencia">
-          Faltan: ${{ diferencia | number:'1.2-2' }}
-        </p>
-      </div>
-
-      <!-- BOTONES -->
       <div class="resultado-btns">
-        <button class="btn-resultado" (click)="cerrarResultado()">
-          Volver
+        <button class="btn-resultado btn-volver" (click)="cerrarResultado()">
+          <ion-icon name="arrow-back-outline"></ion-icon> Volver
         </button>
-        <button class="btn-resultado" (click)="finalizarDia()">
-          Finalizar dia
+        <button class="btn-resultado btn-finalizar" (click)="finalizarDia()">
+          Finalizar <ion-icon name="checkmark-outline"></ion-icon>
         </button>
       </div>
     </div>
   </div>
+
 </ion-content>

@@ -122,7 +122,7 @@
           <div
             class="producto-card"
             *ngFor="let producto of productos"
-            [class.bloqueado]="!clienteSeleccionado"
+            [class.bloqueado]="!clienteSeleccionado || (producto.stock ?? 0) <= 0"
             (click)="abrirProducto(producto)"
           >
             <p class="producto-descripcion">
@@ -139,8 +139,8 @@
             <p class="producto-precio">
               ${{ (+producto.precio_x_menor).toFixed(2) }}
             </p>
-            <div class="lock-overlay" *ngIf="!clienteSeleccionado">
-              <ion-icon name="lock-closed-outline"></ion-icon>
+            <div class="lock-overlay" *ngIf="!clienteSeleccionado || (producto.stock ?? 0) <= 0">
+              <ion-icon [name]="!clienteSeleccionado ? 'lock-closed-outline' : 'close-circle-outline'"></ion-icon>
             </div>
           </div>
         </div>
@@ -409,6 +409,7 @@
             <p class="carrito-cli-cedula">{{ clienteSeleccionado.cedula }}</p>
           </div>
 
+          <!-- 1. LISTA DE PRODUCTOS -->
           <div class="carrito-tabla" *ngIf="carrito.length > 0">
             <div class="tabla-head">
               <span>Producto</span><span>Cant.</span><span>Total</span
@@ -427,6 +428,37 @@
             Sin productos aún
           </p>
 
+          <!-- 2. TOTALES -->
+          <div class="totales">
+            <div class="total-row">
+              <span>SubTotal:</span
+              ><span>${{ calcularTotal().subtotal.toFixed(2) }}</span>
+            </div>
+            <div class="total-row">
+              <span>Desc:</span
+              ><span>${{ calcularTotal().descuento.toFixed(2) }}</span>
+            </div>
+            <div class="total-row iva-row">
+              <span>IVA (%):</span>
+              <div class="iva-input-wrap">
+                <input
+                  type="number"
+                  [(ngModel)]="ivaPercent"
+                  min="0"
+                  max="100"
+                  class="iva-input"
+                />
+                <span class="iva-symbol">%</span>
+              </div>
+              <span>${{ calcularTotal().iva.toFixed(2) }}</span>
+            </div>
+            <div class="total-row total-final">
+              <span>Total:</span
+              ><span>${{ calcularTotal().total.toFixed(2) }}</span>
+            </div>
+          </div>
+
+          <!-- 3. FORMA DE PAGO -->
           <div class="pago-section">
             <p class="pago-label">Forma de Pago:</p>
             <div class="pago-btns">
@@ -477,35 +509,7 @@
             </div>
           </div>
 
-          <div class="totales">
-            <div class="total-row">
-              <span>SubTotal:</span
-              ><span>${{ calcularTotal().subtotal.toFixed(2) }}</span>
-            </div>
-            <div class="total-row">
-              <span>Desc:</span
-              ><span>${{ calcularTotal().descuento.toFixed(2) }}</span>
-            </div>
-            <div class="total-row iva-row">
-              <span>IVA (%):</span>
-              <div class="iva-input-wrap">
-                <input
-                  type="number"
-                  [(ngModel)]="ivaPercent"
-                  min="0"
-                  max="100"
-                  class="iva-input"
-                />
-                <span class="iva-symbol">%</span>
-              </div>
-              <span>${{ calcularTotal().iva.toFixed(2) }}</span>
-            </div>
-            <div class="total-row total-final">
-              <span>Total:</span
-              ><span>${{ calcularTotal().total.toFixed(2) }}</span>
-            </div>
-          </div>
-
+          <!-- 4. ACCIONES -->
           <div class="carrito-acciones">
             <button class="btn-secundario" (click)="guardarPedido()">
               Guardar

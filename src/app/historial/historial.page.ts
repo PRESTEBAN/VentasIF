@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -34,7 +34,7 @@ export interface VentaItem {
   styleUrls: ['historial.page.scss'],
   standalone: false,
 })
-export class HistorialPage implements OnInit {
+export class HistorialPage implements OnInit, OnDestroy {
 
   private readonly API = 'https://ventasif-if-api.onrender.com/api/v1';
 
@@ -56,6 +56,9 @@ export class HistorialPage implements OnInit {
   ventasSeleccionadas: Set<number> = new Set();
   eliminando = false;
 
+  private pollingInterval: any = null;
+  private readonly POLLING_MS = 15000;
+
   constructor(
     public router: Router,
     private authService: AuthService,
@@ -67,7 +70,51 @@ export class HistorialPage implements OnInit {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
     this.generarSemana(this.fechaSeleccionada);
+  }
+
+  ionViewWillEnter() {
     this.cargarVentas();
+    this.iniciarPolling();
+  }
+
+  ionViewWillLeave() {
+    this.detenerPolling();
+  }
+
+  ngOnDestroy() {
+    this.detenerPolling();
+  }
+
+  iniciarPolling() {
+    this.detenerPolling();
+    this.pollingInterval = setInterval(() => {
+      this.cargarVentasSilencioso();
+    }, this.POLLING_MS);
+  }
+
+  detenerPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  // Carga silenciosa — solo agrega ventas nuevas sin spinner
+  cargarVentasSilencioso() {
+    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
+    this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          const idsActuales = new Set(this.ventas.map(v => v.id));
+          (data || []).forEach(v => {
+            const venta = this.mapearVenta(v);
+            if (!idsActuales.has(venta.id)) {
+              this.ventas = [...this.ventas, venta];
+            }
+          });
+        },
+        error: () => {}
+      });
   }
 
   private getHeaders(): HttpHeaders {
@@ -287,7 +334,7 @@ export class HistorialPage implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);  }
+  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']);   }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
 }

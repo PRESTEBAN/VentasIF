@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-tab3',
@@ -8,34 +10,42 @@ import { AuthService } from '../services/auth';
   styleUrls: ['tab3.page.scss'],
   standalone: false,
 })
-export class Tab3Page implements OnInit {
-  menuAbierto = false;
-  usuarioActual: string = '';
+export class Tab3Page implements OnInit, OnDestroy {
+
+  private readonly API = 'https://ventasif-if-api.onrender.com/api/v1';
+
+  menuAbierto   = false;
+  usuarioActual = '';
+  cargando      = false;
+
+  private pollingInterval: any = null;
+  private readonly POLLING_MS  = 15000;
 
   // ── Fecha ──
-  diaSemana: string = '';
-  fechaHoy: string = '';
+  diaSemana = '';
+  fechaHoy  = '';
 
-  // ── Card 1: Resumen de ventas (se llenará desde el servicio) ──
-  ventasRealizadas: number = 20;
-  totalEfectivo: number = 300.0;
-  totalTransferencias: number = 200.0;
-  totalPendientes: number = 370.0;
-  totalIngresosVentas: number = 500.0;
+  // ── Card 1: Resumen de ventas ──
+  ventasRealizadas:    number = 0;
+  totalEfectivo:       number = 0;
+  totalTransferencias: number = 0;
+  totalCheques:        number = 0;
+  totalPendientes:     number = 0;
+  totalIngresosVentas: number = 0;   // efectivo + transferencias + cheques
 
-  // ── Card 2: Adelantos / Egresos ──
-  adelantos: number = 20.0;
-  egresos: number = 4.0;
-  totalIngresosEgresos: number = 24.0;
+  // ── Card 2: Egresos ──
+  totalEgresos: number = 0;
 
-  // ── Total general ──
-  totalGeneral: number = 476.0;
+  // ── Total general: ingresos ventas - egresos ──
+  get totalGeneral(): number {
+    return this.totalIngresosVentas - this.totalEgresos;
+  }
 
-  // ── Card 3: Desglose ──
-  billetes: number | null = 260.6;
-  monedas: number | null = 14.0;
-  transferenciasDesglose: number | null = 200.0;
-  totalDesglose: number = 0;
+  // ── Card 3: Desglose (ingresa el usuario) ──
+  billetes:              number | null = null;
+  monedas:               number | null = null;
+  transferenciasDesglose: number | null = null;
+  totalDesglose:         number = 0;
 
   // ── Modal resultado ──
   mostrarResultado = false;
@@ -45,115 +55,159 @@ export class Tab3Page implements OnInit {
   constructor(
     public router: Router,
     private authService: AuthService,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
     this.setFecha();
-    this.recalcularTotal();
+  }
+
+  ionViewWillEnter() {
+    this.cargarDatos();
+    this.iniciarPolling();
+  }
+
+  ionViewWillLeave() {
+    this.detenerPolling();
+  }
+
+  ngOnDestroy() {
+    this.detenerPolling();
+  }
+
+  iniciarPolling() {
+    this.detenerPolling();
+    this.pollingInterval = setInterval(() => {
+      this.cargarDatosSilencioso();
+    }, this.POLLING_MS);
+  }
+
+  detenerPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  // Recarga silenciosa sin spinner — no interrumpe al usuario
+  cargarDatosSilencioso() {
+    const fecha = this.formatearFechaHoy();
+    forkJoin({
+      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
+      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,     { headers: this.getHeaders() })
+    }).subscribe({
+      next: ({ ventas, egresos }) => {
+        this.procesarVentas(ventas || []);
+        this.procesarEgresos(egresos || []);
+      },
+      error: () => {}
+    });
+  }
+
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
+
+  private formatearFechaHoy(): string {
+    const hoy = new Date();
+    const d = hoy.getDate().toString().padStart(2, '0');
+    const m = (hoy.getMonth() + 1).toString().padStart(2, '0');
+    return `${hoy.getFullYear()}-${m}-${d}`;
+  }
+
+  cargarDatos() {
+    this.cargando = true;
+    const fecha = this.formatearFechaHoy();
+
+    // Cargar ventas y egresos del día en paralelo
+    forkJoin({
+      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`,  { headers: this.getHeaders() }),
+      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,      { headers: this.getHeaders() })
+    }).subscribe({
+      next: ({ ventas, egresos }) => {
+        this.procesarVentas(ventas || []);
+        this.procesarEgresos(egresos || []);
+        this.cargando = false;
+      },
+      error: () => { this.cargando = false; }
+    });
+  }
+
+  private procesarVentas(ventas: any[]) {
+    this.ventasRealizadas    = ventas.length;
+    this.totalEfectivo       = 0;
+    this.totalTransferencias = 0;
+    this.totalCheques        = 0;
+    this.totalPendientes     = 0;
+
+    ventas.forEach(v => {
+      const total = parseFloat(v.total) || 0;
+      const tipo  = (v.tipo_pago || v.forma_pago || '').toLowerCase();
+
+      if (tipo === 'efectivo')       this.totalEfectivo       += total;
+      else if (tipo === 'transferencia') this.totalTransferencias += total;
+      else if (tipo === 'cheques')   this.totalCheques        += total;
+      else if (tipo === 'credito' || tipo === 'pendiente') this.totalPendientes += total;
+    });
+
+    // Total ingresos = lo cobrado (excluye pendientes)
+    this.totalIngresosVentas = this.totalEfectivo + this.totalTransferencias + this.totalCheques;
+  }
+
+  private procesarEgresos(egresos: any[]) {
+    this.totalEgresos = egresos.reduce((acc, e) => acc + (parseFloat(e.valor) || 0), 0);
   }
 
   setFecha() {
-    const dias = [
-      'Domingo',
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-    ];
-    const meses = [
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-    ];
-    const hoy = new Date();
+    const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const hoy    = new Date();
     this.diaSemana = dias[hoy.getDay()];
-    this.fechaHoy = `${hoy.getDate().toString().padStart(2, '0')}/${(hoy.getMonth() + 1).toString().padStart(2, '0')}/${hoy.getFullYear()}`;
+    this.fechaHoy  = `${hoy.getDate().toString().padStart(2,'0')}/${(hoy.getMonth()+1).toString().padStart(2,'0')}/${hoy.getFullYear()}`;
   }
 
   recalcularTotal() {
-    this.totalDesglose =
-      (this.billetes || 0) +
-      (this.monedas || 0) +
-      (this.transferenciasDesglose || 0);
+    this.totalDesglose = (this.billetes || 0) + (this.monedas || 0) + (this.transferenciasDesglose || 0);
   }
 
   revisar() {
-    // totalGeneral = lo que DEBERÍA haber en caja (ingresos - egresos)
-    // totalDesglose = lo que el usuario contó físicamente
-    const TOLERANCIA = 0.01; // centavos de redondeo
+    const TOLERANCIA = 0.01;
     const diff = this.totalDesglose - this.totalGeneral;
 
     if (Math.abs(diff) <= TOLERANCIA) {
       this.estadoCierre = 'cuadrado';
-      this.diferencia = 0;
+      this.diferencia   = 0;
     } else if (diff > 0) {
       this.estadoCierre = 'sobra';
-      this.diferencia = Math.abs(diff);
+      this.diferencia   = Math.abs(diff);
     } else {
       this.estadoCierre = 'falta';
-      this.diferencia = Math.abs(diff);
+      this.diferencia   = Math.abs(diff);
     }
 
     this.mostrarResultado = true;
   }
 
-  cerrarResultado() {
-    this.mostrarResultado = false;
-  }
+  cerrarResultado() { this.mostrarResultado = false; }
 
   finalizarDia() {
-    // TODO: llamar al servicio para registrar el cierre
     this.mostrarResultado = false;
-    console.log(
-      'Día finalizado. Estado:',
-      this.estadoCierre,
-      '| Diferencia:',
-      this.diferencia,
-    );
   }
 
   // ---- MENU ----
-
-  irAClientes() {
-    this.cerrarMenu();
-    this.router.navigate(['/clientes']);
-  }
-  irAHistorial() {
-    this.cerrarMenu();
-    this.router.navigate(['/historial']);
-  }
-  irAInventario() {
-    this.cerrarMenu();
-    this.router.navigate(['/inventario']);
-  }
-  irAEgresos() {
-    this.cerrarMenu();
-    this.router.navigate(['/egresos']);
-  }
-
-  abrirMenu() {
-    this.menuAbierto = true;
-  }
-  cerrarMenu() {
-    this.menuAbierto = false;
-  }
+  abrirMenu()  { this.menuAbierto = true;  }
+  cerrarMenu() { this.menuAbierto = false; }
 
   cerrarSesion() {
     this.authService.logout();
     this.menuAbierto = false;
     this.router.navigate(['/login']);
   }
+
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);   }
+  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']);  }
+  irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
+  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']);    }
 }

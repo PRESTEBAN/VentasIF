@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { VentasRutaService } from '../services/ventas-ruta';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
@@ -10,7 +10,7 @@ import { CarritoEstadoService } from '../services/carrito-estado';
   styleUrls: ['tab2.page.scss'],
   standalone: false,
 })
-export class Tab2Page implements OnInit {
+export class Tab2Page implements OnInit, OnDestroy {
 
   ordenes: any[] = [];
   cargando = false;
@@ -18,6 +18,9 @@ export class Tab2Page implements OnInit {
 
   menuAbierto = false;
   usuarioActual = '';
+
+  private pollingInterval: any = null;
+  private readonly POLLING_MS = 15000; // cada 15 segundos
 
   constructor(
     private ventasRutaService: VentasRutaService,
@@ -27,13 +30,37 @@ export class Tab2Page implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.cargarOrdenes();
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
   }
 
+
   ionViewWillEnter() {
     this.cargarOrdenes();
+    this.iniciarPolling();
+  }
+
+  ionViewWillLeave() {
+    this.detenerPolling();
+  }
+
+  
+  ngOnDestroy() {
+    this.detenerPolling();
+  }
+
+  iniciarPolling() {
+    this.detenerPolling(); 
+    this.pollingInterval = setInterval(() => {
+      this.cargarOrdenesSilencioso();
+    }, this.POLLING_MS);
+  }
+
+  detenerPolling() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
   }
 
   cargarOrdenes() {
@@ -44,6 +71,26 @@ export class Tab2Page implements OnInit {
         this.cargando = false;
       },
       error: () => { this.cargando = false; }
+    });
+  }
+
+  cargarOrdenesSilencioso() {
+    this.ventasRutaService.getPendientes().subscribe({
+      next: (data: any[]) => {
+        const idsActuales = new Set(this.ordenes.map(o => o.venta_id));
+        const idsNuevos = new Set(data.map((o: any) => o.venta_id));
+
+        data.forEach((orden: any) => {
+          if (!idsActuales.has(orden.venta_id)) {
+            this.ordenes.unshift(orden);
+          }
+        });
+
+        this.ordenes = this.ordenes.filter(o =>
+          idsNuevos.has(o.venta_id) || this.actualizando[o.venta_id]
+        );
+      },
+      error: () => { }
     });
   }
 
@@ -81,7 +128,7 @@ export class Tab2Page implements OnInit {
     }
   }
 
-  // ---- MENU ----
+
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
 
@@ -91,12 +138,12 @@ export class Tab2Page implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-    irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
+  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
 
-  // ---- CARRITO ----
+
   irAlCarrito() {
     this.carritoEstado.solicitarAbrirCarrito();
     this.router.navigate(['/tabs/tab1']);
