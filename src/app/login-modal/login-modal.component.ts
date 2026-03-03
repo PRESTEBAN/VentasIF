@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 
@@ -22,10 +22,11 @@ export class LoginModalComponent implements OnInit {
   constructor(
     private modalCtrl: ModalController,
     private router: Router,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    private alertCtrl: AlertController
+  ) { }
 
-  ngOnInit() {}
+  ngOnInit() { }
 
   togglePassword() {
     this.mostrarPassword = !this.mostrarPassword;
@@ -75,20 +76,26 @@ export class LoginModalComponent implements OnInit {
         this.modalCtrl.dismiss({ usuario: res.usuario });
         this.router.navigate(['/tabs/tab1']);
       },
-      error: (err) => {
+      error: async (err) => {
         this.cargando = false;
         if (err.status === 401) {
-          this.errorGeneral = 'Usuario o contraseña incorrectos';
-        } else if (err.status === 0) {
-          this.errorGeneral = 'No se pudo conectar con el servidor';
-        } else {
-          this.errorGeneral = 'Error inesperado. Intenta de nuevo';
-        }
-      }
-    });
+          const alert = await this.alertCtrl.create({
+            header: 'Credenciales incorrectas',
+            message: 'Usuario o contraseña incorrectos, intenta de nuevo.',
+            buttons: ['OK'],
+            cssClass: 'alert-personalizado'
+          });
+          await alert.present();
+      } else if(err.status === 0) {
+      this.errorGeneral = 'No se pudo conectar con el servidor';
+    } else {
+      this.errorGeneral = 'Error inesperado. Intenta de nuevo';
+    }
+  }
+});
   }
 
-  cerrar() {
-    this.modalCtrl.dismiss();
-  }
+cerrar() {
+  this.modalCtrl.dismiss();
+}
 }

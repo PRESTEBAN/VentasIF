@@ -37,7 +37,6 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   mostrarProducto = false;
   productoSeleccionado: Producto | null = null;
-  // CAMBIO: tipoPrecio default 'mayor', precio inicia en precio_x_mayor
   itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'mayor' };
 
   mostrarCarrito = false;
@@ -47,7 +46,6 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   productos: Producto[] = [];
   cargandoProductos = false;
-  // CAMBIO: IVA inicia en 0
   ivaPercent: number = 0;
 
   guardandoCarrito = false;
@@ -169,14 +167,11 @@ export class Tab1Page implements OnInit, OnDestroy {
       next: (data) => {
         if (data && data.items && data.items.length > 0) {
           this.carrito = data.items;
-          // CAMBIO: default 0 en lugar de 15
           this.ivaPercent = data.iva_percent ?? 0;
           this.formaPago = data.forma_pago ?? 'Efectivo';
-          // CAMBIO: restaurar monto_recibido guardado
           this.montoRecibido = data.monto_recibido ?? 0;
         } else {
           this.carrito = [];
-          // CAMBIO: default 0 en lugar de 15
           this.ivaPercent = 0;
           this.formaPago = 'Efectivo';
           this.montoRecibido = 0;
@@ -280,7 +275,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
     this.productoSeleccionado = producto;
-    // CAMBIO: default tipoPrecio 'mayor' y precio inicia en precio_x_mayor
     this.itemProducto = {
       cantidad: 0,
       precio: +producto.precio_x_mayor,
@@ -341,9 +335,20 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   async guardarPedido() {
-    if (!this.clienteSeleccionado || this.carrito.length === 0) return;
+    if (this.carrito.length === 0) return;
+
+    if (!this.clienteSeleccionado) {
+      const toast = await this.toastCtrl.create({
+        message: 'Selecciona un cliente primero',
+        duration: 2000,
+        position: 'bottom',
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
     this.guardandoCarrito = true;
-    // CAMBIO: se guardan también monto_recibido y vuelto en carritos_pendientes
     this.carritoPendiente.guardar({
       cliente_id: this.clienteSeleccionado.id!,
       items: this.carrito,
@@ -380,16 +385,26 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   finalizarPedido() {
-    if (!this.clienteSeleccionado || this.carrito.length === 0) return;
+    if (this.carrito.length === 0) return;
+
+    if (!this.clienteSeleccionado) {
+      this.toastCtrl.create({
+        message: 'Selecciona un cliente primero',
+        duration: 2000,
+        position: 'bottom',
+        color: 'warning'
+      }).then(t => t.present());
+      return;
+    }
 
     const totales = this.calcularTotal();
     const tipoPagoMap: any = {
       'Efectivo': 'efectivo',
       'Transferencia': 'transferencia',
-      'Pendiente': 'credito'
+      'Pendiente': 'credito',
+      'Cheques': 'cheques'
     };
 
-    // CAMBIO: se agregan monto_recibido y vuelto al payload de ventas_ruta
     const payload = {
       cliente_id: this.clienteSeleccionado.id,
       subtotal: totales.subtotal,

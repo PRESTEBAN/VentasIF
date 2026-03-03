@@ -61,7 +61,7 @@ export class HistorialPage implements OnInit {
     private authService: AuthService,
     private http: HttpClient,
     private alertCtrl: AlertController,
-  ) {}
+  ) { }
 
   ngOnInit() {
     const user = this.authService.getUsuario();
@@ -247,9 +247,10 @@ export class HistorialPage implements OnInit {
     const alert = await this.alertCtrl.create({
       header: 'Eliminar ventas',
       message: `¿Estás seguro de eliminar ${this.ventasSeleccionadas.size} venta(s)? Esta acción no se puede deshacer.`,
+      cssClass: 'alert-personalizado',
       buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        { text: 'Eliminar', role: 'destructive', handler: () => this.eliminarSeleccionadas() }
+        { text: 'Eliminar', role: 'destructive', handler: () => this.eliminarSeleccionadas() },
+        { text: 'Cancelar', role: 'cancel' }
       ]
     });
     await alert.present();
@@ -286,7 +287,7 @@ export class HistorialPage implements OnInit {
     this.router.navigate(['/login']);
   }
 
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
+  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
 }

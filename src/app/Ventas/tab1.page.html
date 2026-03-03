@@ -448,6 +448,12 @@
               >
                 Pendiente
               </button>
+              <button
+                [class.pago-active]="formaPago==='Cheques'"
+                (click)="formaPago='Cheques'"
+              >
+                Cheques
+              </button>
             </div>
 
             <!-- RECIBE / VUELTO — solo visible en Efectivo -->

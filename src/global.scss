@@ -74,3 +74,49 @@ ion-modal {
   --ion-toolbar-color: white !important;
   --ion-color-base: #6a1822 !important;
 }
+
+// ===== ALERT PERSONALIZADO =====
+.alert-personalizado {
+  .alert-wrapper {
+    border-radius: 20px;
+    overflow: hidden;
+    background: #FDF6EE;
+    border: 2px solid #590F23;
+  }
+
+  .alert-head {
+    background: linear-gradient(to bottom, #590F23 0%, #7A2020 25%, #A83A1A 60%, #BF5A1F 100%);
+    padding: 16px 20px;
+  }
+
+  .alert-title {
+    color: #fff !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+  }
+
+  .alert-message {
+    color: #2D1B0E;
+    font-size: 14px;
+    padding: 16px 20px;
+    font-weight: 500;
+  }
+
+  .alert-button-group {
+    padding: 0 16px 16px 16px;
+  }
+
+  .alert-button {
+    background: #590F23 !important;
+    color: #fff !important;
+    border-radius: 30px !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    width: 100%;
+  }
+
+  .alert-button-inner {
+    justify-content: center !important;
+  }
+}
