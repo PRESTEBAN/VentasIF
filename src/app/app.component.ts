@@ -11,6 +11,12 @@ export class AppComponent implements OnInit {
   constructor(private printerService: PrinterService) {}
 
   ngOnInit() {
-    this.printerService.intentarReconectar();
+    if ((window as any).cordova) {
+      document.addEventListener('deviceready', () => {
+        this.printerService.intentarReconectar();
+      }, false);
+    } else {
+      this.printerService.intentarReconectar();
+    }
   }
 }
