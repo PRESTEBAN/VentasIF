@@ -82,6 +82,7 @@ export class Tab3Page implements OnInit, OnDestroy {
 
   iniciarPolling() {
     this.detenerPolling();
+    if (!this.authService.estaLogueado()) return; // ← no iniciar polling sin sesión activa
     this.pollingInterval = setInterval(() => {
       this.cargarDatosSilencioso();
     }, this.POLLING_MS);
@@ -96,6 +97,7 @@ export class Tab3Page implements OnInit, OnDestroy {
 
   // Recarga silenciosa sin spinner — no interrumpe al usuario
   cargarDatosSilencioso() {
+    if (!this.authService.estaLogueado()) return; // ← no hacer requests sin sesión activa
     const fecha = this.formatearFechaHoy();
     forkJoin({
       ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),

@@ -20,7 +20,7 @@ export class Tab2Page implements OnInit, OnDestroy {
   usuarioActual = '';
 
   private pollingInterval: any = null;
-  private readonly POLLING_MS = 15000; // cada 15 segundos
+  private readonly POLLING_MS = 15000;
 
   constructor(
     private ventasRutaService: VentasRutaService,
@@ -34,63 +34,44 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.usuarioActual = user?.nombre || user?.username || '';
   }
 
-
   ionViewWillEnter() {
     this.cargarOrdenes();
     this.iniciarPolling();
   }
 
-  ionViewWillLeave() {
-    this.detenerPolling();
-  }
-
-  
-  ngOnDestroy() {
-    this.detenerPolling();
-  }
+  ionViewWillLeave() { this.detenerPolling(); }
+  ngOnDestroy()      { this.detenerPolling(); }
 
   iniciarPolling() {
-    this.detenerPolling(); 
-    this.pollingInterval = setInterval(() => {
-      this.cargarOrdenesSilencioso();
-    }, this.POLLING_MS);
+    this.detenerPolling();
+    if (!this.authService.estaLogueado()) return;
+    this.pollingInterval = setInterval(() => this.cargarOrdenesSilencioso(), this.POLLING_MS);
   }
 
   detenerPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
   cargarOrdenes() {
     this.cargando = true;
     this.ventasRutaService.getPendientes().subscribe({
-      next: (data) => {
-        this.ordenes = data;
-        this.cargando = false;
-      },
+      next: (data) => { this.ordenes = data; this.cargando = false; },
       error: () => { this.cargando = false; }
     });
   }
 
   cargarOrdenesSilencioso() {
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     this.ventasRutaService.getPendientes().subscribe({
       next: (data: any[]) => {
         const idsActuales = new Set(this.ordenes.map(o => o.venta_id));
-        const idsNuevos = new Set(data.map((o: any) => o.venta_id));
-
+        const idsNuevos   = new Set(data.map((o: any) => o.venta_id));
         data.forEach((orden: any) => {
-          if (!idsActuales.has(orden.venta_id)) {
-            this.ordenes.unshift(orden);
-          }
+          if (!idsActuales.has(orden.venta_id)) this.ordenes.unshift(orden);
         });
-
-        this.ordenes = this.ordenes.filter(o =>
-          idsNuevos.has(o.venta_id) || this.actualizando[o.venta_id]
-        );
+        this.ordenes = this.ordenes.filter(o => idsNuevos.has(o.venta_id) || this.actualizando[o.venta_id]);
       },
-      error: () => { }
+      error: () => {}
     });
   }
 
@@ -98,11 +79,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     if (orden.listo_conductor) return;
     this.actualizando[orden.venta_id] = true;
     this.ventasRutaService.marcarListo(orden.venta_id).subscribe({
-      next: () => {
-        orden.listo_conductor = 1;
-        this.actualizando[orden.venta_id] = false;
-        this.verificarCompleta(orden);
-      },
+      next: () => { orden.listo_conductor = 1; this.actualizando[orden.venta_id] = false; this.verificarCompleta(orden); },
       error: () => { this.actualizando[orden.venta_id] = false; }
     });
   }
@@ -111,11 +88,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     if (orden.entregado_vendedor) return;
     this.actualizando[orden.venta_id] = true;
     this.ventasRutaService.marcarEntregado(orden.venta_id).subscribe({
-      next: () => {
-        orden.entregado_vendedor = 1;
-        this.actualizando[orden.venta_id] = false;
-        this.verificarCompleta(orden);
-      },
+      next: () => { orden.entregado_vendedor = 1; this.actualizando[orden.venta_id] = false; this.verificarCompleta(orden); },
       error: () => { this.actualizando[orden.venta_id] = false; }
     });
   }
@@ -127,7 +100,6 @@ export class Tab2Page implements OnInit, OnDestroy {
       }, 800);
     }
   }
-
 
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
@@ -142,7 +114,6 @@ export class Tab2Page implements OnInit, OnDestroy {
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
-
 
   irAlCarrito() {
     this.carritoEstado.solicitarAbrirCarrito();

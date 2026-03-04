@@ -108,6 +108,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   iniciarPolling() {
     this.detenerPolling();
+    if (!this.authService.estaLogueado()) return;
     this.pollingInterval = setInterval(() => this.actualizarStockSilencioso(), this.POLLING_MS);
   }
 
@@ -117,7 +118,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // Recarga stock en segundo plano sin spinner ni interrupciones
   actualizarStockSilencioso() {
-    // No actualizar si el modal de producto está abierto — evita resetear cantidad
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.mostrarProducto) return;
 
     this.inventarioService.getBodega().subscribe({

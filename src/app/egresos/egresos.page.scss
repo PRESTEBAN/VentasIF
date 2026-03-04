@@ -486,3 +486,13 @@
   &:active   { opacity: 0.9; transform: scale(0.98); }
   &:disabled { opacity: 0.6; }
 }
+
+/* BORRAR EGRESO */
+.btn-borrar-egreso {
+  background: #FFF0F0; border: 1px solid #FFCDD2; border-radius: 10px;
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; margin-left: 6px;
+  ion-icon { font-size: 16px; color: #E53935; }
+  &:active { background: #FFCDD2; transform: scale(0.93); }
+}

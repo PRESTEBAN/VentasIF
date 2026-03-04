@@ -57,6 +57,11 @@ export class EgresosPage implements OnInit, OnDestroy {
   nuevoEgreso: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
   errores: any = {};
 
+  // ---- BORRAR ----
+  mostrarConfirmarBorrar = false;
+  egresoABorrar: Egreso | null = null;
+  borrando = false;
+
   readonly OPCIONES_ESPECIALES = ['Vehiculo', 'Fabrica'];
 
   constructor(
@@ -225,6 +230,34 @@ export class EgresosPage implements OnInit, OnDestroy {
       next: () => { this.guardando = false; this.cerrarModal(); this.cargarEgresos(); },
       error: () => { this.guardando = false; this.errores.general = 'Error al guardar, intenta de nuevo'; }
     });
+  }
+
+  // ---- BORRAR ----
+  confirmarBorrar(egreso: Egreso) {
+    this.egresoABorrar = egreso;
+    this.mostrarConfirmarBorrar = true;
+  }
+
+  cancelarBorrar() {
+    this.mostrarConfirmarBorrar = false;
+    this.egresoABorrar = null;
+  }
+
+  borrarEgreso() {
+    if (!this.egresoABorrar?.id) return;
+    this.borrando = true;
+    this.http.delete(`${this.API}/egresos/${this.egresoABorrar.id}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: () => {
+          this.egresos = this.egresos.filter(e => e.id !== this.egresoABorrar!.id);
+          this.borrando = false;
+          this.cancelarBorrar();
+        },
+        error: () => {
+          this.borrando = false;
+          this.cancelarBorrar();
+        }
+      });
   }
 
   // ---- MENU ----

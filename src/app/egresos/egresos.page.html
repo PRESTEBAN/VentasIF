@@ -152,6 +152,9 @@
                 </div>
               </div>
               <span class="egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
+              <button class="btn-borrar-egreso" (click)="confirmarBorrar(egreso)">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
             </div>
 
             <!-- TOTAL -->
@@ -267,6 +270,31 @@
         </button>
       </div>
 
+    </div>
+  </div>
+  <!-- ===== MODAL CONFIRMAR BORRAR ===== -->
+  <div class="modal-overlay" *ngIf="mostrarConfirmarBorrar">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icono" style="background: linear-gradient(135deg, #E53935, #B71C1C)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </div>
+        <h2 class="modal-titulo">¿Borrar egreso?</h2>
+      </div>
+      <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 8px 0">
+        {{ egresoABorrar?.detalle }}
+      </p>
+      <p style="text-align:center; color:#E53935; font-weight:900; font-size:18px; margin: 0 0 20px 0">
+        ${{ egresoABorrar?.valor | number:'1.2-2' }}
+      </p>
+      <div class="modal-btns">
+        <button class="btn-cancelar" (click)="cancelarBorrar()" [disabled]="borrando">Cancelar</button>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #E53935, #B71C1C); box-shadow: 0 4px 12px rgba(229,57,53,0.3)"
+          (click)="borrarEgreso()" [disabled]="borrando">
+          <ion-spinner name="crescent" *ngIf="borrando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+          {{ borrando ? 'Borrando...' : 'Sí, borrar' }}
+        </button>
+      </div>
     </div>
   </div>
 
