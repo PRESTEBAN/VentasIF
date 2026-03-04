@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { forkJoin, Subscription } from 'rxjs';
-import { SocketService } from '../services/socket.service';
+import { SocketService } from '../services/socket';
 
 @Component({
   selector: 'app-tab3',
