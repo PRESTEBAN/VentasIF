@@ -3,6 +3,8 @@ import { VentasRutaService } from '../services/ventas-ruta';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { CarritoEstadoService } from '../services/carrito-estado';
+import { SocketService } from '../services/socket';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-tab2',
@@ -21,12 +23,14 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   private pollingInterval: any = null;
   private readonly POLLING_MS = 15000;
+  private socketSubs: Subscription[] = [];
 
   constructor(
     private ventasRutaService: VentasRutaService,
     public router: Router,
     private authService: AuthService,
-    private carritoEstado: CarritoEstadoService
+    private carritoEstado: CarritoEstadoService,
+    private socketService: SocketService
   ) { }
 
   ngOnInit() {
@@ -37,11 +41,20 @@ export class Tab2Page implements OnInit, OnDestroy {
   ionViewWillEnter() {
     this.cargarOrdenes();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
-  ionViewWillLeave() { this.detenerPolling(); }
-  ngOnDestroy()      { this.detenerPolling(); }
+  ionViewWillLeave() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
 
+  ngOnDestroy() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
+
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -52,6 +65,36 @@ export class Tab2Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
+    if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    // Nueva venta creada → agregar a la lista
+    const ventaSub = this.socketService.on('nueva_venta').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarOrdenesSilencioso();
+    });
+
+    // Orden actualizada (listo/entregado/eliminado) → refrescar
+    const ordenSub = this.socketService.on('orden_actualizada').subscribe((data: any) => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      if (data?.estado === 'eliminado') {
+        this.ordenes = this.ordenes.filter(o => o.venta_id !== +data.venta_id);
+      } else {
+        this.cargarOrdenesSilencioso();
+      }
+    });
+
+    this.socketSubs = [ventaSub, ordenSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarOrdenes() {
     this.cargando = true;
     this.ventasRutaService.getPendientes().subscribe({
@@ -75,6 +118,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     });
   }
 
+  // ── ACCIONES ──────────────────────────────────────────────────────────────
   marcarListo(orden: any) {
     if (orden.listo_conductor) return;
     this.actualizando[orden.venta_id] = true;
@@ -101,22 +145,13 @@ export class Tab2Page implements OnInit, OnDestroy {
     }
   }
 
+  // ── MENU ──────────────────────────────────────────────────────────────────
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
-
-  cerrarSesion() {
-    this.authService.logout();
-    this.menuAbierto = false;
-    this.router.navigate(['/login']);
-  }
-
+  cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
   irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
-
-  irAlCarrito() {
-    this.carritoEstado.solicitarAbrirCarrito();
-    this.router.navigate(['/tabs/tab1']);
-  }
+  irAlCarrito() { this.carritoEstado.solicitarAbrirCarrito(); this.router.navigate(['/tabs/tab1']); }
 }

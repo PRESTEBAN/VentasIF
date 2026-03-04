@@ -2,7 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
+import { SocketService } from '../services/socket';
 
 @Component({
   selector: 'app-tab3',
@@ -20,6 +21,7 @@ export class Tab3Page implements OnInit, OnDestroy {
 
   private pollingInterval: any = null;
   private readonly POLLING_MS  = 15000;
+  private socketSubs: Subscription[] = [];
 
   // ── Fecha ──
   diaSemana = '';
@@ -31,17 +33,15 @@ export class Tab3Page implements OnInit, OnDestroy {
   totalTransferencias: number = 0;
   totalCheques:        number = 0;
   totalPendientes:     number = 0;
-  totalIngresosVentas: number = 0;   // efectivo + transferencias + cheques
+  totalIngresosVentas: number = 0;
 
   // ── Card 2: Egresos ──
   totalEgresos: number = 0;
 
-  // ── Total general: ingresos ventas - egresos ──
-  get totalGeneral(): number {
-    return this.totalIngresosVentas - this.totalEgresos;
-  }
+  // ── Total general ──
+  get totalGeneral(): number { return this.totalIngresosVentas - this.totalEgresos; }
 
-  // ── Card 3: Desglose (ingresa el usuario) ──
+  // ── Card 3: Desglose ──
   billetes:               number | null = null;
   monedas:                number | null = null;
   transferenciasDesglose: number | null = null;
@@ -58,7 +58,8 @@ export class Tab3Page implements OnInit, OnDestroy {
   constructor(
     public router: Router,
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private socketService: SocketService
   ) {}
 
   ngOnInit() {
@@ -70,34 +71,64 @@ export class Tab3Page implements OnInit, OnDestroy {
   ionViewWillEnter() {
     this.cargarDatos();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
   ionViewWillLeave() {
     this.detenerPolling();
+    this.detenerSocket();
   }
 
   ngOnDestroy() {
     this.detenerPolling();
+    this.detenerSocket();
   }
 
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
-    if (!this.authService.estaLogueado()) return; // ← no iniciar polling sin sesión activa
-    this.pollingInterval = setInterval(() => {
-      this.cargarDatosSilencioso();
-    }, this.POLLING_MS);
+    if (!this.authService.estaLogueado()) return;
+    this.pollingInterval = setInterval(() => this.cargarDatosSilencioso(), this.POLLING_MS);
   }
 
   detenerPolling() {
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // Recarga silenciosa sin spinner — no interrumpe al usuario
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
+    if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    // Nueva venta → actualizar totales
+    const ventaSub = this.socketService.on('nueva_venta').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarDatosSilencioso();
+    });
+
+    // Egreso creado o borrado → actualizar totales
+    const egresoSub = this.socketService.on('egresos_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarDatosSilencioso();
+    });
+
+    // Cierre registrado por otro usuario → recargar
+    const cierreSub = this.socketService.on('cierre_registrado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarDatosSilencioso();
+    });
+
+    this.socketSubs = [ventaSub, egresoSub, cierreSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarDatosSilencioso() {
-    if (!this.authService.estaLogueado()) return; // ← no hacer requests sin sesión activa
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     const fecha = this.formatearFechaHoy();
     forkJoin({
       ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
@@ -108,6 +139,22 @@ export class Tab3Page implements OnInit, OnDestroy {
         this.procesarEgresos(egresos || []);
       },
       error: () => {}
+    });
+  }
+
+  cargarDatos() {
+    this.cargando = true;
+    const fecha = this.formatearFechaHoy();
+    forkJoin({
+      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`,  { headers: this.getHeaders() }),
+      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,      { headers: this.getHeaders() })
+    }).subscribe({
+      next: ({ ventas, egresos }) => {
+        this.procesarVentas(ventas || []);
+        this.procesarEgresos(egresos || []);
+        this.cargando = false;
+      },
+      error: () => { this.cargando = false; }
     });
   }
 
@@ -123,42 +170,20 @@ export class Tab3Page implements OnInit, OnDestroy {
     return `${hoy.getFullYear()}-${m}-${d}`;
   }
 
-  cargarDatos() {
-    this.cargando = true;
-    const fecha = this.formatearFechaHoy();
-
-    // Cargar ventas y egresos del día en paralelo
-    forkJoin({
-      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`,  { headers: this.getHeaders() }),
-      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,      { headers: this.getHeaders() })
-    }).subscribe({
-      next: ({ ventas, egresos }) => {
-        this.procesarVentas(ventas || []);
-        this.procesarEgresos(egresos || []);
-        this.cargando = false;
-      },
-      error: () => { this.cargando = false; }
-    });
-  }
-
   private procesarVentas(ventas: any[]) {
     this.ventasRealizadas    = ventas.length;
     this.totalEfectivo       = 0;
     this.totalTransferencias = 0;
     this.totalCheques        = 0;
     this.totalPendientes     = 0;
-
     ventas.forEach(v => {
       const total = parseFloat(v.total) || 0;
       const tipo  = (v.tipo_pago || v.forma_pago || '').toLowerCase();
-
-      if (tipo === 'efectivo')       this.totalEfectivo       += total;
+      if (tipo === 'efectivo')           this.totalEfectivo       += total;
       else if (tipo === 'transferencia') this.totalTransferencias += total;
-      else if (tipo === 'cheques')   this.totalCheques        += total;
+      else if (tipo === 'cheques')       this.totalCheques        += total;
       else if (tipo === 'credito' || tipo === 'pendiente') this.totalPendientes += total;
     });
-
-    // Total ingresos = lo cobrado (excluye pendientes)
     this.totalIngresosVentas = this.totalEfectivo + this.totalTransferencias + this.totalCheques;
   }
 
@@ -167,8 +192,8 @@ export class Tab3Page implements OnInit, OnDestroy {
   }
 
   setFecha() {
-    const dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const hoy    = new Date();
+    const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    const hoy  = new Date();
     this.diaSemana = dias[hoy.getDay()];
     this.fechaHoy  = `${hoy.getDate().toString().padStart(2,'0')}/${(hoy.getMonth()+1).toString().padStart(2,'0')}/${hoy.getFullYear()}`;
   }
@@ -184,56 +209,35 @@ export class Tab3Page implements OnInit, OnDestroy {
   revisar() {
     const TOLERANCIA = 0.01;
     const diff = this.totalDesglose - this.totalGeneral;
-
-    if (Math.abs(diff) <= TOLERANCIA) {
-      this.estadoCierre = 'cuadrado';
-      this.diferencia   = 0;
-    } else if (diff > 0) {
-      this.estadoCierre = 'sobra';
-      this.diferencia   = Math.abs(diff);
-    } else {
-      this.estadoCierre = 'falta';
-      this.diferencia   = Math.abs(diff);
-    }
-
-    this.errorGuardar     = '';
-    this.mostrarResultado = true;
+    if (Math.abs(diff) <= TOLERANCIA) { this.estadoCierre = 'cuadrado'; this.diferencia = 0; }
+    else if (diff > 0) { this.estadoCierre = 'sobra'; this.diferencia = Math.abs(diff); }
+    else               { this.estadoCierre = 'falta'; this.diferencia = Math.abs(diff); }
+    this.errorGuardar = ''; this.mostrarResultado = true;
   }
 
   cerrarResultado() { this.mostrarResultado = false; this.errorGuardar = ''; }
 
   finalizarDia() {
     if (this.estadoCierre !== 'cuadrado') return;
-
     this.guardandoCierre = true;
     this.errorGuardar    = '';
-
     const fecha = this.formatearFechaHoy();
-
-    // Verificar órdenes pendientes Y egresos del día en paralelo
     forkJoin({
       ordenes: this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
       egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,     { headers: this.getHeaders() })
     }).subscribe({
-      next: ({ ordenes, egresos }) => {
-        // Filtrar órdenes que NO están entregadas
+      next: ({ ordenes }) => {
         const pendientes = (ordenes || []).filter(o =>
           !o.entregado_vendedor && o.estado !== 'entregado' && o.estado !== 'anulado'
         );
-
         if (pendientes.length > 0) {
           this.guardandoCierre = false;
           this.errorGuardar = `⚠️ Hay ${pendientes.length} orden${pendientes.length > 1 ? 'es' : ''} sin entregar. Finalízalas en Órdenes antes de cerrar.`;
           return;
         }
-
-        // Todo ok — guardar cierre
         this.guardarCierre(fecha);
       },
-      error: () => {
-        this.guardandoCierre = false;
-        this.errorGuardar = 'Error al verificar datos. Intenta de nuevo.';
-      }
+      error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al verificar datos. Intenta de nuevo.'; }
     });
   }
 
@@ -248,50 +252,24 @@ export class Tab3Page implements OnInit, OnDestroy {
       total_egresos:        this.totalEgresos,
       notas:                null,
     };
-
-    this.http.post(`${this.API}/cierres`, payload, { headers: this.getHeaders() })
-      .subscribe({
-        next: () => {
-          // Notificar backend que el día está cerrado
-          this.http.put(`${this.API}/ventas-ruta/cerrar-dia`, { fecha }, { headers: this.getHeaders() })
-            .subscribe({ next: () => {}, error: () => {} });
-
-          // Reset completo — conteo físico y totales
-          this.guardandoCierre        = false;
-          this.mostrarResultado       = false;
-          this.errorGuardar           = '';
-          this.billetes               = null;
-          this.monedas                = null;
-          this.transferenciasDesglose = null;
-          this.chequesDesglose        = null;
-          this.totalDesglose          = 0;
-
-          // Reset totales del día
-          this.ventasRealizadas    = 0;
-          this.totalEfectivo       = 0;
-          this.totalTransferencias = 0;
-          this.totalCheques        = 0;
-          this.totalPendientes     = 0;
-          this.totalIngresosVentas = 0;
-          this.totalEgresos        = 0;
-        },
-        error: () => {
-          this.guardandoCierre = false;
-          this.errorGuardar    = 'Error al guardar el cierre. Intenta de nuevo.';
-        }
-      });
+    this.http.post(`${this.API}/cierres`, payload, { headers: this.getHeaders() }).subscribe({
+      next: () => {
+        this.http.put(`${this.API}/ventas-ruta/cerrar-dia`, { fecha }, { headers: this.getHeaders() })
+          .subscribe({ next: () => {}, error: () => {} });
+        this.guardandoCierre = false; this.mostrarResultado = false; this.errorGuardar = '';
+        this.billetes = null; this.monedas = null; this.transferenciasDesglose = null;
+        this.chequesDesglose = null; this.totalDesglose = 0;
+        this.ventasRealizadas = 0; this.totalEfectivo = 0; this.totalTransferencias = 0;
+        this.totalCheques = 0; this.totalPendientes = 0; this.totalIngresosVentas = 0; this.totalEgresos = 0;
+      },
+      error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al guardar el cierre. Intenta de nuevo.'; }
+    });
   }
 
-  // ---- MENU ----
+  // ── MENU ──────────────────────────────────────────────────────────────────
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
-
-  cerrarSesion() {
-    this.authService.logout();
-    this.menuAbierto = false;
-    this.router.navigate(['/login']);
-  }
-
+  cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
   irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);   }
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']);  }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }

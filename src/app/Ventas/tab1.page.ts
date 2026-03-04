@@ -8,6 +8,7 @@ import { VentasRutaService } from '../services/ventas-ruta';
 import { CarritoEstadoService } from '../services/carrito-estado';
 import { CarritoPendienteService } from '../services/carrito-pendiente';
 import { PrinterService } from '../services/printer';
+import { SocketService } from '../services/socket';
 import { Subscription } from 'rxjs';
 import { ToastController } from '@ionic/angular';
 
@@ -26,8 +27,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   errorCliente = '';
   clienteSeleccionado: Cliente | null = null;
   clientes: Cliente[] = [];
-
-  // Lista de coincidencias cuando hay múltiples resultados
   clientesCoincidentes: Cliente[] = [];
 
   mostrarAgregarCliente = false;
@@ -54,6 +53,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   guardandoCarrito = false;
 
   private carritoSub!: Subscription;
+  private socketSubs: Subscription[] = [];
   private pollingInterval: any = null;
   private readonly POLLING_MS = 15000;
 
@@ -81,7 +81,8 @@ export class Tab1Page implements OnInit, OnDestroy {
     private carritoEstado: CarritoEstadoService,
     private carritoPendiente: CarritoPendienteService,
     public printerService: PrinterService,
-    private toastCtrl: ToastController
+    private toastCtrl: ToastController,
+    private socketService: SocketService
   ) { }
 
   ngOnInit() {
@@ -97,15 +98,21 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.cargarProductos();
     this.cargarClientes();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
-  ionViewWillLeave() { this.detenerPolling(); }
+  ionViewWillLeave() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
 
   ngOnDestroy() {
     if (this.carritoSub) this.carritoSub.unsubscribe();
     this.detenerPolling();
+    this.detenerSocket();
   }
 
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -116,6 +123,31 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
+    if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    const invSub = this.socketService.on('inventario_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      if (this.mostrarProducto) return;
+      this.actualizarStockSilencioso();
+    });
+
+    const cliSub = this.socketService.on('clientes_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarClientes();
+    });
+
+    this.socketSubs = [invSub, cliSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── ACTUALIZACIÓN SILENCIOSA ──────────────────────────────────────────────
   actualizarStockSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.mostrarProducto) return;
@@ -134,15 +166,13 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
   }
 
+  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarProductos() {
     this.cargandoProductos = true;
     this.productoService.getAll().subscribe({
       next: (data: Producto[]) => {
         const productosNormalizados = data.map(p => ({
-          ...p,
-          precio_x_mayor: +p.precio_x_mayor,
-          precio_x_menor: +p.precio_x_menor,
-          stock: 0
+          ...p, precio_x_mayor: +p.precio_x_mayor, precio_x_menor: +p.precio_x_menor, stock: 0
         }));
         this.inventarioService.getBodega().subscribe({
           next: (inventario) => {
@@ -172,7 +202,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
   }
 
-  // ---- MENU ----
+  // ── MENU ──────────────────────────────────────────────────────────────────
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
@@ -181,26 +211,18 @@ export class Tab1Page implements OnInit, OnDestroy {
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
 
-  // ---- BUSCAR CLIENTE ----
+  // ── BUSCAR CLIENTE ────────────────────────────────────────────────────────
   buscarCliente() {
     const valor = this.busquedaCliente.trim();
     this.clientesCoincidentes = [];
     this.errorCliente = '';
-
-    if (!valor || valor.length < 2) {
-      this.errorCliente = 'Ingresa una cédula (10 dígitos) o apellido válido';
-      return;
-    }
+    if (!valor || valor.length < 2) { this.errorCliente = 'Ingresa una cédula (10 dígitos) o apellido válido'; return; }
 
     const esCedula = /^\d{10}$/.test(valor);
-
     let coincidencias: Cliente[];
-
     if (esCedula) {
-      // Búsqueda exacta por cédula
       coincidencias = this.clientes.filter(c => c.cedula === valor);
     } else {
-      // Búsqueda por apellido, nombre o negocio (parcial, sin importar mayúsculas)
       const q = valor.toLowerCase();
       coincidencias = this.clientes.filter(c =>
         c.apellido.toLowerCase().includes(q) ||
@@ -213,10 +235,8 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.clienteSeleccionado = null;
       this.errorCliente = 'Cliente no encontrado. Usa el botón + para registrarlo.';
     } else if (coincidencias.length === 1) {
-      // Solo uno — seleccionar directo
       this.seleccionarCliente(coincidencias[0]);
     } else {
-      // Múltiples — mostrar lista
       this.clientesCoincidentes = coincidencias;
     }
   }
@@ -245,17 +265,14 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.montoRecibido = data.monto_recibido ?? 0;
           this.cargarProductos();
         } else {
-          this.carrito = [];
-          this.ivaPercent = 0;
-          this.formaPago = 'Efectivo';
-          this.montoRecibido = 0;
+          this.carrito = []; this.ivaPercent = 0; this.formaPago = 'Efectivo'; this.montoRecibido = 0;
         }
       },
       error: () => { this.carrito = []; this.montoRecibido = 0; }
     });
   }
 
-  // ---- AGREGAR CLIENTE ----
+  // ── AGREGAR CLIENTE ───────────────────────────────────────────────────────
   abrirAgregarCliente() { this.mostrarAgregarCliente = true; }
 
   cerrarAgregarCliente() {
@@ -267,71 +284,53 @@ export class Tab1Page implements OnInit, OnDestroy {
   guardarCliente() {
     this.erroresCliente = {};
     let valido = true;
-
     const cedula = this.nuevoCliente.cedula.trim();
     if (!cedula) { this.erroresCliente.cedula = 'La cédula es requerida'; valido = false; }
     else if (/[^0-9]/.test(cedula)) { this.erroresCliente.cedula = 'Solo números'; valido = false; }
     else if (cedula.length !== 10) { this.erroresCliente.cedula = 'Debe tener 10 dígitos'; valido = false; }
-
     if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre))
       { this.erroresCliente.nombre = 'Nombre inválido'; valido = false; }
     if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido))
       { this.erroresCliente.apellido = 'Apellido inválido'; valido = false; }
     if (!this.nuevoCliente.direccion.trim() || this.nuevoCliente.direccion.trim().length < 5)
       { this.erroresCliente.direccion = 'Dirección requerida (mín. 5 chars)'; valido = false; }
-
     const tel = this.nuevoCliente.telefono.trim();
     if (!tel) { this.erroresCliente.telefono = 'Requerido'; valido = false; }
     else if (/[^0-9]/.test(tel)) { this.erroresCliente.telefono = 'Solo números'; valido = false; }
     else if (tel.length !== 10 && tel.length !== 7) { this.erroresCliente.telefono = 'Celular (10) o fijo (7)'; valido = false; }
-
     if (this.nuevoCliente.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.nuevoCliente.email))
       { this.erroresCliente.email = 'Email inválido'; valido = false; }
-
     if (!valido) return;
 
     const clientePayload: Cliente = {
-      cedula: cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
+      cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
       tipo_cliente: this.nuevoCliente.esParticular ? 'particular' : 'negocio',
       direccion: this.nuevoCliente.direccion.trim(), sector: this.nuevoCliente.sector.trim() || null,
       telefono: tel, email: this.nuevoCliente.email.trim() || null, limite_credito: 0, notas: null,
     };
-
     this.guardandoCliente = true;
     this.clienteService.create(clientePayload).subscribe({
       next: () => { this.guardandoCliente = false; this.cargarClientes(); this.cerrarAgregarCliente(); },
-      error: (err: any) => {
-        this.guardandoCliente = false;
-        this.erroresCliente.general = err.status === 400 ? 'Datos inválidos' : 'Error al guardar';
-      }
+      error: (err: any) => { this.guardandoCliente = false; this.erroresCliente.general = err.status === 400 ? 'Datos inválidos' : 'Error al guardar'; }
     });
   }
 
-  // ---- PRODUCTO ----
+  // ── PRODUCTO ──────────────────────────────────────────────────────────────
   async abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
     if ((producto.stock ?? 0) <= 0) {
       const toast = await this.toastCtrl.create({ message: 'Sin stock disponible', duration: 2000, position: 'bottom', color: 'danger' });
-      await toast.present();
-      return;
+      await toast.present(); return;
     }
     this.productoSeleccionado = producto;
-    this.itemProducto = {
-      cantidad: 0,
-      precio: +producto.precio_x_mayor,
-      descuento: 0,
-      subtotal: 0,
-      tipoPrecio: 'mayor'
-    };
+    this.itemProducto = { cantidad: 0, precio: +producto.precio_x_mayor, descuento: 0, subtotal: 0, tipoPrecio: 'mayor' };
     this.mostrarProducto = true;
   }
 
   seleccionarTipoPrecio(tipo: 'mayor' | 'menor') {
     this.itemProducto.tipoPrecio = tipo;
-    this.itemProducto.precio = tipo === 'mayor'
-      ? +this.productoSeleccionado!.precio_x_mayor
-      : +this.productoSeleccionado!.precio_x_menor;
+    this.itemProducto.precio = tipo === 'mayor' ? +this.productoSeleccionado!.precio_x_mayor : +this.productoSeleccionado!.precio_x_menor;
     this.calcularSubtotal();
   }
 
@@ -342,17 +341,12 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   incrementarCantidad() {
-    if (this.itemProducto.cantidad < (this.productoSeleccionado?.stock ?? 0)) {
-      this.itemProducto.cantidad++; this.calcularSubtotal();
-    }
+    if (this.itemProducto.cantidad < (this.productoSeleccionado?.stock ?? 0)) { this.itemProducto.cantidad++; this.calcularSubtotal(); }
   }
-
   decrementarCantidad() {
     if (this.itemProducto.cantidad > 0) { this.itemProducto.cantidad--; this.calcularSubtotal(); }
   }
-
   cerrarProducto() { this.mostrarProducto = false; }
-
   calcularSubtotal() {
     const base = this.itemProducto.cantidad * this.itemProducto.precio;
     this.itemProducto.subtotal = base - (base * this.itemProducto.descuento / 100);
@@ -361,22 +355,16 @@ export class Tab1Page implements OnInit, OnDestroy {
   agregarAlCarrito() {
     if (this.itemProducto.cantidad <= 0 || this.itemProducto.precio <= 0) return;
     this.carrito.push({
-      producto_id: this.productoSeleccionado!.id,
-      nombre: this.productoSeleccionado!.nombre,
-      cantidad: this.itemProducto.cantidad,
-      precio_unitario: this.itemProducto.precio,
-      tipoPrecio: this.itemProducto.tipoPrecio,
-      descuento: this.itemProducto.descuento,
-      subtotal: this.itemProducto.subtotal
+      producto_id: this.productoSeleccionado!.id, nombre: this.productoSeleccionado!.nombre,
+      cantidad: this.itemProducto.cantidad, precio_unitario: this.itemProducto.precio,
+      tipoPrecio: this.itemProducto.tipoPrecio, descuento: this.itemProducto.descuento, subtotal: this.itemProducto.subtotal
     });
     const idx = this.productos.findIndex(p => p.id === this.productoSeleccionado!.id);
-    if (idx !== -1) {
-      this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad };
-    }
+    if (idx !== -1) this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad };
     this.cerrarProducto();
   }
 
-  // ---- CARRITO ----
+  // ── CARRITO ───────────────────────────────────────────────────────────────
   abrirCarrito() { this.mostrarCarrito = true; }
   cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
@@ -387,9 +375,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     return { subtotal, descuento, iva, total: subtotal + iva };
   }
 
-  calcularVuelto(): number {
-    return Math.max(0, this.montoRecibido - this.calcularTotal().total);
-  }
+  calcularVuelto(): number { return Math.max(0, this.montoRecibido - this.calcularTotal().total); }
 
   async guardarPedido() {
     if (this.carrito.length === 0) return;
@@ -399,9 +385,8 @@ export class Tab1Page implements OnInit, OnDestroy {
     }
     this.guardandoCarrito = true;
     this.carritoPendiente.guardar({
-      cliente_id: this.clienteSeleccionado.id!, items: this.carrito,
-      iva_percent: this.ivaPercent, forma_pago: this.formaPago,
-      monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+      cliente_id: this.clienteSeleccionado.id!, items: this.carrito, iva_percent: this.ivaPercent,
+      forma_pago: this.formaPago, monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
       vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
     }).subscribe({
       next: async () => {
@@ -420,9 +405,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   eliminarDelCarrito(index: number) {
     const item = this.carrito[index];
     const idx = this.productos.findIndex(p => p.id === item.producto_id);
-    if (idx !== -1) {
-      this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) + item.cantidad };
-    }
+    if (idx !== -1) this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) + item.cantidad };
     this.carrito.splice(index, 1);
   }
 
@@ -463,30 +446,20 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
   }
 
-  // ── IMPRESIÓN ──
+  // ── IMPRESIÓN ─────────────────────────────────────────────────────────────
   cerrarModalImpresion() { this.mostrarModalImpresion = false; this.serviciosDebug = ''; }
-
-  async verServicios() {
-    this.serviciosDebug = 'Cargando...';
-    this.serviciosDebug = await this.printerService.descubrirServicios();
-  }
-
+  async verServicios() { this.serviciosDebug = 'Cargando...'; this.serviciosDebug = await this.printerService.descubrirServicios(); }
   async imprimirRecibo() {
     if (!this.ultimoRecibo) return;
     this.imprimiendo = true;
-    try {
-      await this.printerService.imprimirRecibo(this.ultimoRecibo);
-      this.estadoImpresion = 'impreso';
-    } catch (err: any) {
-      this.estadoImpresion = 'error';
-      this.errorImpresion = err?.message || 'Error de conexión con la impresora';
-    } finally { this.imprimiendo = false; }
+    try { await this.printerService.imprimirRecibo(this.ultimoRecibo); this.estadoImpresion = 'impreso'; }
+    catch (err: any) { this.estadoImpresion = 'error'; this.errorImpresion = err?.message || 'Error de conexión con la impresora'; }
+    finally { this.imprimiendo = false; }
   }
 
-  // ── BLUETOOTH ──
+  // ── BLUETOOTH ─────────────────────────────────────────────────────────────
   abrirConexionBT() { this.mostrarModalBT = true; this.escanearBT(); }
   cerrarConexionBT() { this.mostrarModalBT = false; }
-
   escanearBT() {
     this.escaneandoBT = true; this.dispositivosBT = [];
     this.printerService.escanearDispositivos()
@@ -494,7 +467,6 @@ export class Tab1Page implements OnInit, OnDestroy {
       .catch(() => { this.dispositivosBT = []; })
       .finally(() => { this.escaneandoBT = false; });
   }
-
   conectarImpresora(dispositivo: any) {
     if (this.conectandoBT === dispositivo.address) return;
     this.conectandoBT = dispositivo.address;

@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ClienteService, Cliente, Movimiento } from '../services/cliente';
 import { AuthService } from '../services/auth';
+import { SocketService } from '../services/socket';
+import { Subscription } from 'rxjs';
 
 type OrdenCampo = 'nombre' | 'saldo' | 'fecha_creacion' | 'fecha_modificacion';
 
@@ -23,6 +25,7 @@ export class ClientesPage implements OnInit, OnDestroy {
 
   private pollingInterval: any = null;
   private readonly POLLING_MS = 30000;
+  private socketSubs: Subscription[] = [];
 
   mostrarOrdenMenu = false;
   ordenActual: OrdenCampo = 'nombre';
@@ -58,7 +61,8 @@ export class ClientesPage implements OnInit, OnDestroy {
   constructor(
     public router: Router,
     private clienteService: ClienteService,
-    private authService: AuthService
+    private authService: AuthService,
+    private socketService: SocketService
   ) {}
 
   ngOnInit() {
@@ -70,11 +74,20 @@ export class ClientesPage implements OnInit, OnDestroy {
   ionViewWillEnter() {
     this.cargarClientes();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
-  ionViewWillLeave() { this.detenerPolling(); }
-  ngOnDestroy()      { this.detenerPolling(); }
+  ionViewWillLeave() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
 
+  ngOnDestroy() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
+
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -85,6 +98,38 @@ export class ClientesPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
+    if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    // Clientes cambiaron (crear/editar/eliminar/abono/pago)
+    const cliSub = this.socketService.on('clientes_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarClientesSilencioso();
+      // Si hay detalle abierto, recargar movimientos también
+      if (this.mostrarDetalle && this.clienteDetalle) {
+        this.cargarMovimientos(this.clienteDetalle.id!);
+      }
+    });
+
+    // Abono registrado → refrescar movimientos si hay detalle abierto
+    const ordenSub = this.socketService.on('orden_actualizada').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      if (this.mostrarDetalle && this.clienteDetalle) {
+        this.cargarMovimientos(this.clienteDetalle.id!);
+      }
+    });
+
+    this.socketSubs = [cliSub, ordenSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarClientesSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     this.clienteService.getAllConSaldos().subscribe({

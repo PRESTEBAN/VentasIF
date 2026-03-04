@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { SocketService } from '../services/socket';
+import { Subscription } from 'rxjs';
 
 export interface Egreso {
   id?: number;
@@ -34,10 +36,11 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   private pollingInterval: any = null;
   private readonly POLLING_MS  = 15000;
+  private socketSubs: Subscription[] = [];
 
   // ---- CALENDARIO ----
   fechaSeleccionada: Date = new Date();
-  semanaBase: Date        = new Date();   // ← primer día visible de la tira
+  semanaBase: Date        = new Date();
   semanaActual: Date[]    = [];
   mostrarDatePicker       = false;
 
@@ -68,14 +71,13 @@ export class EgresosPage implements OnInit, OnDestroy {
   constructor(
     public router: Router,
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private socketService: SocketService
   ) {}
 
   ngOnInit() {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
-
-    // semanaBase = hoy - 3 para que hoy quede centrado visualmente
     const base = new Date(this.fechaSeleccionada);
     base.setDate(base.getDate() - 3);
     this.semanaBase = base;
@@ -86,11 +88,20 @@ export class EgresosPage implements OnInit, OnDestroy {
     this.cargarUsuarios();
     this.cargarEgresos();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
-  ionViewWillLeave() { this.detenerPolling(); }
-  ngOnDestroy()      { this.detenerPolling(); }
+  ionViewWillLeave() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
 
+  ngOnDestroy() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
+
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -101,8 +112,40 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  cargarEgresosSilencioso() {
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    const egresoSub = this.socketService.on<{ accion: string; egreso?: Egreso; id?: string }>('egresos_actualizado').subscribe((data) => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+
+      // Solo actuar si el egreso es del día seleccionado
+      const fechaHoy = this.formatearFecha(this.fechaSeleccionada);
+      const esHoy    = this.formatearFecha(new Date()) === fechaHoy;
+
+      if (data?.accion === 'crear' && data.egreso) {
+        // Solo agregar si estamos viendo el día de hoy
+        if (esHoy) {
+          const yaExiste = this.egresos.some(e => e.id === data.egreso!.id);
+          if (!yaExiste) this.egresos = [...this.egresos, data.egreso];
+        }
+      } else if (data?.accion === 'borrar' && data.id) {
+        this.egresos = this.egresos.filter(e => e.id !== +data.id!);
+      }
+    });
+
+    this.socketSubs = [egresoSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── CARGA ─────────────────────────────────────────────────────────────────
+  cargarEgresosSilencioso() {
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${fechaStr}`, { headers: this.getHeaders() })
       .subscribe({
@@ -119,7 +162,7 @@ export class EgresosPage implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  // ---- USUARIOS — filtra Admin ----
+  // ---- USUARIOS ----
   cargarUsuarios() {
     this.http.get<Usuario[]>(`${this.API}/egresos/usuarios`, { headers: this.getHeaders() })
       .subscribe({
@@ -136,8 +179,6 @@ export class EgresosPage implements OnInit, OnDestroy {
   get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
   // ---- CALENDARIO ----
-
-  // Genera 7 días consecutivos desde `base` hacia adelante (sin centrar)
   generarSemana(base: Date) {
     const dias: Date[] = [];
     for (let i = 0; i < 7; i++) {
@@ -149,29 +190,24 @@ export class EgresosPage implements OnInit, OnDestroy {
   }
 
   semanaAnterior() {
-    // retrocede exactamente 7 días desde el primer día visible
     const nueva = new Date(this.semanaBase);
     nueva.setDate(nueva.getDate() - 7);
     this.semanaBase = nueva;
     this.generarSemana(nueva);
-    // selecciona el último día de la tira al retroceder
     this.fechaSeleccionada = new Date(this.semanaActual[6]);
     this.cargarEgresos();
   }
 
   semanaSiguiente() {
-    // avanza exactamente 7 días desde el primer día visible
     const nueva = new Date(this.semanaBase);
     nueva.setDate(nueva.getDate() + 7);
     this.semanaBase = nueva;
     this.generarSemana(nueva);
-    // selecciona el primer día de la tira al avanzar
     this.fechaSeleccionada = new Date(this.semanaActual[0]);
     this.cargarEgresos();
   }
 
   esSemanaActual(): boolean {
-    // deshabilita la flecha si el último día de la tira ya llegó a hoy o futuro
     const ultimoDia = new Date(this.semanaActual[this.semanaActual.length - 1]);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -180,14 +216,12 @@ export class EgresosPage implements OnInit, OnDestroy {
   }
 
   seleccionarDia(dia: Date) {
-    // solo cambia el día seleccionado — semanaBase NO se mueve
     this.fechaSeleccionada = new Date(dia);
     this.cargarEgresos();
   }
 
   esDiaSeleccionado(dia: Date): boolean { return dia.toDateString() === this.fechaSeleccionada.toDateString(); }
   esHoy(dia: Date): boolean { return dia.toDateString() === new Date().toDateString(); }
-
   abrirDatePicker()  { this.mostrarDatePicker = true;  }
   cerrarDatePicker() { this.mostrarDatePicker = false; }
 
@@ -197,7 +231,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     const [anio, mes, dia] = valor.split('-').map(Number);
     const nueva = new Date(anio, mes - 1, dia);
     this.fechaSeleccionada = nueva;
-    // date picker resetea el ancla centrada en la fecha elegida
     const base = new Date(nueva);
     base.setDate(nueva.getDate() - 3);
     this.semanaBase = base;
@@ -216,7 +249,10 @@ export class EgresosPage implements OnInit, OnDestroy {
   cargarEgresos() {
     this.cargando = true; this.egresos = [];
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${this.formatearFecha(this.fechaSeleccionada)}`, { headers: this.getHeaders() })
-      .subscribe({ next: (data) => { this.egresos = data; this.cargando = false; }, error: () => { this.egresos = []; this.cargando = false; } });
+      .subscribe({
+        next: (data) => { this.egresos = data; this.cargando = false; },
+        error: () => { this.egresos = []; this.cargando = false; }
+      });
   }
 
   // ---- MODAL ----
@@ -227,18 +263,9 @@ export class EgresosPage implements OnInit, OnDestroy {
   }
 
   toggleResponsable() { this.mostrarResponsableDropdown = !this.mostrarResponsableDropdown; }
-
-  seleccionarResponsable(valor: string) {
-    this.nuevoEgreso.responsable = valor;
-    this.mostrarResponsableDropdown = false;
-  }
-
+  seleccionarResponsable(valor: string) { this.nuevoEgreso.responsable = valor; this.mostrarResponsableDropdown = false; }
   toggleBeneficiario() { this.mostrarBeneficiarioDropdown = !this.mostrarBeneficiarioDropdown; }
-
-  seleccionarBeneficiario(valor: string) {
-    this.nuevoEgreso.beneficiario = valor;
-    this.mostrarBeneficiarioDropdown = false;
-  }
+  seleccionarBeneficiario(valor: string) { this.nuevoEgreso.beneficiario = valor; this.mostrarBeneficiarioDropdown = false; }
 
   getLabelBeneficiario(username: string): string {
     const u = this.usuarios.find(u => u.username === username);
@@ -272,15 +299,8 @@ export class EgresosPage implements OnInit, OnDestroy {
   }
 
   // ---- BORRAR ----
-  confirmarBorrar(egreso: Egreso) {
-    this.egresoABorrar = egreso;
-    this.mostrarConfirmarBorrar = true;
-  }
-
-  cancelarBorrar() {
-    this.mostrarConfirmarBorrar = false;
-    this.egresoABorrar = null;
-  }
+  confirmarBorrar(egreso: Egreso) { this.egresoABorrar = egreso; this.mostrarConfirmarBorrar = true; }
+  cancelarBorrar() { this.mostrarConfirmarBorrar = false; this.egresoABorrar = null; }
 
   borrarEgreso() {
     if (!this.egresoABorrar?.id) return;
@@ -292,17 +312,13 @@ export class EgresosPage implements OnInit, OnDestroy {
           this.borrando = false;
           this.cancelarBorrar();
         },
-        error: () => {
-          this.borrando = false;
-          this.cancelarBorrar();
-        }
+        error: () => { this.borrando = false; this.cancelarBorrar(); }
       });
   }
 
   // ---- MENU ----
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
-
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
   irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);   }
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']);  }

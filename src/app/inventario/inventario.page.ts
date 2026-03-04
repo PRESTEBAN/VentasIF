@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { InventarioService, ItemInventario } from '../services/inventario';
 import { AuthService } from '../services/auth';
+import { SocketService } from '../services/socket';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-inventario',
@@ -41,11 +43,13 @@ export class InventarioPage implements OnInit, OnDestroy {
 
   private pollingInterval: any = null;
   private readonly POLLING_MS = 20000;
+  private socketSubs: Subscription[] = [];
 
   constructor(
     public router: Router,
     private inventarioService: InventarioService,
-    private authService: AuthService
+    private authService: AuthService,
+    private socketService: SocketService
   ) {}
 
   ngOnInit() {
@@ -57,11 +61,20 @@ export class InventarioPage implements OnInit, OnDestroy {
   ionViewWillEnter() {
     this.cargarInventario();
     this.iniciarPolling();
+    this.iniciarSocket();
   }
 
-  ionViewWillLeave() { this.detenerPolling(); }
-  ngOnDestroy()      { this.detenerPolling(); }
+  ionViewWillLeave() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
 
+  ngOnDestroy() {
+    this.detenerPolling();
+    this.detenerSocket();
+  }
+
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -72,9 +85,40 @@ export class InventarioPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  iniciarSocket() {
+    if (!this.authService.estaLogueado()) return;
+    this.socketService.connect();
+
+    // Stock cambió (movimiento bodega/meson, venta, nuevo producto, precios)
+    const invSub = this.socketService.on<{ accion?: string; producto_id?: number; stock_actual?: number }>('inventario_actualizado').subscribe((data) => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      // No actualizar si el usuario está editando
+      if (this.modoIngreso || this.modoEditarPrecios) return;
+
+      // Si viene producto_id y stock_actual, actualizar solo ese item (más eficiente)
+      if (data?.producto_id && data?.stock_actual !== undefined) {
+        const idx = this.items.findIndex(i => i.producto_id === data.producto_id);
+        if (idx >= 0) {
+          this.items[idx] = { ...this.items[idx], stock_actual: data.stock_actual };
+          return;
+        }
+      }
+      // Si no hay datos específicos o el producto es nuevo, recargar todo
+      this.actualizarSilencioso();
+    });
+
+    this.socketSubs = [invSub];
+  }
+
+  detenerSocket() {
+    this.socketSubs.forEach(s => s.unsubscribe());
+    this.socketSubs = [];
+  }
+
+  // ── ACTUALIZACIÓN SILENCIOSA ──────────────────────────────────────────────
   actualizarSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
-    // No actualizar si hay ediciones en curso
     if (this.modoIngreso || this.modoEditarPrecios) return;
     this.inventarioService.getBodega().subscribe({
       next: (data: ItemInventario[]) => {
@@ -85,6 +129,7 @@ export class InventarioPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarInventario() {
     this.cargando = true;
     this.inventarioService.getBodega().subscribe({
@@ -111,16 +156,8 @@ export class InventarioPage implements OnInit, OnDestroy {
     this.mensajeIngreso = '';
   }
 
-  activarIngreso() {
-    this.modoIngreso = true;
-    this.mensajeIngreso = '';
-    this.items = this.items.map(i => ({ ...i, ingreso: null }));
-  }
-
-  cancelarIngreso() {
-    this.modoIngreso = false;
-    this.items = this.items.map(i => ({ ...i, ingreso: null }));
-  }
+  activarIngreso() { this.modoIngreso = true; this.mensajeIngreso = ''; this.items = this.items.map(i => ({ ...i, ingreso: null })); }
+  cancelarIngreso() { this.modoIngreso = false; this.items = this.items.map(i => ({ ...i, ingreso: null })); }
 
   incrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) + 1; }
   decrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) - 1; }
