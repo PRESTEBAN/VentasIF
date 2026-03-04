@@ -42,6 +42,7 @@ export class HistorialPage implements OnInit, OnDestroy {
   usuarioActual: string = '';
 
   fechaSeleccionada: Date = new Date();
+  semanaBase: Date = new Date();   // ← primer día visible de la tira
   semanaActual: Date[] = [];
   mostrarDatePicker = false;
 
@@ -69,7 +70,12 @@ export class HistorialPage implements OnInit, OnDestroy {
   ngOnInit() {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
-    this.generarSemana(this.fechaSeleccionada);
+
+    // semanaBase = hoy - 3 para que hoy quede centrado visualmente
+    const base = new Date(this.fechaSeleccionada);
+    base.setDate(base.getDate() - 3);
+    this.semanaBase = base;
+    this.generarSemana(this.semanaBase);
   }
 
   ionViewWillEnter() {
@@ -87,6 +93,7 @@ export class HistorialPage implements OnInit, OnDestroy {
 
   iniciarPolling() {
     this.detenerPolling();
+    if (!this.authService.estaLogueado()) return;
     this.pollingInterval = setInterval(() => {
       this.cargarVentasSilencioso();
     }, this.POLLING_MS);
@@ -99,8 +106,8 @@ export class HistorialPage implements OnInit, OnDestroy {
     }
   }
 
-  // Carga silenciosa — solo agrega ventas nuevas sin spinner
   cargarVentasSilencioso() {
+    if (!this.authService.estaLogueado()) return;
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
     this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
       .subscribe({
@@ -122,40 +129,48 @@ export class HistorialPage implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  generarSemana(fecha: Date) {
+  // Genera 7 días consecutivos desde `base` hacia adelante (sin centrar)
+  generarSemana(base: Date) {
     const dias: Date[] = [];
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(fecha);
-      d.setDate(fecha.getDate() + i);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
       dias.push(d);
     }
     this.semanaActual = dias;
   }
 
   semanaAnterior() {
-    const nueva = new Date(this.fechaSeleccionada);
+    const nueva = new Date(this.semanaBase);
     nueva.setDate(nueva.getDate() - 7);
-    this.fechaSeleccionada = nueva;
+    this.semanaBase = nueva;
     this.generarSemana(nueva);
+    // selecciona el último día de la tira al retroceder
+    this.fechaSeleccionada = new Date(this.semanaActual[6]);
     this.cargarVentas();
   }
 
   semanaSiguiente() {
-    const nueva = new Date(this.fechaSeleccionada);
+    const nueva = new Date(this.semanaBase);
     nueva.setDate(nueva.getDate() + 7);
-    this.fechaSeleccionada = nueva;
+    this.semanaBase = nueva;
     this.generarSemana(nueva);
+    // selecciona el primer día de la tira al avanzar
+    this.fechaSeleccionada = new Date(this.semanaActual[0]);
     this.cargarVentas();
   }
 
   esSemanaActual(): boolean {
+    // deshabilita la flecha si el último día de la tira ya llegó a hoy o futuro
+    const ultimoDia = new Date(this.semanaActual[this.semanaActual.length - 1]);
     const hoy = new Date();
-    const hoyStr = this.formatearFecha(hoy);
-    const selStr = this.formatearFecha(this.fechaSeleccionada);
-    return selStr >= hoyStr;
+    hoy.setHours(0, 0, 0, 0);
+    ultimoDia.setHours(0, 0, 0, 0);
+    return ultimoDia >= hoy;
   }
 
   seleccionarDia(dia: Date) {
+    // solo cambia el día seleccionado — semanaBase NO se mueve
     this.fechaSeleccionada = new Date(dia);
     this.cargarVentas();
   }
@@ -177,7 +192,11 @@ export class HistorialPage implements OnInit, OnDestroy {
     const [anio, mes, dia] = valor.split('-').map(Number);
     const nueva = new Date(anio, mes - 1, dia);
     this.fechaSeleccionada = nueva;
-    this.generarSemana(nueva);
+    // date picker resetea el ancla centrada en la fecha elegida
+    const base = new Date(nueva);
+    base.setDate(nueva.getDate() - 3);
+    this.semanaBase = base;
+    this.generarSemana(this.semanaBase);
     this.cargarVentas();
     this.cerrarDatePicker();
   }
