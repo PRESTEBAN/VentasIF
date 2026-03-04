@@ -206,18 +206,23 @@ export class ClientesPage implements OnInit, OnDestroy {
     }
   }
 
-  abrirEditar() {
-    if (!this.clienteDetalle) return;
-    const c = this.clienteDetalle;
-    this.editCliente = {
-      cedula: c.cedula, nombre: c.nombre, apellido: c.apellido,
-      negocio: c.nombre_negocio || '', email: c.email || '',
-      direccion: c.direccion, sector: c.sector || '',
-      telefono: c.telefono, esParticular: c.tipo_cliente === 'particular',
-    };
-    this.erroresEditar = {};
-    this.mostrarEditar = true;
-  }
+abrirEditar() {
+  if (!this.clienteDetalle) return;
+  const c = this.clienteDetalle;
+  this.editCliente = {
+    cedula:       c.cedula        || '',
+    nombre:       c.nombre        || '',
+    apellido:     c.apellido      || '',
+    negocio:      c.nombre_negocio || '',
+    email:        c.email         || '',
+    direccion:    c.direccion     || '',
+    sector:       c.sector        || '',
+    telefono:     c.telefono      || '',   // ← este era el null
+    esParticular: c.tipo_cliente === 'particular',
+  };
+  this.erroresEditar = {};
+  this.mostrarEditar = true;
+}
 
   cerrarEditar() { this.mostrarEditar = false; this.erroresEditar = {}; }
 
