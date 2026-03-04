@@ -325,6 +325,9 @@ const LOGO_BYTES = new Uint8Array([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
+const STORAGE_KEY_ADDRESS = 'bt_printer_address';
+const STORAGE_KEY_NAME    = 'bt_printer_name';
+
 @Injectable({ providedIn: 'root' })
 export class PrinterService {
 
@@ -333,6 +336,22 @@ export class PrinterService {
   get dispositivoConectado() { return this.impresora; }
 
   private get bt(): any { return (window as any).bluetoothSerial; }
+
+  // ── Llamar esto en app.component.ts ngOnInit ──────────────────────────
+  async intentarReconectar(): Promise<void> {
+    const address = localStorage.getItem(STORAGE_KEY_ADDRESS);
+    const name    = localStorage.getItem(STORAGE_KEY_NAME) || '';
+    if (!address || !this.bt) return;
+
+    try {
+      const yaConectado = await this.estaConectado();
+      if (yaConectado) { this.impresora = { id: address, name }; return; }
+      await this.conectar(address, name);
+      console.log(`[Printer] Reconectado automáticamente a ${name}`);
+    } catch {
+      console.warn('[Printer] No se pudo reconectar automáticamente');
+    }
+  }
 
   async escanearDispositivos(): Promise<any[]> {
     return new Promise((resolve) => {
@@ -346,7 +365,13 @@ export class PrinterService {
       if (!this.bt) { reject(new Error('Plugin no disponible')); return; }
       this.bt.connect(
         address,
-        () => { this.impresora = { id: address, name }; resolve(); },
+        () => {
+          this.impresora = { id: address, name };
+          // Guardar para reconexión automática
+          localStorage.setItem(STORAGE_KEY_ADDRESS, address);
+          localStorage.setItem(STORAGE_KEY_NAME, name);
+          resolve();
+        },
         (err: any) => reject(new Error(err || 'Error al conectar'))
       );
     });
@@ -356,8 +381,19 @@ export class PrinterService {
     return new Promise((resolve) => {
       if (!this.bt) { resolve(); return; }
       this.bt.disconnect(
-        () => { this.impresora = null; resolve(); },
-        () => { this.impresora = null; resolve(); }
+        () => {
+          this.impresora = null;
+          // Borrar dispositivo guardado al desconectar manualmente
+          localStorage.removeItem(STORAGE_KEY_ADDRESS);
+          localStorage.removeItem(STORAGE_KEY_NAME);
+          resolve();
+        },
+        () => {
+          this.impresora = null;
+          localStorage.removeItem(STORAGE_KEY_ADDRESS);
+          localStorage.removeItem(STORAGE_KEY_NAME);
+          resolve();
+        }
       );
     });
   }
@@ -373,7 +409,6 @@ export class PrinterService {
     return 'Bluetooth clásico SPP - conexión directa sin UUIDs';
   }
 
-  // Escribe bytes crudos a la impresora (para el logo)
   private escribirBytes(data: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
       this.bt.write(
@@ -384,7 +419,6 @@ export class PrinterService {
     });
   }
 
-  // Escribe texto a la impresora
   private escribirTexto(texto: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.bt.write(
@@ -397,7 +431,12 @@ export class PrinterService {
 
   async imprimirRecibo(datos: DatosRecibo): Promise<void> {
     const conectado = await this.estaConectado();
-    if (!conectado) throw new Error('Impresora no conectada');
+    if (!conectado) {
+      // Intentar reconectar antes de fallar
+      await this.intentarReconectar();
+      const reintento = await this.estaConectado();
+      if (!reintento) throw new Error('Impresora no conectada');
+    }
 
     const ESC      = '\x1B';
     const LF       = '\n';
@@ -422,7 +461,7 @@ export class PrinterService {
     const hora  = `${ahora.getHours().toString().padStart(2,'0')}:${ahora.getMinutes().toString().padStart(2,'0')}`;
     const nroRecibo = datos.ventaId ? String(datos.ventaId).padStart(6, '0') : '------';
 
-    // ── 1. LOGO (bytes crudos, centrado) ──────────────────────────────────
+    // ── 1. LOGO ───────────────────────────────────────────────────────────
     await this.escribirTexto(CENTER);
     await this.escribirBytes(LOGO_BYTES);
     await this.escribirTexto(LF);
