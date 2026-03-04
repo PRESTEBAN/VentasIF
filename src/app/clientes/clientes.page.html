@@ -214,18 +214,19 @@
               <p class="detalle-card-titulo">Contacto</p>
               <div class="info-fila">
                 <ion-icon name="call-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Teléfono</p><p class="info-val">{{ clienteDetalle.telefono }}</p></div>
+                <div class="info-contenido"><p class="info-lbl">Teléfono</p><p class="info-val">{{ clienteDetalle.telefono || '—' }}</p></div>
               </div>
-              <div class="info-fila" *ngIf="clienteDetalle.email">
+              <div class="info-fila">
                 <ion-icon name="mail-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Email</p><p class="info-val">{{ clienteDetalle.email }}</p></div>
+                <div class="info-contenido"><p class="info-lbl">Email</p><p class="info-val">{{ clienteDetalle.email || '—' }}</p></div>
               </div>
               <div class="info-fila">
                 <ion-icon name="location-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido">
-                  <p class="info-lbl">Dirección</p>
-                  <p class="info-val">{{ clienteDetalle.direccion }}<span *ngIf="clienteDetalle.sector"> — {{ clienteDetalle.sector }}</span></p>
-                </div>
+                <div class="info-contenido"><p class="info-lbl">Dirección</p><p class="info-val">{{ clienteDetalle.direccion || '—' }}</p></div>
+              </div>
+              <div class="info-fila">
+                <ion-icon name="map-outline" class="info-icon"></ion-icon>
+                <div class="info-contenido"><p class="info-lbl">Sector</p><p class="info-val">{{ clienteDetalle.sector || '—' }}</p></div>
               </div>
               <div class="info-fila" *ngIf="clienteDetalle.notas">
                 <ion-icon name="document-text-outline" class="info-icon"></ion-icon>
