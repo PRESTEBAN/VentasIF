@@ -100,42 +100,32 @@ export class InventarioPage implements OnInit {
     this.items = this.items.map(i => ({ ...i, ingreso: null }));
   }
 
+  incrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) + 1; }
+  decrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) - 1; }
+
   guardarIngresos() {
-    const conIngreso = this.items.filter(i => i.ingreso && i.ingreso > 0);
-    if (conIngreso.length === 0) {
-      this.mensajeIngreso = 'No hay ingresos para guardar';
-      return;
-    }
+    const conCambio = this.items.filter(i => i.ingreso !== null && i.ingreso !== 0);
+    if (conCambio.length === 0) { this.mensajeIngreso = 'No hay cambios para guardar'; return; }
 
     this.guardandoIngreso = true;
     this.mensajeIngreso = '';
-
-    // Registrar uno por uno en secuencia
-    let pendientes = conIngreso.length;
+    let pendientes = conCambio.length;
     let errores = 0;
 
-    conIngreso.forEach(item => {
-      this.inventarioService.registrarIngreso(item.producto_id, item.ingreso!).subscribe({
+    conCambio.forEach(item => {
+      const cantidad = Math.abs(item.ingreso!);
+      const tipo = item.ingreso! > 0 ? 'entrada' : 'salida';
+
+      this.inventarioService.registrarMovimiento(item.producto_id, cantidad, tipo).subscribe({
         next: (res: any) => {
           const idx = this.items.findIndex(i => i.producto_id === item.producto_id);
-          if (idx >= 0) {
-            this.items[idx].stock_actual = res.stock_actual;
-            this.items[idx].ingreso = null;
-          }
+          if (idx >= 0) { this.items[idx].stock_actual = res.stock_actual; this.items[idx].ingreso = null; }
           pendientes--;
-          if (pendientes === 0) {
-            this.guardandoIngreso = false;
-            this.modoIngreso = false;
-            this.mensajeIngreso = errores > 0 ? `${errores} error(es) al guardar` : '';
-          }
+          if (pendientes === 0) { this.guardandoIngreso = false; this.modoIngreso = false; this.mensajeIngreso = errores > 0 ? `${errores} error(es)` : ''; }
         },
         error: (_err: any) => {
-          errores++;
-          pendientes--;
-          if (pendientes === 0) {
-            this.guardandoIngreso = false;
-            this.mensajeIngreso = `${errores} error(es) al guardar`;
-          }
+          errores++; pendientes--;
+          if (pendientes === 0) { this.guardandoIngreso = false; this.mensajeIngreso = `${errores} error(es) al guardar`; }
         }
       });
     });

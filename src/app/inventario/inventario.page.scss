@@ -30,15 +30,15 @@
 
 /* TABS */
 .tabs-row {
-  display: flex; border-bottom: 2px solid #EDE0D0;
-  margin-bottom: 0;
+  display: flex; margin: 0 14px 16px 14px;
+  background: #F0E6DA; border-radius: 12px; padding: 4px;
+  margin-top: 16px;
 }
 .tab-btn {
-  flex: 1; text-align: center; padding: 14px 0;
-  font-size: 14px; font-weight: 600; color: #AAA; cursor: pointer;
-  border-bottom: 3px solid transparent; margin-bottom: -2px;
-  transition: all 0.2s;
-  &.activo { color: #590F23; border-bottom-color: #590F23; }
+  flex: 1; text-align: center; padding: 10px 0;
+  font-size: 13px; font-weight: 600; color: #AAA; cursor: pointer;
+  border-radius: 9px; transition: all 0.2s;
+  &.activo { background: #590F23; color: white; box-shadow: 0 2px 8px rgba(89,15,35,0.3); }
 }
 
 /* LOADING */
@@ -47,12 +47,14 @@
 /* BARRA ACCIÓN */
 .accion-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; background: #fff8f0; border-bottom: 1px solid #EDE0D0;
+  padding: 10px 14px 10px 14px; background: #FFF3E0;
+  border-radius: 12px; margin: 0 14px 12px 14px;
+  border: 1px solid #FFD599;
 }
-.accion-txt { font-size: 12px; color: #888; font-weight: 500; }
+.accion-txt { font-size: 12px; color: #A0522D; font-weight: 600; }
 .accion-btns { display: flex; gap: 8px; }
 .btn-cancelar-sm {
-  padding: 6px 14px; border: 1.5px solid #CCC; background: transparent;
+  padding: 6px 14px; border: 1.5px solid #CCC; background: white;
   border-radius: 20px; font-size: 12px; font-weight: 600; color: #888; cursor: pointer;
 }
 .btn-guardar-sm {
@@ -63,57 +65,88 @@
 }
 .msg-error { font-size: 12px; color: #E53935; text-align: center; padding: 6px; margin: 0; }
 
-/* TABLA */
-.tabla-wrap { overflow-x: auto; }
+/* LISTA DE ITEMS */
+.items-lista { display: flex; flex-direction: column; gap: 8px; padding: 0 14px; }
 
-.inv-tabla {
-  width: 100%; border-collapse: collapse;
-
-  thead tr { background: #590F23; }
-  th { padding: 10px 12px; font-size: 12px; font-weight: 700; color: white; text-align: left; white-space: nowrap; }
-
-  tbody tr {
-    border-bottom: 1px solid #F0E6DA;
-    &:last-child { border-bottom: none; }
-    &:nth-child(even) { background: #FDFAF6; }
-    &.stock-bajo { background: rgba(244, 67, 54, 0.05) !important; }
-  }
-
-  td { padding: 10px 12px; font-size: 13px; color: #333; vertical-align: middle; }
+.item-card {
+  background: white; border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border: 1px solid #F0E6DA;
+  display: flex; align-items: center; gap: 12px;
+  &.stock-bajo { border-left: 3px solid #E53935; }
 }
 
-.col-nombre { min-width: 120px; }
-.col-stock  { width: 100px; text-align: center; }
-.col-ingreso { width: 90px; text-align: center; }
-.col-precio { width: 120px; text-align: right; }
+.item-nombre {
+  flex: 1; font-size: 14px; font-weight: 700; color: #2D1B0E;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
-/* Stock badge */
 .stock-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  background: #E8F5E9; color: #2E7D32; font-weight: 700; font-size: 13px;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 36px; height: 28px; padding: 0 10px;
+  border-radius: 20px; font-weight: 800; font-size: 13px;
+  background: #E8F5E9; color: #2E7D32;
   &.badge-bajo { background: #FFEBEE; color: #C62828; }
 }
 
-/* Input ingreso */
-.ingreso-input {
-  width: 64px; text-align: center;
-  border: 1.5px solid #590F23; border-radius: 8px;
-  padding: 5px 6px; font-size: 13px; font-weight: 600; color: #590F23;
-  background: #FFF8F5; outline: none;
-  &::placeholder { color: #DDD; font-weight: 400; }
+/* Stepper +/- para ingreso */
+.stepper-wrap {
+  display: flex; align-items: center; gap: 0;
+  border: 1.5px solid #590F23; border-radius: 10px; overflow: hidden;
+}
+.step-btn {
+  width: 30px; height: 32px; border: none; background: #590F23;
+  color: white; font-size: 18px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; -webkit-appearance: none;
+  &:active { background: #7A2020; }
+}
+.step-input {
+  width: 42px; height: 32px; border: none; text-align: center;
+  font-size: 14px; font-weight: 700; color: #2D1B0E;
+  background: white; outline: none;
+  &.negativo { color: #E53935; }
+  &.positivo { color: #2E7D32; }
 }
 
-/* Precio tag y input */
-.precio-tag { font-size: 13px; font-weight: 600; color: #333; }
+/* TABLA PRECIOS */
+.items-lista-precios { display: flex; flex-direction: column; gap: 8px; padding: 0 14px; }
+
+.precio-card {
+  background: white; border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border: 1px solid #F0E6DA;
+}
+
+.precio-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.precio-nombre { font-size: 14px; font-weight: 700; color: #2D1B0E; }
+
+.precio-row {
+  display: flex; gap: 10px;
+}
+
+.precio-campo {
+  flex: 1; display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 10px; font-weight: 700; color: #AAA; text-transform: uppercase; letter-spacing: 0.5px; }
+}
+
+.precio-tag {
+  font-size: 15px; font-weight: 800; color: #590F23;
+}
 
 .precio-input-wrap {
   display: flex; align-items: center;
   border: 1.5px solid #590F23; border-radius: 8px;
   overflow: hidden; background: #FFF8F5;
-  max-width: 110px; margin-left: auto;
 }
-.precio-prefix { padding: 5px 6px; font-size: 12px; font-weight: 700; color: #590F23; }
-.precio-input { flex: 1; border: none; background: transparent; padding: 5px 6px 5px 0; font-size: 13px; font-weight: 600; color: #333; outline: none; width: 70px; }
+.precio-prefix { padding: 6px 6px; font-size: 12px; font-weight: 700; color: #590F23; }
+.precio-input { flex: 1; border: none; background: transparent; padding: 6px 6px 6px 0; font-size: 14px; font-weight: 700; color: #333; outline: none; width: 100%; }
 
 /* MENÚ LATERAL */
 .menu-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; &.open { opacity: 1; pointer-events: all; } }

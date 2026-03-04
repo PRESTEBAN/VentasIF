@@ -82,9 +82,8 @@
         <!-- ══ TAB INVENTARIO ══ -->
         <div *ngIf="!cargando && tabActivo === 'inventario'">
 
-          <!-- Barra de acción ingreso -->
           <div class="accion-bar" *ngIf="modoIngreso">
-            <span class="accion-txt">Ingresa las cantidades a añadir</span>
+            <span class="accion-txt">+ agregar · − restar stock</span>
             <div class="accion-btns">
               <button class="btn-cancelar-sm" (click)="cancelarIngreso()">Cancelar</button>
               <button class="btn-guardar-sm" (click)="guardarIngresos()" [disabled]="guardandoIngreso">
@@ -95,47 +94,40 @@
           </div>
           <p class="msg-error" *ngIf="mensajeIngreso">{{ mensajeIngreso }}</p>
 
-          <!-- Tabla inventario -->
-          <div class="tabla-wrap">
-            <table class="inv-tabla">
-              <thead>
-                <tr>
-                  <th class="col-nombre">Nombre</th>
-                  <th class="col-stock">Stock actual</th>
-                  <th class="col-ingreso" *ngIf="modoIngreso">Ingreso</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of items"
-                  [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
-                  <td class="col-nombre">{{ item.nombre }}</td>
-                  <td class="col-stock">
-                    <span class="stock-badge"
-                      [class.badge-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
-                      {{ item.stock_actual }}
-                    </span>
-                  </td>
-                  <td class="col-ingreso" *ngIf="modoIngreso">
-                    <input
-                      type="number"
-                      class="ingreso-input"
-                      [(ngModel)]="item.ingreso"
-                      placeholder="0"
-                      min="1"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="items-lista">
+            <div class="item-card" *ngFor="let item of items"
+              [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
+
+              <span class="item-nombre">{{ item.nombre }}</span>
+
+              <span class="stock-badge"
+                [class.badge-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
+                {{ item.stock_actual }}
+              </span>
+
+              <!-- Stepper solo en modo ingreso -->
+              <div class="stepper-wrap" *ngIf="modoIngreso">
+                <button class="step-btn" (click)="decrementar(item)">−</button>
+                <input
+                  type="number"
+                  class="step-input"
+                  [class.negativo]="(item.ingreso || 0) < 0"
+                  [class.positivo]="(item.ingreso || 0) > 0"
+                  [(ngModel)]="item.ingreso"
+                  placeholder="0"
+                />
+                <button class="step-btn" (click)="incrementar(item)">+</button>
+              </div>
+
+            </div>
           </div>
         </div>
 
         <!-- ══ TAB PRODUCTOS (precios) ══ -->
         <div *ngIf="!cargando && tabActivo === 'productos'">
 
-          <!-- Barra de acción precios -->
           <div class="accion-bar" *ngIf="modoEditarPrecios">
-            <span class="accion-txt">Edita los precios</span>
+            <span class="accion-txt">Edita los precios directamente</span>
             <div class="accion-btns">
               <button class="btn-cancelar-sm" (click)="cancelarEditarPrecios()">Cancelar</button>
               <button class="btn-guardar-sm" (click)="guardarPrecios()" [disabled]="guardandoPrecios">
@@ -145,44 +137,41 @@
             </div>
           </div>
 
-          <!-- Tabla precios -->
-          <div class="tabla-wrap">
-            <table class="inv-tabla">
-              <thead>
-                <tr>
-                  <th class="col-nombre">Nombre</th>
-                  <th class="col-precio">Precio x menor</th>
-                  <th class="col-precio">Precio x mayor</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of items">
-                  <td class="col-nombre">{{ item.nombre }}</td>
-                  <td class="col-precio">
-                    <span *ngIf="!modoEditarPrecios" class="precio-tag">
-                      ${{ item.precio_x_menor | number:'1.2-2' }}
-                    </span>
-                    <div *ngIf="modoEditarPrecios" class="precio-input-wrap">
-                      <span class="precio-prefix">$</span>
-                      <input type="number" class="precio-input"
-                        [(ngModel)]="editPrecios[item.producto_id].menor"
-                        step="0.01" min="0" />
-                    </div>
-                  </td>
-                  <td class="col-precio">
-                    <span *ngIf="!modoEditarPrecios" class="precio-tag">
-                      ${{ item.precio_x_mayor | number:'1.2-2' }}
-                    </span>
-                    <div *ngIf="modoEditarPrecios" class="precio-input-wrap">
-                      <span class="precio-prefix">$</span>
-                      <input type="number" class="precio-input"
-                        [(ngModel)]="editPrecios[item.producto_id].mayor"
-                        step="0.01" min="0" />
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div class="items-lista-precios">
+            <div class="precio-card" *ngFor="let item of items">
+
+              <div class="precio-card-header">
+                <span class="precio-nombre">{{ item.nombre }}</span>
+              </div>
+
+              <div class="precio-row">
+                <div class="precio-campo">
+                  <label>Precio x menor</label>
+                  <span class="precio-tag" *ngIf="!modoEditarPrecios">
+                    ${{ item.precio_x_menor | number:'1.2-2' }}
+                  </span>
+                  <div class="precio-input-wrap" *ngIf="modoEditarPrecios">
+                    <span class="precio-prefix">$</span>
+                    <input type="number" class="precio-input"
+                      [(ngModel)]="editPrecios[item.producto_id].menor"
+                      step="0.01" min="0" />
+                  </div>
+                </div>
+                <div class="precio-campo">
+                  <label>Precio x mayor</label>
+                  <span class="precio-tag" *ngIf="!modoEditarPrecios">
+                    ${{ item.precio_x_mayor | number:'1.2-2' }}
+                  </span>
+                  <div class="precio-input-wrap" *ngIf="modoEditarPrecios">
+                    <span class="precio-prefix">$</span>
+                    <input type="number" class="precio-input"
+                      [(ngModel)]="editPrecios[item.producto_id].mayor"
+                      step="0.01" min="0" />
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
 

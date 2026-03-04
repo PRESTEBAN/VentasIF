@@ -44,6 +44,14 @@ export class InventarioService {
     );
   }
 
+  registrarMovimiento(producto_id: number, cantidad: number, tipo: 'entrada' | 'salida'): Observable<any> {
+    return this.http.post(
+      `${this.invUrl}/bodega/movimiento`,
+      { producto_id, cantidad, tipo, motivo: tipo === 'entrada' ? 'Ingreso manual' : 'Ajuste de stock' },
+      { headers: this.getHeaders() }
+    );
+  }
+
   actualizarPrecios(id: number, precio_x_mayor: number, precio_x_menor: number): Observable<any> {
     return this.http.put(
       `${this.prodUrl}/${id}/precios`,
