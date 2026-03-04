@@ -1,73 +1,56 @@
 import { Injectable } from '@angular/core';
-import { BleClient, ScanResult } from '@capacitor-community/bluetooth-le';
-
-const SPP_SERVICE    = '49535343-fe7d-4ae5-8fa9-9fafd205e455';
-const SPP_WRITE_CHAR = '49535343-1e4d-4bd9-ba61-23c647249616';
 
 @Injectable({ providedIn: 'root' })
 export class PrinterService {
 
   private impresora: { id: string; name: string } | null = null;
-  private deviceId: string | null = null;
 
   get dispositivoConectado() { return this.impresora; }
 
-  async inicializar(): Promise<void> {
-    await BleClient.initialize({ androidNeverForLocation: true });
+  private get bt(): any {
+    return (window as any).bluetoothSerial;
   }
 
   async escanearDispositivos(): Promise<any[]> {
-    const devices: any[] = [];
-    try {
-      await this.inicializar();
-      await BleClient.requestLEScan({ allowDuplicates: false }, (result: ScanResult) => {
-        const existe = devices.find((d: any) => d.address === result.device.deviceId);
-        if (!existe) {
-          devices.push({ address: result.device.deviceId, name: result.device.name || 'Desconocido' });
-        }
-      });
-      await new Promise(resolve => setTimeout(resolve, 4000));
-      await BleClient.stopLEScan();
-    } catch (e) { console.error('Error escaneando:', e); }
-    return devices;
+    return new Promise((resolve) => {
+      if (!this.bt) { resolve([]); return; }
+      this.bt.list(
+        (devices: any[]) => resolve(devices || []),
+        () => resolve([])
+      );
+    });
   }
 
   async conectar(address: string, name: string): Promise<void> {
-    await this.inicializar();
-    await BleClient.connect(address);
-    this.deviceId  = address;
-    this.impresora = { id: address, name };
+    return new Promise((resolve, reject) => {
+      if (!this.bt) { reject(new Error('Plugin no disponible')); return; }
+      this.bt.connect(
+        address,
+        () => { this.impresora = { id: address, name }; resolve(); },
+        (err: any) => reject(new Error(err || 'Error al conectar'))
+      );
+    });
   }
 
   async desconectar(): Promise<void> {
-    try { if (this.deviceId) await BleClient.disconnect(this.deviceId); } catch {}
-    this.impresora = null;
-    this.deviceId  = null;
+    return new Promise((resolve) => {
+      if (!this.bt) { resolve(); return; }
+      this.bt.disconnect(
+        () => { this.impresora = null; resolve(); },
+        () => { this.impresora = null; resolve(); }
+      );
+    });
   }
 
   async estaConectado(): Promise<boolean> {
-    if (!this.deviceId) return false;
-    try {
-      const result = await BleClient.getConnectedDevices([]);
-      return result.some((d: any) => d.deviceId === this.deviceId);
-    } catch { return false; }
+    return new Promise((resolve) => {
+      if (!this.bt) { resolve(false); return; }
+      this.bt.isConnected(() => resolve(true), () => resolve(false));
+    });
   }
 
   async descubrirServicios(): Promise<string> {
-    if (!this.deviceId) return 'Sin dispositivo conectado';
-    try {
-      const services = await BleClient.getServices(this.deviceId);
-      let info = '';
-      for (const service of services) {
-        info += `SERVICE: ${service.uuid}\n`;
-        for (const char of service.characteristics) {
-          info += `  CHAR: ${char.uuid} props: ${JSON.stringify(char.properties)}\n`;
-        }
-      }
-      return info || 'Sin servicios encontrados';
-    } catch (e: any) {
-      return `Error: ${e.message}`;
-    }
+    return 'Bluetooth clásico SPP - conexión directa sin UUIDs';
   }
 
   async imprimirRecibo(datos: DatosRecibo): Promise<void> {
@@ -122,16 +105,13 @@ export class PrinterService {
     t += LINEA + LF + CENTER + '¡Gracias por su compra!' + LF + 'Industrial Fatima' + LF;
     t += LF + LF + LF + CUT;
 
-    const encoder  = new TextEncoder();
-    const bytes    = encoder.encode(t);
-    const CHUNK    = 20;
-
-    for (let i = 0; i < bytes.length; i += CHUNK) {
-      const chunk    = bytes.slice(i, i + CHUNK);
-      const dataView = new DataView(chunk.buffer);
-      await BleClient.writeWithoutResponse(this.deviceId!, SPP_SERVICE, SPP_WRITE_CHAR, dataView);
-      await new Promise(r => setTimeout(r, 50));
-    }
+    return new Promise((resolve, reject) => {
+      this.bt.write(
+        t,
+        () => resolve(),
+        (err: any) => reject(new Error(err || 'Error al escribir'))
+      );
+    });
   }
 }
 
