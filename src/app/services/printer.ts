@@ -124,7 +124,7 @@ export class PrinterService {
 
     const encoder  = new TextEncoder();
     const bytes    = encoder.encode(t);
-    const CHUNK    = 100;
+    const CHUNK    = 20;
 
     for (let i = 0; i < bytes.length; i += CHUNK) {
       const chunk    = bytes.slice(i, i + CHUNK);
