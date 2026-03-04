@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { forkJoin, Subscription } from 'rxjs';
-import { SocketService } from '../services/socket';
+import { SocketService } from '../services/socket.service';
 
 @Component({
   selector: 'app-tab3',
@@ -112,10 +112,14 @@ export class Tab3Page implements OnInit, OnDestroy {
       this.cargarDatosSilencioso();
     });
 
-    // Cierre registrado por otro usuario → recargar
+    // Cierre registrado por otro usuario → resetear todo igual que quien cerró
     const cierreSub = this.socketService.on('cierre_registrado').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
-      this.cargarDatosSilencioso();
+      this.ventasRealizadas = 0; this.totalEfectivo = 0; this.totalTransferencias = 0;
+      this.totalCheques = 0; this.totalPendientes = 0; this.totalIngresosVentas = 0; this.totalEgresos = 0;
+      this.billetes = null; this.monedas = null; this.transferenciasDesglose = null;
+      this.chequesDesglose = null; this.totalDesglose = 0;
+      this.mostrarResultado = false; this.errorGuardar = '';
     });
 
     this.socketSubs = [ventaSub, egresoSub, cierreSub];
