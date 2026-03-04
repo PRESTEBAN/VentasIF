@@ -22,6 +22,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   menuAbierto = false;
   usuarioActual: string = '';
+  vendedorNombreCompleto: string = '';
 
   busquedaCliente = '';
   errorCliente = '';
@@ -89,6 +90,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.cargarClientes();
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
+    this.vendedorNombreCompleto = [user?.nombre, user?.apellido].filter(Boolean).join(' ') || this.usuarioActual;
     this.carritoSub = this.carritoEstado.abrirCarrito.subscribe(() => {
       this.mostrarCarrito = true;
     });
@@ -428,10 +430,14 @@ export class Tab1Page implements OnInit, OnDestroy {
       productos: this.carrito.map(item => ({ producto_id: item.producto_id, cantidad: item.cantidad, precio_unitario: item.precio_unitario, descuento: item.descuento }))
     };
     this.ventasRutaService.create(payload).subscribe({
-      next: () => {
+      next: (res: any) => {
         this.ultimoRecibo = {
-          clienteNombre: `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
-          clienteCedula: this.clienteSeleccionado!.cedula,
+          ventaId:           res?.id,
+          clienteNombre:     `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
+          clienteCedula:     this.clienteSeleccionado!.cedula,
+          clienteTelefono:   this.clienteSeleccionado!.telefono  || '-',
+          clienteDireccion:  this.clienteSeleccionado!.direccion || '-',
+          vendedor:          this.vendedorNombreCompleto,
           items: this.carrito.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio_unitario, descuento: i.descuento, subtotal: i.subtotal })),
           subtotal: totales.subtotal, descuento: totales.descuento, iva: totales.iva,
           ivaPercent: this.ivaPercent, total: totales.total, formaPago: this.formaPago,
