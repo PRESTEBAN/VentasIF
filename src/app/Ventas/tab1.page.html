@@ -97,10 +97,30 @@
                 <ion-icon name="arrow-forward-outline"></ion-icon>
               </div>
             </div>
+
+            <!-- Error -->
             <p class="error-cliente" *ngIf="errorCliente">
               <ion-icon name="alert-circle-outline"></ion-icon>
               {{ errorCliente }}
             </p>
+
+            <!-- Lista de coincidencias múltiples -->
+            <div class="coincidentes-lista" *ngIf="clientesCoincidentes.length > 0">
+              <p class="coincidentes-titulo">
+                <ion-icon name="people-outline"></ion-icon>
+                {{ clientesCoincidentes.length }} clientes encontrados
+              </p>
+              <div class="coincidente-item" *ngFor="let c of clientesCoincidentes" (click)="seleccionarCliente(c)">
+                <div class="coinc-avatar">
+                  <ion-icon name="person-outline"></ion-icon>
+                </div>
+                <div class="coinc-datos">
+                  <p class="coinc-nombre">{{ c.nombre }} {{ c.apellido }}</p>
+                  <p class="coinc-sub">{{ c.cedula }}{{ c.nombre_negocio ? ' · ' + c.nombre_negocio : '' }}</p>
+                </div>
+                <ion-icon name="chevron-forward-outline" class="coinc-arrow"></ion-icon>
+              </div>
+            </div>
           </div>
 
           <!-- Con cliente seleccionado -->
@@ -112,7 +132,7 @@
               <p class="cliente-nombre-sel">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
               <p class="cliente-cedula-sel">{{ clienteSeleccionado.cedula }}</p>
             </div>
-            <div class="cliente-cambiar-btn" (click)="clienteSeleccionado = null; busquedaCliente = ''; errorCliente = ''">
+            <div class="cliente-cambiar-btn" (click)="limpiarCliente()">
               <ion-icon name="close-outline"></ion-icon>
             </div>
           </div>
@@ -133,20 +153,16 @@
             [class.bloqueado]="!clienteSeleccionado || (producto.stock ?? 0) <= 0"
             (click)="abrirProducto(producto)"
           >
-            <!-- Badge stock bajo -->
             <div class="stock-badge" *ngIf="(producto.stock ?? 0) <= 5 && (producto.stock ?? 0) > 0">
               <ion-icon name="warning-outline"></ion-icon>
             </div>
-
             <div class="producto-img-placeholder">
               <ion-icon name="cube-outline"></ion-icon>
             </div>
-
             <p class="producto-nombre">{{ producto.nombre }}</p>
             <p class="producto-descripcion">{{ producto.descripcion || producto.categoria }}</p>
-
             <div class="producto-footer">
-              <span class="producto-precio">${{ (+producto.precio_x_menor).toFixed(2) }}</span>
+              <span class="producto-precio">${{ (+producto.precio_x_mayor).toFixed(2) }}</span>
               <div class="stock-wrap">
                 <span class="producto-stock" [class.stock-bajo]="(producto.stock ?? 0) <= 5">
                   {{ producto.stock }}
@@ -154,7 +170,6 @@
                 <span class="stock-label">stock</span>
               </div>
             </div>
-
             <div class="lock-overlay" *ngIf="!clienteSeleccionado || (producto.stock ?? 0) <= 0">
               <ion-icon [name]="!clienteSeleccionado ? 'lock-closed-outline' : 'close-circle-outline'"></ion-icon>
               <span>{{ !clienteSeleccionado ? 'Sin cliente' : 'Agotado' }}</span>
@@ -382,89 +397,54 @@
 <!-- ===== MODAL IMPRESIÓN ===== -->
 <div class="print-overlay" *ngIf="mostrarModalImpresion">
   <div class="print-card" (click)="$event.stopPropagation()">
-
-    <!-- ÉXITO — preguntar si imprimir -->
     <ng-container *ngIf="estadoImpresion === 'preguntar'">
-      <div class="print-icono-wrap ok">
-        <ion-icon name="checkmark-outline"></ion-icon>
-      </div>
+      <div class="print-icono-wrap ok"><ion-icon name="checkmark-outline"></ion-icon></div>
       <h2 class="print-titulo">¡Pedido registrado!</h2>
       <p class="print-sub">¿Deseas imprimir el recibo?</p>
       <div class="print-aviso" *ngIf="!printerService.dispositivoConectado">
-        <ion-icon name="bluetooth-outline"></ion-icon>
-        <span>Sin impresora conectada.</span>
+        <ion-icon name="bluetooth-outline"></ion-icon><span>Sin impresora conectada.</span>
       </div>
       <div class="print-btns">
-        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">
-          <ion-icon name="close-outline"></ion-icon> No imprimir
-        </button>
-        <button class="print-btn print-btn-connect"
-          *ngIf="!printerService.dispositivoConectado"
-          (click)="abrirConexionBT()">
-          <ion-icon name="bluetooth-outline"></ion-icon> Conectar
-        </button>
-        <button class="print-btn print-btn-print"
-          *ngIf="printerService.dispositivoConectado"
-          (click)="imprimirRecibo()" [disabled]="imprimiendo">
+        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()"><ion-icon name="close-outline"></ion-icon> No imprimir</button>
+        <button class="print-btn print-btn-connect" *ngIf="!printerService.dispositivoConectado" (click)="abrirConexionBT()"><ion-icon name="bluetooth-outline"></ion-icon> Conectar</button>
+        <button class="print-btn print-btn-print" *ngIf="printerService.dispositivoConectado" (click)="imprimirRecibo()" [disabled]="imprimiendo">
           <ion-spinner name="crescent" *ngIf="imprimiendo" style="width:14px;height:14px"></ion-spinner>
           <ion-icon name="print-outline" *ngIf="!imprimiendo"></ion-icon>
           {{ imprimiendo ? 'Imprimiendo...' : 'Imprimir' }}
         </button>
       </div>
     </ng-container>
-
-    <!-- IMPRESO OK -->
     <ng-container *ngIf="estadoImpresion === 'impreso'">
-      <div class="print-icono-wrap ok">
-        <ion-icon name="print-outline"></ion-icon>
-      </div>
+      <div class="print-icono-wrap ok"><ion-icon name="print-outline"></ion-icon></div>
       <h2 class="print-titulo">¡Impreso!</h2>
       <div class="print-btns">
         <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
-        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo">
-          <ion-icon name="refresh-outline"></ion-icon> Reimprimir
-        </button>
+        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo"><ion-icon name="refresh-outline"></ion-icon> Reimprimir</button>
       </div>
     </ng-container>
-
-    <!-- ERROR -->
     <ng-container *ngIf="estadoImpresion === 'error'">
-      <div class="print-icono-wrap error">
-        <ion-icon name="alert-outline"></ion-icon>
-      </div>
+      <div class="print-icono-wrap error"><ion-icon name="alert-outline"></ion-icon></div>
       <h2 class="print-titulo error">Error al imprimir</h2>
       <p class="print-sub">{{ errorImpresion }}</p>
       <div class="print-btns">
         <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
-        <button class="print-btn print-btn-connect" (click)="abrirConexionBT()">
-          <ion-icon name="bluetooth-outline"></ion-icon> Reconectar
-        </button>
-        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo">
-          <ion-icon name="print-outline"></ion-icon> Reintentar
-        </button>
+        <button class="print-btn print-btn-connect" (click)="abrirConexionBT()"><ion-icon name="bluetooth-outline"></ion-icon> Reconectar</button>
+        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo"><ion-icon name="print-outline"></ion-icon> Reintentar</button>
       </div>
-      <button class="print-btn print-btn-skip" style="width:100%;margin-top:6px;font-size:10px" (click)="verServicios()">
-        🔍 Ver servicios BLE
-      </button>
+      <button class="print-btn print-btn-skip" style="width:100%;margin-top:6px;font-size:10px" (click)="verServicios()">🔍 Ver servicios BLE</button>
       <pre style="font-size:9px;color:#555;width:100%;overflow:auto;max-height:150px;background:#f5f5f5;padding:6px;border-radius:8px;margin:0" *ngIf="serviciosDebug">{{ serviciosDebug }}</pre>
     </ng-container>
-
   </div>
 </div>
 
 <!-- ===== MODAL BLUETOOTH ===== -->
 <div class="print-overlay" *ngIf="mostrarModalBT">
   <div class="print-card" (click)="$event.stopPropagation()">
-    <div class="print-icono-wrap bt">
-      <ion-icon name="bluetooth-outline"></ion-icon>
-    </div>
+    <div class="print-icono-wrap bt"><ion-icon name="bluetooth-outline"></ion-icon></div>
     <h2 class="print-titulo">Conectar impresora</h2>
-
     <div class="bt-loading" *ngIf="escaneandoBT">
-      <ion-spinner name="crescent"></ion-spinner>
-      <p>Buscando dispositivos pareados...</p>
+      <ion-spinner name="crescent"></ion-spinner><p>Buscando dispositivos pareados...</p>
     </div>
-
     <div class="bt-lista" *ngIf="!escaneandoBT">
       <div class="bt-item" *ngFor="let d of dispositivosBT" (click)="conectarImpresora(d)">
         <ion-icon name="print-outline"></ion-icon>
@@ -475,16 +455,11 @@
         <ion-spinner name="crescent" *ngIf="conectandoBT === d.address" style="width:18px;height:18px"></ion-spinner>
         <ion-icon name="checkmark-circle" *ngIf="printerService.dispositivoConectado?.id === d.address" style="color:#2E7D32;font-size:20px"></ion-icon>
       </div>
-      <p class="bt-vacio" *ngIf="dispositivosBT.length === 0">
-        No hay dispositivos pareados. Paréalos primero en Ajustes Bluetooth del celular.
-      </p>
+      <p class="bt-vacio" *ngIf="dispositivosBT.length === 0">No hay dispositivos pareados. Paréalos primero en Ajustes Bluetooth del celular.</p>
     </div>
-
     <div class="print-btns">
       <button class="print-btn print-btn-skip" (click)="cerrarConexionBT()">Cerrar</button>
-      <button class="print-btn print-btn-connect" (click)="escanearBT()" [disabled]="escaneandoBT">
-        <ion-icon name="search-outline"></ion-icon> Buscar
-      </button>
+      <button class="print-btn print-btn-connect" (click)="escanearBT()" [disabled]="escaneandoBT"><ion-icon name="search-outline"></ion-icon> Buscar</button>
     </div>
   </div>
 </div>

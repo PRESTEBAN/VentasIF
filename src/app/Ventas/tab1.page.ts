@@ -27,6 +27,9 @@ export class Tab1Page implements OnInit, OnDestroy {
   clienteSeleccionado: Cliente | null = null;
   clientes: Cliente[] = [];
 
+  // Lista de coincidencias cuando hay múltiples resultados
+  clientesCoincidentes: Cliente[] = [];
+
   mostrarAgregarCliente = false;
   nuevoCliente = {
     cedula: '', nombre: '', apellido: '',
@@ -38,7 +41,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   mostrarProducto = false;
   productoSeleccionado: Producto | null = null;
-  itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'mayor' };
+  itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'menor' };
 
   mostrarCarrito = false;
   carrito: any[] = [];
@@ -60,7 +63,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   errorImpresion  = '';
   imprimiendo     = false;
   ultimoRecibo:   any = null;
-  serviciosDebug  = ''; // datos del último pedido para reimprimir
+  serviciosDebug  = '';
 
   // ── Bluetooth ──
   mostrarModalBT  = false;
@@ -85,7 +88,6 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.cargarClientes();
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
-
     this.carritoSub = this.carritoEstado.abrirCarrito.subscribe(() => {
       this.mostrarCarrito = true;
     });
@@ -97,9 +99,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.iniciarPolling();
   }
 
-  ionViewWillLeave() {
-    this.detenerPolling();
-  }
+  ionViewWillLeave() { this.detenerPolling(); }
 
   ngOnDestroy() {
     if (this.carritoSub) this.carritoSub.unsubscribe();
@@ -116,17 +116,14 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // Recarga stock en segundo plano sin spinner ni interrupciones
   actualizarStockSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.mostrarProducto) return;
-
     this.inventarioService.getBodega().subscribe({
       next: (inventario) => {
         this.productos = this.productos.map(p => {
           const inv = inventario.find((i: any) => i.producto_id === p.id);
           const stockBD = inv ? inv.stock_actual : 0;
-          // Restar lo que ya está en el carrito para mantener consistencia
           const enCarrito = this.carrito
             .filter(item => item.producto_id === p.id)
             .reduce((acc, item) => acc + item.cantidad, 0);
@@ -153,28 +150,18 @@ export class Tab1Page implements OnInit, OnDestroy {
               const inv = inventario.find(i => i.producto_id === p.id);
               return { ...p, stock: inv ? inv.stock_actual : 0 };
             });
-
-            // Restar el stock de los productos que ya están en el carrito
-            // para que la UI sea consistente después de recargar
             this.productos = productosConStock.map(p => {
               const enCarrito = this.carrito
                 .filter(item => item.producto_id === p.id)
                 .reduce((acc, item) => acc + item.cantidad, 0);
               return { ...p, stock: (p.stock ?? 0) - enCarrito };
             });
-
             this.cargandoProductos = false;
           },
-          error: () => {
-            this.productos = productosNormalizados;
-            this.cargandoProductos = false;
-          }
+          error: () => { this.productos = productosNormalizados; this.cargandoProductos = false; }
         });
       },
-      error: (err: any) => {
-        console.error('Error cargando productos:', err);
-        this.cargandoProductos = false;
-      }
+      error: (err: any) => { console.error('Error cargando productos:', err); this.cargandoProductos = false; }
     });
   }
 
@@ -188,44 +175,64 @@ export class Tab1Page implements OnInit, OnDestroy {
   // ---- MENU ----
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
-
-  cerrarSesion() {
-    this.authService.logout();
-    this.menuAbierto = false;
-    this.router.navigate(['/login']);
-  }
-
-  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-  irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
+  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']); }
 
   // ---- BUSCAR CLIENTE ----
   buscarCliente() {
     const valor = this.busquedaCliente.trim();
-    const esCedula = /^\d{10}$/.test(valor);
-    const esTexto = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s]{2,}$/.test(valor);
+    this.clientesCoincidentes = [];
+    this.errorCliente = '';
 
-    if (!esCedula && !esTexto) {
+    if (!valor || valor.length < 2) {
       this.errorCliente = 'Ingresa una cédula (10 dígitos) o apellido válido';
-      this.clienteSeleccionado = null;
       return;
     }
 
-    const encontrado = this.clientes.find(c =>
-      c.cedula === valor ||
-      c.apellido.toLowerCase() === valor.toLowerCase() ||
-      (c.nombre_negocio && c.nombre_negocio.toLowerCase().includes(valor.toLowerCase()))
-    );
+    const esCedula = /^\d{10}$/.test(valor);
 
-    if (encontrado) {
-      this.clienteSeleccionado = encontrado;
-      this.errorCliente = '';
-      this.cargarCarritoGuardado(encontrado.id!);
+    let coincidencias: Cliente[];
+
+    if (esCedula) {
+      // Búsqueda exacta por cédula
+      coincidencias = this.clientes.filter(c => c.cedula === valor);
     } else {
+      // Búsqueda por apellido, nombre o negocio (parcial, sin importar mayúsculas)
+      const q = valor.toLowerCase();
+      coincidencias = this.clientes.filter(c =>
+        c.apellido.toLowerCase().includes(q) ||
+        c.nombre.toLowerCase().includes(q) ||
+        (c.nombre_negocio && c.nombre_negocio.toLowerCase().includes(q))
+      );
+    }
+
+    if (coincidencias.length === 0) {
       this.clienteSeleccionado = null;
       this.errorCliente = 'Cliente no encontrado. Usa el botón + para registrarlo.';
+    } else if (coincidencias.length === 1) {
+      // Solo uno — seleccionar directo
+      this.seleccionarCliente(coincidencias[0]);
+    } else {
+      // Múltiples — mostrar lista
+      this.clientesCoincidentes = coincidencias;
     }
+  }
+
+  seleccionarCliente(cliente: Cliente) {
+    this.clienteSeleccionado = cliente;
+    this.clientesCoincidentes = [];
+    this.errorCliente = '';
+    this.cargarCarritoGuardado(cliente.id!);
+  }
+
+  limpiarCliente() {
+    this.clienteSeleccionado = null;
+    this.clientesCoincidentes = [];
+    this.busquedaCliente = '';
+    this.errorCliente = '';
   }
 
   cargarCarritoGuardado(clienteId: number) {
@@ -236,7 +243,6 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.ivaPercent = data.iva_percent ?? 0;
           this.formaPago = data.forma_pago ?? 'Efectivo';
           this.montoRecibido = data.monto_recibido ?? 0;
-          // Recargar productos para reflejar el stock con el carrito cargado
           this.cargarProductos();
         } else {
           this.carrito = [];
@@ -245,10 +251,7 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.montoRecibido = 0;
         }
       },
-      error: () => {
-        this.carrito = [];
-        this.montoRecibido = 0;
-      }
+      error: () => { this.carrito = []; this.montoRecibido = 0; }
     });
   }
 
@@ -257,11 +260,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   cerrarAgregarCliente() {
     this.mostrarAgregarCliente = false;
-    this.nuevoCliente = {
-      cedula: '', nombre: '', apellido: '',
-      negocio: '', email: '', direccion: '',
-      sector: '', telefono: '', esParticular: false
-    };
+    this.nuevoCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
     this.erroresCliente = {};
   }
 
@@ -270,71 +269,41 @@ export class Tab1Page implements OnInit, OnDestroy {
     let valido = true;
 
     const cedula = this.nuevoCliente.cedula.trim();
-    if (!cedula) {
-      this.erroresCliente.cedula = 'La cédula es requerida'; valido = false;
-    } else if (/[^0-9]/.test(cedula)) {
-      this.erroresCliente.cedula = 'La cédula solo debe contener números'; valido = false;
-    } else if (cedula.length !== 10) {
-      this.erroresCliente.cedula = 'La cédula debe tener exactamente 10 dígitos'; valido = false;
-    }
+    if (!cedula) { this.erroresCliente.cedula = 'La cédula es requerida'; valido = false; }
+    else if (/[^0-9]/.test(cedula)) { this.erroresCliente.cedula = 'Solo números'; valido = false; }
+    else if (cedula.length !== 10) { this.erroresCliente.cedula = 'Debe tener 10 dígitos'; valido = false; }
 
-    if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre)) {
-      this.erroresCliente.nombre = 'Nombre inválido'; valido = false;
-    }
-
-    if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido)) {
-      this.erroresCliente.apellido = 'Apellido inválido'; valido = false;
-    }
-
-    if (!this.nuevoCliente.direccion.trim() || this.nuevoCliente.direccion.trim().length < 5) {
-      this.erroresCliente.direccion = 'Dirección requerida (mínimo 5 caracteres)'; valido = false;
-    }
+    if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre))
+      { this.erroresCliente.nombre = 'Nombre inválido'; valido = false; }
+    if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido))
+      { this.erroresCliente.apellido = 'Apellido inválido'; valido = false; }
+    if (!this.nuevoCliente.direccion.trim() || this.nuevoCliente.direccion.trim().length < 5)
+      { this.erroresCliente.direccion = 'Dirección requerida (mín. 5 chars)'; valido = false; }
 
     const tel = this.nuevoCliente.telefono.trim();
-    if (!tel) {
-      this.erroresCliente.telefono = 'El teléfono es requerido'; valido = false;
-    } else if (/[^0-9]/.test(tel)) {
-      this.erroresCliente.telefono = 'El teléfono solo debe contener números'; valido = false;
-    } else if (tel.length !== 10 && tel.length !== 7) {
-      this.erroresCliente.telefono = 'Ingresa un celular (10 dígitos) o fijo local (7 dígitos)'; valido = false;
-    }
+    if (!tel) { this.erroresCliente.telefono = 'Requerido'; valido = false; }
+    else if (/[^0-9]/.test(tel)) { this.erroresCliente.telefono = 'Solo números'; valido = false; }
+    else if (tel.length !== 10 && tel.length !== 7) { this.erroresCliente.telefono = 'Celular (10) o fijo (7)'; valido = false; }
 
-    if (this.nuevoCliente.email) {
-      if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.nuevoCliente.email)) {
-        this.erroresCliente.email = 'Email inválido (ej: nombre@dominio.com)'; valido = false;
-      }
-    }
+    if (this.nuevoCliente.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.nuevoCliente.email))
+      { this.erroresCliente.email = 'Email inválido'; valido = false; }
 
     if (!valido) return;
 
     const clientePayload: Cliente = {
-      cedula: this.nuevoCliente.cedula.trim(),
-      nombre: this.nuevoCliente.nombre.trim(),
-      apellido: this.nuevoCliente.apellido.trim(),
+      cedula: cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
       tipo_cliente: this.nuevoCliente.esParticular ? 'particular' : 'negocio',
-      direccion: this.nuevoCliente.direccion.trim(),
-      sector: this.nuevoCliente.sector.trim() || null,
-      telefono: this.nuevoCliente.telefono.trim(),
-      email: this.nuevoCliente.email.trim() || null,
-      limite_credito: 0,
-      notas: null,
+      direccion: this.nuevoCliente.direccion.trim(), sector: this.nuevoCliente.sector.trim() || null,
+      telefono: tel, email: this.nuevoCliente.email.trim() || null, limite_credito: 0, notas: null,
     };
 
     this.guardandoCliente = true;
     this.clienteService.create(clientePayload).subscribe({
-      next: () => {
-        this.guardandoCliente = false;
-        this.cargarClientes();
-        this.cerrarAgregarCliente();
-      },
+      next: () => { this.guardandoCliente = false; this.cargarClientes(); this.cerrarAgregarCliente(); },
       error: (err: any) => {
         this.guardandoCliente = false;
-        if (err.status === 400) {
-          this.erroresCliente.general = 'Datos inválidos, revisa los campos';
-        } else {
-          this.erroresCliente.general = 'Error al guardar, intenta de nuevo';
-        }
+        this.erroresCliente.general = err.status === 400 ? 'Datos inválidos' : 'Error al guardar';
       }
     });
   }
@@ -342,18 +311,11 @@ export class Tab1Page implements OnInit, OnDestroy {
   // ---- PRODUCTO ----
   async abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
-
     if ((producto.stock ?? 0) <= 0) {
-      const toast = await this.toastCtrl.create({
-        message: 'Sin stock disponible',
-        duration: 2000,
-        position: 'bottom',
-        color: 'danger'
-      });
+      const toast = await this.toastCtrl.create({ message: 'Sin stock disponible', duration: 2000, position: 'bottom', color: 'danger' });
       await toast.present();
       return;
     }
-
     this.productoSeleccionado = producto;
     this.itemProducto = {
       cantidad: 0,
@@ -375,29 +337,18 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   onCantidadChange(valor: number) {
     const maxStock = this.productoSeleccionado?.stock ?? 0;
-    if (valor > maxStock) {
-      this.itemProducto.cantidad = maxStock;
-    } else if (valor < 0) {
-      this.itemProducto.cantidad = 0;
-    } else {
-      this.itemProducto.cantidad = valor;
-    }
+    this.itemProducto.cantidad = valor > maxStock ? maxStock : valor < 0 ? 0 : valor;
     this.calcularSubtotal();
   }
 
   incrementarCantidad() {
-    const maxStock = this.productoSeleccionado?.stock ?? 0;
-    if (this.itemProducto.cantidad < maxStock) {
-      this.itemProducto.cantidad++;
-      this.calcularSubtotal();
+    if (this.itemProducto.cantidad < (this.productoSeleccionado?.stock ?? 0)) {
+      this.itemProducto.cantidad++; this.calcularSubtotal();
     }
   }
 
   decrementarCantidad() {
-    if (this.itemProducto.cantidad > 0) {
-      this.itemProducto.cantidad--;
-      this.calcularSubtotal();
-    }
+    if (this.itemProducto.cantidad > 0) { this.itemProducto.cantidad--; this.calcularSubtotal(); }
   }
 
   cerrarProducto() { this.mostrarProducto = false; }
@@ -409,7 +360,6 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   agregarAlCarrito() {
     if (this.itemProducto.cantidad <= 0 || this.itemProducto.precio <= 0) return;
-
     this.carrito.push({
       producto_id: this.productoSeleccionado!.id,
       nombre: this.productoSeleccionado!.nombre,
@@ -419,26 +369,16 @@ export class Tab1Page implements OnInit, OnDestroy {
       descuento: this.itemProducto.descuento,
       subtotal: this.itemProducto.subtotal
     });
-
-    // Actualizar stock local inmediatamente para respuesta visual instantánea
     const idx = this.productos.findIndex(p => p.id === this.productoSeleccionado!.id);
     if (idx !== -1) {
-      this.productos[idx] = {
-        ...this.productos[idx],
-        stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad
-      };
+      this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad };
     }
-
     this.cerrarProducto();
   }
 
   // ---- CARRITO ----
   abrirCarrito() { this.mostrarCarrito = true; }
-
-  cerrarCarrito() {
-    this.mostrarCarrito = false;
-    this.montoRecibido = 0;
-  }
+  cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
   calcularTotal() {
     const subtotal = this.carrito.reduce((acc, i) => acc + i.subtotal, 0);
@@ -448,51 +388,30 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   calcularVuelto(): number {
-    const total = this.calcularTotal().total;
-    return Math.max(0, this.montoRecibido - total);
+    return Math.max(0, this.montoRecibido - this.calcularTotal().total);
   }
 
   async guardarPedido() {
     if (this.carrito.length === 0) return;
-
     if (!this.clienteSeleccionado) {
-      const toast = await this.toastCtrl.create({
-        message: 'Selecciona un cliente primero',
-        duration: 2000,
-        position: 'bottom',
-        color: 'warning'
-      });
-      await toast.present();
-      return;
+      const toast = await this.toastCtrl.create({ message: 'Selecciona un cliente primero', duration: 2000, position: 'bottom', color: 'warning' });
+      await toast.present(); return;
     }
-
     this.guardandoCarrito = true;
     this.carritoPendiente.guardar({
-      cliente_id: this.clienteSeleccionado.id!,
-      items: this.carrito,
-      iva_percent: this.ivaPercent,
-      forma_pago: this.formaPago,
+      cliente_id: this.clienteSeleccionado.id!, items: this.carrito,
+      iva_percent: this.ivaPercent, forma_pago: this.formaPago,
       monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
       vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
     }).subscribe({
       next: async () => {
         this.guardandoCarrito = false;
-        const toast = await this.toastCtrl.create({
-          message: 'Carrito guardado ✓',
-          duration: 2000,
-          position: 'bottom',
-          color: 'success'
-        });
+        const toast = await this.toastCtrl.create({ message: 'Carrito guardado ✓', duration: 2000, position: 'bottom', color: 'success' });
         await toast.present();
       },
       error: async () => {
         this.guardandoCarrito = false;
-        const toast = await this.toastCtrl.create({
-          message: 'Error al guardar el carrito',
-          duration: 2000,
-          position: 'bottom',
-          color: 'danger'
-        });
+        const toast = await this.toastCtrl.create({ message: 'Error al guardar el carrito', duration: 2000, position: 'bottom', color: 'danger' });
         await toast.present();
       }
     });
@@ -500,91 +419,45 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   eliminarDelCarrito(index: number) {
     const item = this.carrito[index];
-
-    // Devolver stock local al eliminar del carrito
     const idx = this.productos.findIndex(p => p.id === item.producto_id);
     if (idx !== -1) {
-      this.productos[idx] = {
-        ...this.productos[idx],
-        stock: (this.productos[idx].stock ?? 0) + item.cantidad
-      };
+      this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) + item.cantidad };
     }
-
     this.carrito.splice(index, 1);
   }
 
   finalizarPedido() {
     if (this.carrito.length === 0) return;
-
     if (!this.clienteSeleccionado) {
-      this.toastCtrl.create({
-        message: 'Selecciona un cliente primero',
-        duration: 2000, position: 'bottom', color: 'warning'
-      }).then(t => t.present());
+      this.toastCtrl.create({ message: 'Selecciona un cliente primero', duration: 2000, position: 'bottom', color: 'warning' }).then(t => t.present());
       return;
     }
-
     const totales = this.calcularTotal();
-    const tipoPagoMap: any = {
-      'Efectivo': 'efectivo', 'Transferencia': 'transferencia',
-      'Pendiente': 'credito', 'Cheques': 'cheques'
-    };
-
+    const tipoPagoMap: any = { 'Efectivo': 'efectivo', 'Transferencia': 'transferencia', 'Pendiente': 'credito', 'Cheques': 'cheques' };
     const payload = {
-      cliente_id:     this.clienteSeleccionado.id,
-      subtotal:       totales.subtotal,
-      descuento:      totales.descuento,
-      total:          totales.total,
-      tipo_pago:      tipoPagoMap[this.formaPago] || 'efectivo',
-      monto_pagado:   this.formaPago !== 'Pendiente' ? totales.total : 0,
+      cliente_id: this.clienteSeleccionado.id, subtotal: totales.subtotal, descuento: totales.descuento,
+      total: totales.total, tipo_pago: tipoPagoMap[this.formaPago] || 'efectivo',
+      monto_pagado: this.formaPago !== 'Pendiente' ? totales.total : 0,
       saldo_generado: this.formaPago === 'Pendiente' ? totales.total : 0,
-      iva:            totales.iva,
-      notas:          null,
+      iva: totales.iva, notas: null,
       monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
-      vuelto:         this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
-      productos:      this.carrito.map(item => ({
-        producto_id:     item.producto_id,
-        cantidad:        item.cantidad,
-        precio_unitario: item.precio_unitario,
-        descuento:       item.descuento
-      }))
+      vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
+      productos: this.carrito.map(item => ({ producto_id: item.producto_id, cantidad: item.cantidad, precio_unitario: item.precio_unitario, descuento: item.descuento }))
     };
-
     this.ventasRutaService.create(payload).subscribe({
       next: () => {
-        // Guardar datos del recibo para imprimir
         this.ultimoRecibo = {
-          clienteNombre:  `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
-          clienteCedula:  this.clienteSeleccionado!.cedula,
-          items: this.carrito.map(i => ({
-            nombre:          i.nombre,
-            cantidad:        i.cantidad,
-            precio_unitario: i.precio_unitario,
-            descuento:       i.descuento,
-            subtotal:        i.subtotal
-          })),
-          subtotal:      totales.subtotal,
-          descuento:     totales.descuento,
-          iva:           totales.iva,
-          ivaPercent:    this.ivaPercent,
-          total:         totales.total,
-          formaPago:     this.formaPago,
-          montoRecibido: this.montoRecibido || 0,
-          vuelto:        this.calcularVuelto()
+          clienteNombre: `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
+          clienteCedula: this.clienteSeleccionado!.cedula,
+          items: this.carrito.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio_unitario, descuento: i.descuento, subtotal: i.subtotal })),
+          subtotal: totales.subtotal, descuento: totales.descuento, iva: totales.iva,
+          ivaPercent: this.ivaPercent, total: totales.total, formaPago: this.formaPago,
+          montoRecibido: this.montoRecibido || 0, vuelto: this.calcularVuelto()
         };
-
         this.carritoPendiente.eliminar(this.clienteSeleccionado!.id!).subscribe();
-        this.carrito             = [];
-        this.clienteSeleccionado = null;
-        this.busquedaCliente     = '';
-        this.montoRecibido       = 0;
-        this.cerrarCarrito();
-        this.cargarProductos();
-
-        // Abrir modal de impresión
-        this.estadoImpresion       = 'preguntar';
-        this.errorImpresion        = '';
-        this.mostrarModalImpresion = true;
+        this.carrito = []; this.clienteSeleccionado = null; this.busquedaCliente = ''; this.montoRecibido = 0;
+        this.cerrarCarrito(); this.cargarProductos();
+        this.estadoImpresion = 'preguntar'; this.errorImpresion = ''; this.mostrarModalImpresion = true;
       },
       error: (err) => { console.error('Error guardando pedido:', err); }
     });
@@ -606,23 +479,16 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.estadoImpresion = 'impreso';
     } catch (err: any) {
       this.estadoImpresion = 'error';
-      this.errorImpresion  = err?.message || 'Error de conexión con la impresora';
-    } finally {
-      this.imprimiendo = false;
-    }
+      this.errorImpresion = err?.message || 'Error de conexión con la impresora';
+    } finally { this.imprimiendo = false; }
   }
 
   // ── BLUETOOTH ──
-  abrirConexionBT() {
-    this.mostrarModalBT = true;
-    this.escanearBT();
-  }
-
+  abrirConexionBT() { this.mostrarModalBT = true; this.escanearBT(); }
   cerrarConexionBT() { this.mostrarModalBT = false; }
 
   escanearBT() {
-    this.escaneandoBT   = true;
-    this.dispositivosBT = [];
+    this.escaneandoBT = true; this.dispositivosBT = [];
     this.printerService.escanearDispositivos()
       .then((devices: any[]) => { this.dispositivosBT = devices; })
       .catch(() => { this.dispositivosBT = []; })
@@ -634,19 +500,12 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.conectandoBT = dispositivo.address;
     this.printerService.conectar(dispositivo.address, dispositivo.name)
       .then(() => {
-        this.conectandoBT = '';
-        this.cerrarConexionBT();
-        this.toastCtrl.create({
-          message: `✓ Conectado a ${dispositivo.name || dispositivo.address}`,
-          duration: 2000, position: 'bottom', color: 'success'
-        }).then(t => t.present());
+        this.conectandoBT = ''; this.cerrarConexionBT();
+        this.toastCtrl.create({ message: `✓ Conectado a ${dispositivo.name || dispositivo.address}`, duration: 2000, position: 'bottom', color: 'success' }).then(t => t.present());
       })
       .catch(() => {
         this.conectandoBT = '';
-        this.toastCtrl.create({
-          message: 'Error al conectar. Verifica que la impresora esté encendida.',
-          duration: 3000, position: 'bottom', color: 'danger'
-        }).then(t => t.present());
+        this.toastCtrl.create({ message: 'Error al conectar. Verifica que la impresora esté encendida.', duration: 3000, position: 'bottom', color: 'danger' }).then(t => t.present());
       });
   }
 }
