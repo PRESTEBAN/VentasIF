@@ -337,19 +337,17 @@ export class PrinterService {
 
   private get bt(): any { return (window as any).bluetoothSerial; }
 
-  // ── Llamar esto en app.component.ts ngOnInit ──────────────────────────
   async intentarReconectar(): Promise<void> {
     const address = localStorage.getItem(STORAGE_KEY_ADDRESS);
     const name    = localStorage.getItem(STORAGE_KEY_NAME) || '';
     if (!address || !this.bt) return;
-
     try {
       const yaConectado = await this.estaConectado();
       if (yaConectado) { this.impresora = { id: address, name }; return; }
       await this.conectar(address, name);
-      console.log(`[Printer] Reconectado automáticamente a ${name}`);
+      console.log(`[Printer] Reconectado a ${name}`);
     } catch {
-      console.warn('[Printer] No se pudo reconectar automáticamente');
+      console.warn('[Printer] No se pudo reconectar');
     }
   }
 
@@ -367,7 +365,6 @@ export class PrinterService {
         address,
         () => {
           this.impresora = { id: address, name };
-          // Guardar para reconexión automática
           localStorage.setItem(STORAGE_KEY_ADDRESS, address);
           localStorage.setItem(STORAGE_KEY_NAME, name);
           resolve();
@@ -381,19 +378,8 @@ export class PrinterService {
     return new Promise((resolve) => {
       if (!this.bt) { resolve(); return; }
       this.bt.disconnect(
-        () => {
-          this.impresora = null;
-          // Borrar dispositivo guardado al desconectar manualmente
-          localStorage.removeItem(STORAGE_KEY_ADDRESS);
-          localStorage.removeItem(STORAGE_KEY_NAME);
-          resolve();
-        },
-        () => {
-          this.impresora = null;
-          localStorage.removeItem(STORAGE_KEY_ADDRESS);
-          localStorage.removeItem(STORAGE_KEY_NAME);
-          resolve();
-        }
+        () => { this.impresora = null; localStorage.removeItem(STORAGE_KEY_ADDRESS); localStorage.removeItem(STORAGE_KEY_NAME); resolve(); },
+        () => { this.impresora = null; localStorage.removeItem(STORAGE_KEY_ADDRESS); localStorage.removeItem(STORAGE_KEY_NAME); resolve(); }
       );
     });
   }
@@ -406,33 +392,24 @@ export class PrinterService {
   }
 
   async descubrirServicios(): Promise<string> {
-    return 'Bluetooth clásico SPP - conexión directa sin UUIDs';
+    return 'Bluetooth clasico SPP - conexion directa sin UUIDs';
   }
 
   private escribirBytes(data: Uint8Array): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.bt.write(
-        data.buffer,
-        () => resolve(),
-        (err: any) => reject(new Error(err || 'Error al escribir bytes'))
-      );
+      this.bt.write(data.buffer, () => resolve(), (err: any) => reject(new Error(err || 'Error bytes')));
     });
   }
 
   private escribirTexto(texto: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.bt.write(
-        texto,
-        () => resolve(),
-        (err: any) => reject(new Error(err || 'Error al escribir texto'))
-      );
+      this.bt.write(texto, () => resolve(), (err: any) => reject(new Error(err || 'Error texto')));
     });
   }
 
   async imprimirRecibo(datos: DatosRecibo): Promise<void> {
     const conectado = await this.estaConectado();
     if (!conectado) {
-      // Intentar reconectar antes de fallar
       await this.intentarReconectar();
       const reintento = await this.estaConectado();
       if (!reintento) throw new Error('Impresora no conectada');
@@ -448,6 +425,21 @@ export class PrinterService {
     const ANCHO    = 32;
     const LINEA    = '-'.repeat(ANCHO);
 
+    // Columnas tabla: |DESC(13)|CT(3)|PU(6)|TOTAL(5)|  = 32 chars
+    const COL_DESC  = 13;
+    const COL_CANT  = 3;
+    const COL_PU    = 6;
+    const COL_TOT   = 5;
+
+    const filaTabla = (desc: string, cant: string, pu: string, tot: string): string =>
+      '|' + desc.substring(0, COL_DESC).padEnd(COL_DESC) +
+      '|' + cant.substring(0, COL_CANT).padStart(COL_CANT) +
+      '|' + pu.substring(0, COL_PU).padStart(COL_PU) +
+      '|' + tot.substring(0, COL_TOT).padStart(COL_TOT) + '|';
+
+    const separadorTabla = (): string =>
+      '|' + '-'.repeat(COL_DESC) + '|' + '-'.repeat(COL_CANT) + '|' + '-'.repeat(COL_PU) + '|' + '-'.repeat(COL_TOT) + '|';
+
     const col2 = (izq: string, der: string): string =>
       izq + ' '.repeat(Math.max(1, ANCHO - izq.length - der.length)) + der;
 
@@ -459,6 +451,7 @@ export class PrinterService {
     const ahora = new Date();
     const fecha = `${ahora.getDate().toString().padStart(2,'0')}/${(ahora.getMonth()+1).toString().padStart(2,'0')}/${ahora.getFullYear()}`;
     const hora  = `${ahora.getHours().toString().padStart(2,'0')}:${ahora.getMinutes().toString().padStart(2,'0')}`;
+    // N. en lugar de N° para evitar problemas de encoding
     const nroRecibo = datos.ventaId ? String(datos.ventaId).padStart(6, '0') : '------';
 
     // ── 1. LOGO ───────────────────────────────────────────────────────────
@@ -473,7 +466,7 @@ export class PrinterService {
     t += 'industrialfatima@hotmail.com' + LF;
     t += '0990718782 / (07)288-01-09' + LF;
     t += LINEA + LF;
-    t += BOLD_ON + 'N° RECIBO: ' + nroRecibo + BOLD_OFF + LF;
+    t += BOLD_ON + 'No. RECIBO: ' + nroRecibo + BOLD_OFF + LF;
     t += LINEA + LF;
 
     // ── 3. DATOS DEL CLIENTE ──────────────────────────────────────────────
@@ -481,29 +474,28 @@ export class PrinterService {
     t += centrar('DATOS DEL CLIENTE') + LF;
     t += LINEA + LF;
     t += col2('FECHA:', `${fecha} ${hora}`) + LF;
-    t += col2('NOMBRE:', (datos.clienteNombre || 'CONSUMIDOR FINAL').substring(0, 20)) + LF;
+    t += col2('NOMBRE:', (datos.clienteNombre || 'CONSUMIDOR FINAL').substring(0, 18)) + LF;
     t += col2('C.I.:', datos.clienteCedula || '0000000000') + LF;
     t += col2('TELF./CEL.:', datos.clienteTelefono || '-') + LF;
     t += col2('DIREC.:', (datos.clienteDireccion || '-').substring(0, 18)) + LF;
-    t += col2('VENDEDOR:', (datos.vendedor || '-').substring(0, 20)) + LF;
+    t += col2('VENDEDOR:', (datos.vendedor || '-').substring(0, 18)) + LF;
     t += LINEA + LF;
 
     // ── 4. TABLA PRODUCTOS ────────────────────────────────────────────────
-    t += BOLD_ON + 'Descripcion  Cant. P.U.   Total' + BOLD_OFF + LF;
-    t += LINEA + LF;
+    t += BOLD_ON + filaTabla('Descripcion', 'Ct', 'P.U.', 'Total') + BOLD_OFF + LF;
+    t += separadorTabla() + LF;
 
     datos.items.forEach((item: any) => {
-      const nombre = item.nombre.length > ANCHO
-        ? item.nombre.substring(0, ANCHO - 3) + '...'
-        : item.nombre;
-      t += nombre + LF;
       const pu  = `$${(+item.precio_unitario).toFixed(2)}`;
       const sub = `$${(+item.subtotal).toFixed(2)}`;
-      t += col2(`  ${item.cantidad} x ${pu}`, sub) + LF;
-      if (item.descuento > 0) t += col2('  Desc.:', `-${item.descuento}%`) + LF;
+      const ct  = String(item.cantidad);
+      t += filaTabla(item.nombre, ct, pu, sub) + LF;
+      if (item.descuento > 0) {
+        t += filaTabla(`Desc. -${item.descuento}%`, '', '', '') + LF;
+      }
     });
 
-    t += LINEA + LF;
+    t += separadorTabla() + LF;
 
     // ── 5. TOTALES ────────────────────────────────────────────────────────
     t += col2('Subtotal:', `$${(+datos.subtotal).toFixed(2)}`) + LF;
@@ -525,7 +517,7 @@ export class PrinterService {
     // ── 7. PIE ────────────────────────────────────────────────────────────
     t += CENTER;
     t += '*Este documento no tiene validez legal*' + LF;
-    t += BOLD_ON + '¡¡GRACIAS POR SU COMPRA' + LF;
+    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + LF;
     t += 'VUELVA PRONTO!!' + BOLD_OFF + LF;
     t += LF + LF + LF + CUT;
 
