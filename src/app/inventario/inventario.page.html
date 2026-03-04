@@ -1,13 +1,277 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>inventario</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content [fullscreen]="true" class="inv-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">inventario p xd</ion-title>
-    </ion-toolbar>
-  </ion-header>
+      <!-- OVERLAY MENU -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
+      <!-- MENU LATERAL -->
+      <div class="menu-lateral" [class.open]="menuAbierto">
+        <div class="menu-header">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+          <p class="menu-titulo">Industrial Fátima</p>
+          <p class="menu-usuario"><ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}</p>
+        </div>
+        <div class="menu-items">
+          <p class="menu-seccion">Navegación</p>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"><ion-icon name="cart-outline"></ion-icon><span>Ventas</span></div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"><ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span></div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"><ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span></div>
+          <div class="menu-divider"></div>
+          <p class="menu-seccion">Gestión</p>
+          <div class="menu-item" (click)="irAClientes()"><ion-icon name="people-outline"></ion-icon><span>Clientes</span></div>
+          <div class="menu-item" (click)="irAHistorial()"><ion-icon name="time-outline"></ion-icon><span>Historial</span></div>
+          <div class="menu-item" (click)="irAEgresos()"><ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span></div>
+          <div class="menu-item menu-item-active" (click)="cerrarMenu()"><ion-icon name="cube-outline"></ion-icon><span>Inventario</span></div>
+          <div class="menu-divider"></div>
+          <div class="menu-item menu-logout" (click)="cerrarSesion()"><ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span></div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
+        </div>
+        <!-- Botones según tab activo -->
+        <div class="header-actions">
+          <!-- Tab inventario: botón + para agregar ingreso -->
+          <ng-container *ngIf="tabActivo === 'inventario'">
+            <div class="header-icon-btn" (click)="activarIngreso()" *ngIf="!modoIngreso">
+              <ion-icon name="add-outline"></ion-icon>
+            </div>
+          </ng-container>
+          <!-- Tab productos: botón lápiz + botón agregar -->
+          <ng-container *ngIf="tabActivo === 'productos'">
+            <div class="header-icon-btn" (click)="activarEditarPrecios()" *ngIf="!modoEditarPrecios">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </div>
+            <div class="header-icon-btn" (click)="abrirNuevoProducto()">
+              <ion-icon name="add-circle-outline"></ion-icon>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- GLACEADO -->
+      <img src="assets/Glaceado.png" class="glaceado" alt="" />
+
+      <!-- MAIN -->
+      <div class="main-content">
+
+        <!-- TABS -->
+        <div class="tabs-row">
+          <div class="tab-btn" [class.activo]="tabActivo === 'inventario'" (click)="cambiarTab('inventario')">
+            Inventario
+          </div>
+          <div class="tab-btn" [class.activo]="tabActivo === 'productos'" (click)="cambiarTab('productos')">
+            Productos
+          </div>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-inv" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando...</p>
+        </div>
+
+        <!-- ══ TAB INVENTARIO ══ -->
+        <div *ngIf="!cargando && tabActivo === 'inventario'">
+
+          <!-- Barra de acción ingreso -->
+          <div class="accion-bar" *ngIf="modoIngreso">
+            <span class="accion-txt">Ingresa las cantidades a añadir</span>
+            <div class="accion-btns">
+              <button class="btn-cancelar-sm" (click)="cancelarIngreso()">Cancelar</button>
+              <button class="btn-guardar-sm" (click)="guardarIngresos()" [disabled]="guardandoIngreso">
+                <ion-spinner name="crescent" *ngIf="guardandoIngreso" style="width:14px;height:14px;"></ion-spinner>
+                {{ guardandoIngreso ? '...' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+          <p class="msg-error" *ngIf="mensajeIngreso">{{ mensajeIngreso }}</p>
+
+          <!-- Tabla inventario -->
+          <div class="tabla-wrap">
+            <table class="inv-tabla">
+              <thead>
+                <tr>
+                  <th class="col-nombre">Nombre</th>
+                  <th class="col-stock">Stock actual</th>
+                  <th class="col-ingreso" *ngIf="modoIngreso">Ingreso</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of items"
+                  [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
+                  <td class="col-nombre">{{ item.nombre }}</td>
+                  <td class="col-stock">
+                    <span class="stock-badge"
+                      [class.badge-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
+                      {{ item.stock_actual }}
+                    </span>
+                  </td>
+                  <td class="col-ingreso" *ngIf="modoIngreso">
+                    <input
+                      type="number"
+                      class="ingreso-input"
+                      [(ngModel)]="item.ingreso"
+                      placeholder="0"
+                      min="1"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ══ TAB PRODUCTOS (precios) ══ -->
+        <div *ngIf="!cargando && tabActivo === 'productos'">
+
+          <!-- Barra de acción precios -->
+          <div class="accion-bar" *ngIf="modoEditarPrecios">
+            <span class="accion-txt">Edita los precios</span>
+            <div class="accion-btns">
+              <button class="btn-cancelar-sm" (click)="cancelarEditarPrecios()">Cancelar</button>
+              <button class="btn-guardar-sm" (click)="guardarPrecios()" [disabled]="guardandoPrecios">
+                <ion-spinner name="crescent" *ngIf="guardandoPrecios" style="width:14px;height:14px;"></ion-spinner>
+                {{ guardandoPrecios ? '...' : 'Guardar' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabla precios -->
+          <div class="tabla-wrap">
+            <table class="inv-tabla">
+              <thead>
+                <tr>
+                  <th class="col-nombre">Nombre</th>
+                  <th class="col-precio">Precio x menor</th>
+                  <th class="col-precio">Precio x mayor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of items">
+                  <td class="col-nombre">{{ item.nombre }}</td>
+                  <td class="col-precio">
+                    <span *ngIf="!modoEditarPrecios" class="precio-tag">
+                      ${{ item.precio_x_menor | number:'1.2-2' }}
+                    </span>
+                    <div *ngIf="modoEditarPrecios" class="precio-input-wrap">
+                      <span class="precio-prefix">$</span>
+                      <input type="number" class="precio-input"
+                        [(ngModel)]="editPrecios[item.producto_id].menor"
+                        step="0.01" min="0" />
+                    </div>
+                  </td>
+                  <td class="col-precio">
+                    <span *ngIf="!modoEditarPrecios" class="precio-tag">
+                      ${{ item.precio_x_mayor | number:'1.2-2' }}
+                    </span>
+                    <div *ngIf="modoEditarPrecios" class="precio-input-wrap">
+                      <span class="precio-prefix">$</span>
+                      <input type="number" class="precio-input"
+                        [(ngModel)]="editPrecios[item.producto_id].mayor"
+                        step="0.01" min="0" />
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL NUEVO PRODUCTO ===== -->
+  <ion-modal [isOpen]="mostrarNuevoProducto" (didDismiss)="cerrarNuevoProducto()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Nuevo Producto</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarNuevoProducto()"><ion-icon name="close-outline"></ion-icon></ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-form-content">
+        <div class="modal-body">
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Código*</label>
+              <input type="text" [(ngModel)]="nuevoProducto.codigo" placeholder="código de barras" />
+              <span class="field-error" *ngIf="erroresNuevo.codigo">{{ erroresNuevo.codigo }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Unidad</label>
+              <input type="text" [(ngModel)]="nuevoProducto.unidad_medida" placeholder="unidad" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Nombre*</label>
+            <input type="text" [(ngModel)]="nuevoProducto.nombre" placeholder="nombre del producto" />
+            <span class="field-error" *ngIf="erroresNuevo.nombre">{{ erroresNuevo.nombre }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Categoría</label>
+            <input type="text" [(ngModel)]="nuevoProducto.categoria" placeholder="categoría" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Precio x menor*</label>
+              <div class="precio-input-wrap">
+                <span class="precio-prefix">$</span>
+                <input type="number" [(ngModel)]="nuevoProducto.precio_x_menor" placeholder="0.00" step="0.01" />
+              </div>
+              <span class="field-error" *ngIf="erroresNuevo.precio_x_menor">{{ erroresNuevo.precio_x_menor }}</span>
+            </div>
+            <div class="form-group half">
+              <label>Precio x mayor*</label>
+              <div class="precio-input-wrap">
+                <span class="precio-prefix">$</span>
+                <input type="number" [(ngModel)]="nuevoProducto.precio_x_mayor" placeholder="0.00" step="0.01" />
+              </div>
+              <span class="field-error" *ngIf="erroresNuevo.precio_x_mayor">{{ erroresNuevo.precio_x_mayor }}</span>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>Peso (gramos)</label>
+              <input type="number" [(ngModel)]="nuevoProducto.peso_gramos" placeholder="0" />
+            </div>
+            <div class="form-group half">
+              <label>Stock inicial</label>
+              <input type="number" [(ngModel)]="nuevoProducto.stock_inicial" placeholder="0" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Descripción</label>
+            <input type="text" [(ngModel)]="nuevoProducto.descripcion" placeholder="descripción opcional" />
+          </div>
+
+          <span class="field-error" *ngIf="erroresNuevo.general">{{ erroresNuevo.general }}</span>
+
+          <button class="btn-nativo" (click)="guardarNuevoProducto()" [disabled]="guardandoNuevo">
+            <ion-spinner name="crescent" *ngIf="guardandoNuevo" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+            {{ guardandoNuevo ? 'Guardando...' : 'Guardar Producto' }}
+          </button>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>
