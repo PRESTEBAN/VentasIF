@@ -267,3 +267,32 @@
   ion-icon { color: #e53935; }
   span { color: #e53935; font-weight: 600; }
 }
+
+.orden-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+
+.orden-numero {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #590F23;
+  background: rgba(89, 15, 35, 0.08);
+  padding: 2px 7px;
+  border-radius: 20px;
+  ion-icon { font-size: 0.7rem; }
+}
+
+.orden-fecha {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  color: #888;
+  ion-icon { font-size: 0.7rem; }
+}
