@@ -37,6 +37,7 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   // ---- CALENDARIO ----
   fechaSeleccionada: Date = new Date();
+  semanaBase: Date        = new Date();   // ← primer día visible de la tira
   semanaActual: Date[]    = [];
   mostrarDatePicker       = false;
 
@@ -73,7 +74,12 @@ export class EgresosPage implements OnInit, OnDestroy {
   ngOnInit() {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
-    this.generarSemana(this.fechaSeleccionada);
+
+    // semanaBase = hoy - 3 para que hoy quede centrado visualmente
+    const base = new Date(this.fechaSeleccionada);
+    base.setDate(base.getDate() - 3);
+    this.semanaBase = base;
+    this.generarSemana(this.semanaBase);
   }
 
   ionViewWillEnter() {
@@ -87,6 +93,7 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   iniciarPolling() {
     this.detenerPolling();
+    if (!this.authService.estaLogueado()) return;
     this.pollingInterval = setInterval(() => this.cargarEgresosSilencioso(), this.POLLING_MS);
   }
 
@@ -95,6 +102,7 @@ export class EgresosPage implements OnInit, OnDestroy {
   }
 
   cargarEgresosSilencioso() {
+    if (!this.authService.estaLogueado()) return;
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${fechaStr}`, { headers: this.getHeaders() })
       .subscribe({
@@ -116,7 +124,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     this.http.get<Usuario[]>(`${this.API}/egresos/usuarios`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => {
-          // Excluir usuario admin de ambos selectores
           this.usuarios = data.filter(u =>
             u.username?.toLowerCase() !== 'admin' &&
             u.nombre?.toLowerCase()   !== 'admin'
@@ -126,33 +133,58 @@ export class EgresosPage implements OnInit, OnDestroy {
       });
   }
 
-  // Beneficiario = usuarios (sin admin) + Vehículo + Fábrica
   get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
   // ---- CALENDARIO ----
-  generarSemana(fecha: Date) {
+
+  // Genera 7 días consecutivos desde `base` hacia adelante (sin centrar)
+  generarSemana(base: Date) {
     const dias: Date[] = [];
-    for (let i = -3; i <= 3; i++) {
-      const d = new Date(fecha); d.setDate(fecha.getDate() + i); dias.push(d);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base);
+      d.setDate(base.getDate() + i);
+      dias.push(d);
     }
     this.semanaActual = dias;
   }
 
   semanaAnterior() {
-    const nueva = new Date(this.fechaSeleccionada); nueva.setDate(nueva.getDate() - 7);
-    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos();
+    // retrocede exactamente 7 días desde el primer día visible
+    const nueva = new Date(this.semanaBase);
+    nueva.setDate(nueva.getDate() - 7);
+    this.semanaBase = nueva;
+    this.generarSemana(nueva);
+    // selecciona el último día de la tira al retroceder
+    this.fechaSeleccionada = new Date(this.semanaActual[6]);
+    this.cargarEgresos();
   }
 
   semanaSiguiente() {
-    const nueva = new Date(this.fechaSeleccionada); nueva.setDate(nueva.getDate() + 7);
-    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos();
+    // avanza exactamente 7 días desde el primer día visible
+    const nueva = new Date(this.semanaBase);
+    nueva.setDate(nueva.getDate() + 7);
+    this.semanaBase = nueva;
+    this.generarSemana(nueva);
+    // selecciona el primer día de la tira al avanzar
+    this.fechaSeleccionada = new Date(this.semanaActual[0]);
+    this.cargarEgresos();
   }
 
   esSemanaActual(): boolean {
-    return this.formatearFecha(this.fechaSeleccionada) >= this.formatearFecha(new Date());
+    // deshabilita la flecha si el último día de la tira ya llegó a hoy o futuro
+    const ultimoDia = new Date(this.semanaActual[this.semanaActual.length - 1]);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    ultimoDia.setHours(0, 0, 0, 0);
+    return ultimoDia >= hoy;
   }
 
-  seleccionarDia(dia: Date) { this.fechaSeleccionada = new Date(dia); this.cargarEgresos(); }
+  seleccionarDia(dia: Date) {
+    // solo cambia el día seleccionado — semanaBase NO se mueve
+    this.fechaSeleccionada = new Date(dia);
+    this.cargarEgresos();
+  }
+
   esDiaSeleccionado(dia: Date): boolean { return dia.toDateString() === this.fechaSeleccionada.toDateString(); }
   esHoy(dia: Date): boolean { return dia.toDateString() === new Date().toDateString(); }
 
@@ -164,7 +196,14 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (!valor) return;
     const [anio, mes, dia] = valor.split('-').map(Number);
     const nueva = new Date(anio, mes - 1, dia);
-    this.fechaSeleccionada = nueva; this.generarSemana(nueva); this.cargarEgresos(); this.cerrarDatePicker();
+    this.fechaSeleccionada = nueva;
+    // date picker resetea el ancla centrada en la fecha elegida
+    const base = new Date(nueva);
+    base.setDate(nueva.getDate() - 3);
+    this.semanaBase = base;
+    this.generarSemana(this.semanaBase);
+    this.cargarEgresos();
+    this.cerrarDatePicker();
   }
 
   formatearFecha(fecha: Date): string {
