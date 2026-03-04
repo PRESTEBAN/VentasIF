@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ClienteService, Cliente, Movimiento } from '../services/cliente';
 import { AuthService } from '../services/auth';
@@ -11,7 +11,7 @@ type OrdenCampo = 'nombre' | 'saldo' | 'fecha_creacion' | 'fecha_modificacion';
   styleUrls: ['clientes.page.scss'],
   standalone: false,
 })
-export class ClientesPage implements OnInit {
+export class ClientesPage implements OnInit, OnDestroy {
 
   menuAbierto = false;
   usuarioActual: string = '';
@@ -21,36 +21,34 @@ export class ClientesPage implements OnInit {
   busqueda = '';
   cargando = false;
 
-  // Ordenamiento
+  private pollingInterval: any = null;
+  private readonly POLLING_MS = 30000;
+
   mostrarOrdenMenu = false;
   ordenActual: OrdenCampo = 'nombre';
   direccionOrden: 'asc' | 'desc' = 'asc';
   opcionesOrden: { label: string; valor: OrdenCampo }[] = [
-    { label: 'Nombre (A-Z)',         valor: 'nombre' },
-    { label: 'Saldo',                valor: 'saldo' },
-    { label: 'Fecha de agregado',    valor: 'fecha_creacion' },
-    { label: 'Fecha modificación',   valor: 'fecha_modificacion' },
+    { label: 'Nombre (A-Z)',       valor: 'nombre' },
+    { label: 'Saldo',              valor: 'saldo' },
+    { label: 'Fecha de agregado',  valor: 'fecha_creacion' },
+    { label: 'Fecha modificación', valor: 'fecha_modificacion' },
   ];
 
-  // Modal nuevo cliente
   mostrarAgregarCliente = false;
   nuevoCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
   errores: any = {};
   guardando = false;
 
-  // Modal detalle
   mostrarDetalle = false;
   clienteDetalle: Cliente | null = null;
   movimientos: Movimiento[] = [];
   cargandoMovimientos = false;
 
-  // Modal editar
   mostrarEditar = false;
   editCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
   erroresEditar: any = {};
   guardandoEdicion = false;
 
-  // Modal abono
   mostrarAbono = false;
   abonoData = { ventaId: null as number | null, monto: null as number | null };
   erroresAbono: any = {};
@@ -69,7 +67,32 @@ export class ClientesPage implements OnInit {
     this.cargarClientes();
   }
 
-  // ── CARGA ──────────────────────────────────────────────────────────────
+  ionViewWillEnter() {
+    this.cargarClientes();
+    this.iniciarPolling();
+  }
+
+  ionViewWillLeave() { this.detenerPolling(); }
+  ngOnDestroy()      { this.detenerPolling(); }
+
+  iniciarPolling() {
+    this.detenerPolling();
+    if (!this.authService.estaLogueado()) return;
+    this.pollingInterval = setInterval(() => this.cargarClientesSilencioso(), this.POLLING_MS);
+  }
+
+  detenerPolling() {
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+  }
+
+  cargarClientesSilencioso() {
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
+    this.clienteService.getAllConSaldos().subscribe({
+      next: (data) => { this.clientes = data; this.aplicarFiltroYOrden(); },
+      error: () => {}
+    });
+  }
+
   cargarClientes() {
     this.cargando = true;
     this.clienteService.getAllConSaldos().subscribe({
@@ -78,7 +101,6 @@ export class ClientesPage implements OnInit {
     });
   }
 
-  // ── FILTRO + ORDEN ─────────────────────────────────────────────────────
   aplicarFiltroYOrden() {
     const q = this.busqueda.trim().toLowerCase();
     let res = q
@@ -96,9 +118,9 @@ export class ClientesPage implements OnInit {
     const dir = this.direccionOrden === 'asc' ? 1 : -1;
     return lista.sort((a, b) => {
       switch (this.ordenActual) {
-        case 'nombre': return dir * `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`);
-        case 'saldo':  return dir * ((a.saldo || 0) - (b.saldo || 0));
-        case 'fecha_creacion': return dir * (new Date(a.fecha_creacion || 0).getTime() - new Date(b.fecha_creacion || 0).getTime());
+        case 'nombre':             return dir * `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`);
+        case 'saldo':              return dir * ((a.saldo || 0) - (b.saldo || 0));
+        case 'fecha_creacion':     return dir * (new Date(a.fecha_creacion || 0).getTime() - new Date(b.fecha_creacion || 0).getTime());
         case 'fecha_modificacion': return dir * (new Date(a.fecha_modificacion || 0).getTime() - new Date(b.fecha_modificacion || 0).getTime());
         default: return 0;
       }
@@ -108,15 +130,12 @@ export class ClientesPage implements OnInit {
   toggleOrdenMenu() { this.mostrarOrdenMenu = !this.mostrarOrdenMenu; }
 
   seleccionarOrden(campo: OrdenCampo) {
-    this.direccionOrden = this.ordenActual === campo
-      ? (this.direccionOrden === 'asc' ? 'desc' : 'asc')
-      : 'asc';
+    this.direccionOrden = this.ordenActual === campo ? (this.direccionOrden === 'asc' ? 'desc' : 'asc') : 'asc';
     this.ordenActual = campo;
     this.aplicarFiltroYOrden();
     this.mostrarOrdenMenu = false;
   }
 
-  // ── DETALLE ────────────────────────────────────────────────────────────
   verDetalle(cliente: Cliente) {
     this.clienteDetalle = cliente;
     this.movimientos = [];
@@ -124,11 +143,7 @@ export class ClientesPage implements OnInit {
     this.cargarMovimientos(cliente.id!);
   }
 
-  cerrarDetalle() {
-    this.mostrarDetalle = false;
-    this.clienteDetalle = null;
-    this.movimientos = [];
-  }
+  cerrarDetalle() { this.mostrarDetalle = false; this.clienteDetalle = null; this.movimientos = []; }
 
   cargarMovimientos(clienteId: number) {
     this.cargandoMovimientos = true;
@@ -146,34 +161,24 @@ export class ClientesPage implements OnInit {
     }
   }
 
-  // ── EDITAR ─────────────────────────────────────────────────────────────
   abrirEditar() {
     if (!this.clienteDetalle) return;
     const c = this.clienteDetalle;
     this.editCliente = {
-      cedula:       c.cedula,
-      nombre:       c.nombre,
-      apellido:     c.apellido,
-      negocio:      c.nombre_negocio || '',
-      email:        c.email || '',
-      direccion:    c.direccion,
-      sector:       c.sector || '',
-      telefono:     c.telefono,
-      esParticular: c.tipo_cliente === 'particular',
+      cedula: c.cedula, nombre: c.nombre, apellido: c.apellido,
+      negocio: c.nombre_negocio || '', email: c.email || '',
+      direccion: c.direccion, sector: c.sector || '',
+      telefono: c.telefono, esParticular: c.tipo_cliente === 'particular',
     };
     this.erroresEditar = {};
     this.mostrarEditar = true;
   }
 
-  cerrarEditar() {
-    this.mostrarEditar = false;
-    this.erroresEditar = {};
-  }
+  cerrarEditar() { this.mostrarEditar = false; this.erroresEditar = {}; }
 
   guardarEdicion() {
     this.erroresEditar = {};
     let valido = true;
-
     if (!this.editCliente.cedula.trim() || !/^\d{10}$/.test(this.editCliente.cedula.trim()))
       { this.erroresEditar.cedula = 'Cédula inválida (10 dígitos)'; valido = false; }
     if (!this.editCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.editCliente.nombre))
@@ -187,19 +192,14 @@ export class ClientesPage implements OnInit {
       { this.erroresEditar.telefono = 'Teléfono inválido'; valido = false; }
     if (this.editCliente.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.editCliente.email))
       { this.erroresEditar.email = 'Email inválido'; valido = false; }
-
     if (!valido) return;
 
     const payload: Partial<Cliente> = {
-      cedula:        this.editCliente.cedula.trim(),
-      nombre:        this.editCliente.nombre.trim(),
-      apellido:      this.editCliente.apellido.trim(),
-      nombre_negocio: this.editCliente.negocio.trim() || null,
-      tipo_cliente:  this.editCliente.esParticular ? 'particular' : 'negocio',
-      direccion:     this.editCliente.direccion.trim(),
-      sector:        this.editCliente.sector.trim() || null,
-      telefono:      tel,
-      email:         this.editCliente.email.trim() || null,
+      cedula: this.editCliente.cedula.trim(), nombre: this.editCliente.nombre.trim(),
+      apellido: this.editCliente.apellido.trim(), nombre_negocio: this.editCliente.negocio.trim() || null,
+      tipo_cliente: this.editCliente.esParticular ? 'particular' : 'negocio',
+      direccion: this.editCliente.direccion.trim(), sector: this.editCliente.sector.trim() || null,
+      telefono: tel, email: this.editCliente.email.trim() || null,
     };
 
     this.guardandoEdicion = true;
@@ -208,13 +208,9 @@ export class ClientesPage implements OnInit {
         this.guardandoEdicion = false;
         this.cerrarEditar();
         this.cargarClientes();
-        // Actualizar clienteDetalle localmente
         this.clienteDetalle = { ...this.clienteDetalle!, ...payload };
       },
-      error: (err) => {
-        this.guardandoEdicion = false;
-        this.erroresEditar.general = err.error?.error || 'Error al guardar';
-      }
+      error: (err) => { this.guardandoEdicion = false; this.erroresEditar.general = err.error?.error || 'Error al guardar'; }
     });
   }
 
@@ -223,63 +219,35 @@ export class ClientesPage implements OnInit {
     const nombre = `${this.clienteDetalle.nombre} ${this.clienteDetalle.apellido}`;
     if (confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`)) {
       this.clienteService.remove(this.clienteDetalle.id!).subscribe({
-        next: () => {
-          this.cerrarEditar();
-          this.cerrarDetalle();
-          this.cargarClientes();
-        },
-        error: (err) => {
-          this.erroresEditar.general = err.error?.error || 'Error al eliminar';
-        }
+        next: () => { this.cerrarEditar(); this.cerrarDetalle(); this.cargarClientes(); },
+        error: (err) => { this.erroresEditar.general = err.error?.error || 'Error al eliminar'; }
       });
     }
   }
 
-  // ── ABONO ──────────────────────────────────────────────────────────────
-  abrirAbono() {
-    this.abonoData = { ventaId: null, monto: null };
-    this.erroresAbono = {};
-    this.mensajeAbono = '';
-    this.mostrarAbono = true;
-  }
-
-  cerrarAbono() {
-    this.mostrarAbono = false;
-    this.erroresAbono = {};
-    this.mensajeAbono = '';
-  }
+  abrirAbono() { this.abonoData = { ventaId: null, monto: null }; this.erroresAbono = {}; this.mensajeAbono = ''; this.mostrarAbono = true; }
+  cerrarAbono() { this.mostrarAbono = false; this.erroresAbono = {}; this.mensajeAbono = ''; }
 
   guardarAbono() {
-    this.erroresAbono = {};
-    this.mensajeAbono = '';
+    this.erroresAbono = {}; this.mensajeAbono = '';
     let valido = true;
-
     if (!this.abonoData.ventaId) { this.erroresAbono.ventaId = 'Ingresa el N° de orden'; valido = false; }
     if (!this.abonoData.monto || this.abonoData.monto <= 0) { this.erroresAbono.monto = 'Ingresa un valor mayor a 0'; valido = false; }
     if (!valido) return;
 
     this.guardandoAbono = true;
-    this.clienteService.registrarAbono(
-      this.abonoData.ventaId!,
-      this.clienteDetalle!.id!,
-      this.abonoData.monto!
-    ).subscribe({
+    this.clienteService.registrarAbono(this.abonoData.ventaId!, this.clienteDetalle!.id!, this.abonoData.monto!).subscribe({
       next: (res: any) => {
         this.guardandoAbono = false;
         this.mensajeAbono = res.mensaje;
-        // Recargar movimientos y saldo
         this.cargarMovimientos(this.clienteDetalle!.id!);
         this.cargarClientes();
         setTimeout(() => this.cerrarAbono(), 1500);
       },
-      error: (err) => {
-        this.guardandoAbono = false;
-        this.erroresAbono.general = err.error?.error || 'Error al registrar abono';
-      }
+      error: (err) => { this.guardandoAbono = false; this.erroresAbono.general = err.error?.error || 'Error al registrar abono'; }
     });
   }
 
-  // ── NUEVO CLIENTE ──────────────────────────────────────────────────────
   abrirAgregarCliente() { this.mostrarAgregarCliente = true; }
 
   cerrarAgregarCliente() {
@@ -291,35 +259,29 @@ export class ClientesPage implements OnInit {
   guardarCliente() {
     this.errores = {};
     let valido = true;
-
     const cedula = this.nuevoCliente.cedula.trim();
     if (!cedula) { this.errores.cedula = 'La cédula es requerida'; valido = false; }
     else if (/[^0-9]/.test(cedula)) { this.errores.cedula = 'Solo números'; valido = false; }
     else if (cedula.length !== 10) { this.errores.cedula = 'Debe tener 10 dígitos'; valido = false; }
-
     if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre))
       { this.errores.nombre = 'Nombre inválido'; valido = false; }
     if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido))
       { this.errores.apellido = 'Apellido inválido'; valido = false; }
     if (!this.nuevoCliente.direccion.trim() || this.nuevoCliente.direccion.trim().length < 5)
       { this.errores.direccion = 'Dirección requerida (mín. 5 chars)'; valido = false; }
-
     const tel = this.nuevoCliente.telefono.trim();
     if (!tel) { this.errores.telefono = 'Teléfono requerido'; valido = false; }
     else if (/[^0-9]/.test(tel)) { this.errores.telefono = 'Solo números'; valido = false; }
     else if (tel.length !== 10 && tel.length !== 7) { this.errores.telefono = 'Celular (10) o fijo (7) dígitos'; valido = false; }
-
     if (this.nuevoCliente.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.nuevoCliente.email))
       { this.errores.email = 'Email inválido'; valido = false; }
-
     if (!valido) return;
 
     const payload: Cliente = {
       cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
       tipo_cliente: this.nuevoCliente.esParticular ? 'particular' : 'negocio',
-      direccion: this.nuevoCliente.direccion.trim(),
-      sector: this.nuevoCliente.sector.trim() || null,
+      direccion: this.nuevoCliente.direccion.trim(), sector: this.nuevoCliente.sector.trim() || null,
       telefono: tel, email: this.nuevoCliente.email.trim() || null,
       limite_credito: 0, notas: null,
     };
@@ -327,14 +289,10 @@ export class ClientesPage implements OnInit {
     this.guardando = true;
     this.clienteService.create(payload).subscribe({
       next: () => { this.guardando = false; this.cargarClientes(); this.cerrarAgregarCliente(); },
-      error: (err) => {
-        this.guardando = false;
-        this.errores.general = err.status === 400 ? 'Datos inválidos' : 'Error al guardar';
-      }
+      error: (err) => { this.guardando = false; this.errores.general = err.status === 400 ? 'Datos inválidos' : 'Error al guardar'; }
     });
   }
 
-  // ── MENU ───────────────────────────────────────────────────────────────
   abrirMenu()     { this.menuAbierto = true; }
   cerrarMenu()    { this.menuAbierto = false; }
   cerrarSesion()  { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
