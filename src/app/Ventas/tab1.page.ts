@@ -59,7 +59,8 @@ export class Tab1Page implements OnInit, OnDestroy {
   estadoImpresion: 'preguntar' | 'impreso' | 'error' = 'preguntar';
   errorImpresion  = '';
   imprimiendo     = false;
-  ultimoRecibo:   any = null; // datos del último pedido para reimprimir
+  ultimoRecibo:   any = null;
+  serviciosDebug  = ''; // datos del último pedido para reimprimir
 
   // ── Bluetooth ──
   mostrarModalBT  = false;
@@ -589,7 +590,12 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   // ── IMPRESIÓN ──
-  cerrarModalImpresion() { this.mostrarModalImpresion = false; }
+  cerrarModalImpresion() { this.mostrarModalImpresion = false; this.serviciosDebug = ''; }
+
+  async verServicios() {
+    this.serviciosDebug = 'Cargando...';
+    this.serviciosDebug = await this.printerService.descubrirServicios();
+  }
 
   async imprimirRecibo() {
     if (!this.ultimoRecibo) return;
@@ -617,7 +623,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.escaneandoBT   = true;
     this.dispositivosBT = [];
     this.printerService.escanearDispositivos()
-      .then(devices => { this.dispositivosBT = devices; })
+      .then((devices: any[]) => { this.dispositivosBT = devices; })
       .catch(() => { this.dispositivosBT = []; })
       .finally(() => { this.escaneandoBT = false; });
   }

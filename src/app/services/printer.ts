@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BleClient, ScanResult } from '@capacitor-community/bluetooth-le';
 
-const SPP_SERVICE    = '00001101-0000-1000-8000-00805f9b34fb';
-const SPP_WRITE_CHAR = '00001101-0000-1000-8000-00805f9b34fb';
+const SPP_SERVICE    = '49535343-fe7d-4ae5-8fa9-9fafd205e455';
+const SPP_WRITE_CHAR = '49535343-1e4d-4bd9-ba61-23c647249616';
 
 @Injectable({ providedIn: 'root' })
 export class PrinterService {
@@ -21,7 +21,7 @@ export class PrinterService {
     try {
       await this.inicializar();
       await BleClient.requestLEScan({ allowDuplicates: false }, (result: ScanResult) => {
-        const existe = devices.find(d => d.address === result.device.deviceId);
+        const existe = devices.find((d: any) => d.address === result.device.deviceId);
         if (!existe) {
           devices.push({ address: result.device.deviceId, name: result.device.name || 'Desconocido' });
         }
@@ -49,19 +49,42 @@ export class PrinterService {
     if (!this.deviceId) return false;
     try {
       const result = await BleClient.getConnectedDevices([]);
-      return result.some(d => d.deviceId === this.deviceId);
+      return result.some((d: any) => d.deviceId === this.deviceId);
     } catch { return false; }
+  }
+
+  async descubrirServicios(): Promise<string> {
+    if (!this.deviceId) return 'Sin dispositivo conectado';
+    try {
+      const services = await BleClient.getServices(this.deviceId);
+      let info = '';
+      for (const service of services) {
+        info += `SERVICE: ${service.uuid}\n`;
+        for (const char of service.characteristics) {
+          info += `  CHAR: ${char.uuid} props: ${JSON.stringify(char.properties)}\n`;
+        }
+      }
+      return info || 'Sin servicios encontrados';
+    } catch (e: any) {
+      return `Error: ${e.message}`;
+    }
   }
 
   async imprimirRecibo(datos: DatosRecibo): Promise<void> {
     const conectado = await this.estaConectado();
     if (!conectado) throw new Error('Impresora no conectada');
 
-    const ESC = '\x1B', LF = '\n', ANCHO = 32, LINEA = '-'.repeat(ANCHO);
-    const BOLD_ON = ESC+'E\x01', BOLD_OFF = ESC+'E\x00';
-    const CENTER  = ESC+'a\x01', LEFT = ESC+'a\x00', CUT = ESC+'m';
+    const ESC      = '\x1B';
+    const LF       = '\n';
+    const BOLD_ON  = ESC + 'E\x01';
+    const BOLD_OFF = ESC + 'E\x00';
+    const CENTER   = ESC + 'a\x01';
+    const LEFT     = ESC + 'a\x00';
+    const CUT      = ESC + 'm';
+    const ANCHO    = 32;
+    const LINEA    = '-'.repeat(ANCHO);
 
-    const col2 = (izq: string, der: string) => {
+    const col2 = (izq: string, der: string): string => {
       return izq + ' '.repeat(Math.max(1, ANCHO - izq.length - der.length)) + der;
     };
 
@@ -79,8 +102,8 @@ export class PrinterService {
     t += LINEA + LF;
     t += BOLD_ON + col2('PRODUCTO', 'SUBTOTAL') + BOLD_OFF + LF + LINEA + LF;
 
-    datos.items.forEach(item => {
-      const nombre = item.nombre.length > ANCHO ? item.nombre.substring(0, ANCHO-3)+'...' : item.nombre;
+    datos.items.forEach((item: any) => {
+      const nombre = item.nombre.length > ANCHO ? item.nombre.substring(0, ANCHO - 3) + '...' : item.nombre;
       t += nombre + LF;
       t += col2(`  ${item.cantidad} x $${item.precio_unitario.toFixed(2)}`, `$${item.subtotal.toFixed(2)}`) + LF;
       if (item.descuento > 0) t += col2('  Desc:', `-${item.descuento}%`) + LF;
@@ -99,14 +122,15 @@ export class PrinterService {
     t += LINEA + LF + CENTER + '¡Gracias por su compra!' + LF + 'Industrial Fatima' + LF;
     t += LF + LF + LF + CUT;
 
-    const encoder = new TextEncoder();
-    const bytes   = encoder.encode(t);
-    const CHUNK   = 20;
+    const encoder  = new TextEncoder();
+    const bytes    = encoder.encode(t);
+    const CHUNK    = 100;
+
     for (let i = 0; i < bytes.length; i += CHUNK) {
       const chunk    = bytes.slice(i, i + CHUNK);
       const dataView = new DataView(chunk.buffer);
-      await BleClient.write(this.deviceId!, SPP_SERVICE, SPP_WRITE_CHAR, dataView);
-      await new Promise(r => setTimeout(r, 30));
+      await BleClient.writeWithoutResponse(this.deviceId!, SPP_SERVICE, SPP_WRITE_CHAR, dataView);
+      await new Promise(r => setTimeout(r, 50));
     }
   }
 }
@@ -114,7 +138,19 @@ export class PrinterService {
 export interface DatosRecibo {
   clienteNombre:  string;
   clienteCedula?: string;
-  items: { nombre: string; cantidad: number; precio_unitario: number; descuento: number; subtotal: number; }[];
-  subtotal: number; descuento: number; iva: number; ivaPercent: number;
-  total: number; formaPago: string; montoRecibido: number; vuelto: number;
+  items: {
+    nombre:          string;
+    cantidad:        number;
+    precio_unitario: number;
+    descuento:       number;
+    subtotal:        number;
+  }[];
+  subtotal:      number;
+  descuento:     number;
+  iva:           number;
+  ivaPercent:    number;
+  total:         number;
+  formaPago:     string;
+  montoRecibido: number;
+  vuelto:        number;
 }

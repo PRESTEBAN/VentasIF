@@ -380,7 +380,7 @@
 </ion-content>
 
 <!-- ===== MODAL IMPRESIÓN ===== -->
-<div class="print-overlay" *ngIf="mostrarModalImpresion" (click)="cerrarModalImpresion()">
+<div class="print-overlay" *ngIf="mostrarModalImpresion">
   <div class="print-card" (click)="$event.stopPropagation()">
 
     <!-- ÉXITO — preguntar si imprimir -->
@@ -443,13 +443,17 @@
           <ion-icon name="print-outline"></ion-icon> Reintentar
         </button>
       </div>
+      <button class="print-btn print-btn-skip" style="width:100%;margin-top:6px;font-size:10px" (click)="verServicios()">
+        🔍 Ver servicios BLE
+      </button>
+      <pre style="font-size:9px;color:#555;width:100%;overflow:auto;max-height:150px;background:#f5f5f5;padding:6px;border-radius:8px;margin:0" *ngIf="serviciosDebug">{{ serviciosDebug }}</pre>
     </ng-container>
 
   </div>
 </div>
 
 <!-- ===== MODAL BLUETOOTH ===== -->
-<div class="print-overlay" *ngIf="mostrarModalBT" (click)="cerrarConexionBT()">
+<div class="print-overlay" *ngIf="mostrarModalBT">
   <div class="print-card" (click)="$event.stopPropagation()">
     <div class="print-icono-wrap bt">
       <ion-icon name="bluetooth-outline"></ion-icon>
