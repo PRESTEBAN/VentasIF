@@ -496,3 +496,29 @@
   ion-icon { font-size: 16px; color: #E53935; }
   &:active { background: #FFCDD2; transform: scale(0.93); }
 }
+
+.egreso-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.btn-editar-egreso {
+  background: #EEF2FF; border: 1px solid #BAC8FF; border-radius: 10px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  ion-icon { font-size: 16px; color: #3B5BDB; }
+  &:active { background: #BAC8FF; transform: scale(0.93); }
+}
+
+.btn-borrar-egreso {
+  background: #FFF0F0; border: 1px solid #FFCDD2; border-radius: 10px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; margin-left: 0;  // ← quitar el margin-left que tenía antes
+  ion-icon { font-size: 16px; color: #E53935; }
+  &:active { background: #FFCDD2; transform: scale(0.93); }
+}

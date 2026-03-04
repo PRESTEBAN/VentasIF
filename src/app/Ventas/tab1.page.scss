@@ -575,3 +575,8 @@
 .coinc-nombre { font-size: 13px; font-weight: 700; color: #2D1B0E; }
 .coinc-sub    { font-size: 11px; color: #AAA; margin-top: 2px !important; }
 .coinc-arrow  { font-size: 16px; color: #CCC; flex-shrink: 0; }
+
+.carrito-sin-guardar {
+  display: flex; align-items: center; margin-right: 6px;
+  ion-icon { font-size: 18px; color: #E65100; }
+}

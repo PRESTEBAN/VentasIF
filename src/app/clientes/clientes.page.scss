@@ -307,3 +307,62 @@
 .valor-wrap { display: flex; align-items: center; border: 1.5px solid #E8D5BF; border-radius: 12px; overflow: hidden; background: #FDFAF6; &:focus-within { border-color: #590F23; } }
 .valor-prefix { padding: 11px 10px 11px 14px; font-size: 15px; font-weight: 800; color: #590F23; background: transparent; }
 .valor-wrap input { flex: 1; border: none; background: transparent; padding: 11px 14px 11px 0; font-size: 14px; color: #2D1B0E; outline: none; font-weight: 500; &::placeholder { color: #C4A882; } }
+
+.confirmar-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 20px;
+}
+
+.confirmar-icono {
+  font-size: 2.5rem;
+  color: #e53935;
+  margin-bottom: 10px;
+}
+
+.confirmar-titulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #590F23;
+  margin: 0 0 8px;
+}
+
+.confirmar-texto {
+  font-size: 0.88rem;
+  color: #555;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.confirmar-acciones {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-cancelar {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1.5px solid #ccc;
+  background: white;
+  color: #555;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-eliminar-confirm {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: #e53935;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

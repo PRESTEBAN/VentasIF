@@ -132,6 +132,10 @@
               <p class="cliente-nombre-sel">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
               <p class="cliente-cedula-sel">{{ clienteSeleccionado.cedula }}</p>
             </div>
+            <!-- Indicador carrito sin guardar -->
+            <div class="carrito-sin-guardar" *ngIf="carrito.length > 0 && !carritoGuardadoEnBD">
+              <ion-icon name="warning-outline"></ion-icon>
+            </div>
             <div class="cliente-cambiar-btn" (click)="limpiarCliente()">
               <ion-icon name="close-outline"></ion-icon>
             </div>
@@ -393,6 +397,30 @@
   </ion-modal>
 
 </ion-content>
+
+<!-- ===== MODAL CONFIRMAR QUITAR CLIENTE ===== -->
+<div class="print-overlay" *ngIf="mostrarConfirmarLimpiar">
+  <div class="print-card" (click)="$event.stopPropagation()">
+    <div class="print-icono-wrap" style="background: #FFF3E0;">
+      <ion-icon name="warning-outline" style="color: #E65100; font-size: 28px;"></ion-icon>
+    </div>
+    <h2 class="print-titulo" style="color: #2D1B0E">Cambios sin guardar</h2>
+    <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 20px 0; line-height: 1.5">
+      Tienes productos en el carrito que <strong>no fueron guardados</strong>.<br/>
+      Si quitas el cliente, se perderán.
+    </p>
+    <div class="print-btns">
+      <button class="print-btn print-btn-skip" (click)="cancelarLimpiarCliente()">
+        <ion-icon name="arrow-back-outline"></ion-icon> Volver
+      </button>
+      <button class="print-btn print-btn-print"
+        style="background: #E65100; box-shadow: 0 4px 12px rgba(230,81,0,0.3)"
+        (click)="confirmarLimpiarCliente()">
+        <ion-icon name="trash-outline"></ion-icon> Quitar igual
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== MODAL IMPRESIÓN ===== -->
 <div class="print-overlay" *ngIf="mostrarModalImpresion">

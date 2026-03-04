@@ -53,6 +53,10 @@ export class Tab1Page implements OnInit, OnDestroy {
   ivaPercent: number = 0;
   guardandoCarrito = false;
 
+  // ── Carrito estado ────────────────────────────────────────────────────────
+  carritoGuardadoEnBD = false;
+  mostrarConfirmarLimpiar = false;
+
   private carritoSub!: Subscription;
   private socketSubs: Subscription[] = [];
   private pollingInterval: any = null;
@@ -114,7 +118,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING (respaldo) ────────────────────────────────────────────────────
+  // ── POLLING ───────────────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -125,7 +129,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
+  // ── SOCKET ────────────────────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
@@ -149,7 +153,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-  // ── ACTUALIZACIÓN SILENCIOSA ──────────────────────────────────────────────
+  // ── STOCK SILENCIOSO ──────────────────────────────────────────────────────
   actualizarStockSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.mostrarProducto) return;
@@ -247,14 +251,56 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.clienteSeleccionado = cliente;
     this.clientesCoincidentes = [];
     this.errorCliente = '';
+    this.carritoGuardadoEnBD = false;
     this.cargarCarritoGuardado(cliente.id!);
   }
 
+  // ── LIMPIAR CLIENTE ───────────────────────────────────────────────────────
   limpiarCliente() {
+    // Carrito con cambios sin guardar → pedir confirmación
+    if (this.carrito.length > 0 && !this.carritoGuardadoEnBD) {
+      this.mostrarConfirmarLimpiar = true;
+      return;
+    }
+    this._ejecutarLimpiarCliente();
+  }
+
+  confirmarLimpiarCliente() {
+    this.mostrarConfirmarLimpiar = false;
+    // Descartar: borrar de BD también
+    if (this.clienteSeleccionado) {
+      this.carritoPendiente.eliminar(this.clienteSeleccionado.id!).subscribe();
+    }
+    this._ejecutarLimpiarCliente();
+  }
+
+  cancelarLimpiarCliente() {
+    this.mostrarConfirmarLimpiar = false;
+  }
+
+  private _ejecutarLimpiarCliente() {
+    // Si estaba guardado, persistir el estado actual antes de limpiar
+    if (this.carritoGuardadoEnBD && this.carrito.length > 0 && this.clienteSeleccionado) {
+      this.carritoPendiente.guardar({
+        cliente_id: this.clienteSeleccionado.id!,
+        items: this.carrito,
+        iva_percent: this.ivaPercent,
+        forma_pago: this.formaPago,
+        monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+        vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
+      }).subscribe();
+    }
+
     this.clienteSeleccionado = null;
     this.clientesCoincidentes = [];
     this.busquedaCliente = '';
     this.errorCliente = '';
+    this.carrito = [];
+    this.ivaPercent = 0;
+    this.formaPago = 'Efectivo';
+    this.montoRecibido = 0;
+    this.carritoGuardadoEnBD = false;
+    this.cargarProductos();
   }
 
   cargarCarritoGuardado(clienteId: number) {
@@ -265,12 +311,14 @@ export class Tab1Page implements OnInit, OnDestroy {
           this.ivaPercent = data.iva_percent ?? 0;
           this.formaPago = data.forma_pago ?? 'Efectivo';
           this.montoRecibido = data.monto_recibido ?? 0;
+          this.carritoGuardadoEnBD = true;
           this.cargarProductos();
         } else {
           this.carrito = []; this.ivaPercent = 0; this.formaPago = 'Efectivo'; this.montoRecibido = 0;
+          this.carritoGuardadoEnBD = false;
         }
       },
-      error: () => { this.carrito = []; this.montoRecibido = 0; }
+      error: () => { this.carrito = []; this.montoRecibido = 0; this.carritoGuardadoEnBD = false; }
     });
   }
 
@@ -363,6 +411,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
     const idx = this.productos.findIndex(p => p.id === this.productoSeleccionado!.id);
     if (idx !== -1) this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad };
+    this.carritoGuardadoEnBD = false;
     this.cerrarProducto();
   }
 
@@ -393,6 +442,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     }).subscribe({
       next: async () => {
         this.guardandoCarrito = false;
+        this.carritoGuardadoEnBD = true;
         const toast = await this.toastCtrl.create({ message: 'Carrito guardado ✓', duration: 2000, position: 'bottom', color: 'success' });
         await toast.present();
       },
@@ -409,6 +459,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     const idx = this.productos.findIndex(p => p.id === item.producto_id);
     if (idx !== -1) this.productos[idx] = { ...this.productos[idx], stock: (this.productos[idx].stock ?? 0) + item.cantidad };
     this.carrito.splice(index, 1);
+    this.carritoGuardadoEnBD = false;
   }
 
   finalizarPedido() {
@@ -444,7 +495,8 @@ export class Tab1Page implements OnInit, OnDestroy {
           montoRecibido: this.montoRecibido || 0, vuelto: this.calcularVuelto()
         };
         this.carritoPendiente.eliminar(this.clienteSeleccionado!.id!).subscribe();
-        this.carrito = []; this.clienteSeleccionado = null; this.busquedaCliente = ''; this.montoRecibido = 0;
+        this.carrito = []; this.clienteSeleccionado = null; this.busquedaCliente = '';
+        this.montoRecibido = 0; this.carritoGuardadoEnBD = false;
         this.cerrarCarrito(); this.cargarProductos();
         this.estadoImpresion = 'preguntar'; this.errorImpresion = ''; this.mostrarModalImpresion = true;
       },

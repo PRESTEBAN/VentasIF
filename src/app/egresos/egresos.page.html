@@ -9,82 +9,49 @@
         <div class="menu-header">
           <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
           <p class="menu-titulo">Industrial Fátima</p>
-          <p class="menu-usuario">
-            <ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}
-          </p>
+          <p class="menu-usuario"><ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}</p>
         </div>
         <div class="menu-items">
           <p class="menu-seccion">Navegación</p>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
-            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
-          </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
-            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
-          </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
-            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
-          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"><ion-icon name="cart-outline"></ion-icon><span>Ventas</span></div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"><ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span></div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"><ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span></div>
           <div class="menu-divider"></div>
           <p class="menu-seccion">Gestión</p>
-          <div class="menu-item" (click)="irAClientes()">
-            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
-          </div>
-          <div class="menu-item" (click)="irAHistorial()">
-            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
-          </div>
-          <div class="menu-item" (click)="irAInventario()">
-            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
-          </div>
-          <div class="menu-item menu-item-active" (click)="irAEgresos()">
-            <ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span>
-          </div>
+          <div class="menu-item" (click)="irAClientes()"><ion-icon name="people-outline"></ion-icon><span>Clientes</span></div>
+          <div class="menu-item" (click)="irAHistorial()"><ion-icon name="time-outline"></ion-icon><span>Historial</span></div>
+          <div class="menu-item" (click)="irAInventario()"><ion-icon name="cube-outline"></ion-icon><span>Inventario</span></div>
+          <div class="menu-item menu-item-active" (click)="irAEgresos()"><ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span></div>
           <div class="menu-divider"></div>
-          <div class="menu-item menu-logout" (click)="cerrarSesion()">
-            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
-          </div>
+          <div class="menu-item menu-logout" (click)="cerrarSesion()"><ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span></div>
         </div>
       </div>
 
       <!-- HEADER -->
       <div class="header-card">
-        <div class="menu-btn" (click)="abrirMenu()">
-          <span></span><span></span><span></span>
-        </div>
-        <div class="header-logo">
-          <img src="assets/LOGO_IF.jpg" alt="Logo" />
-        </div>
-        <div class="header-right" (click)="abrirModal()">
-          <ion-icon name="add-circle-outline"></ion-icon>
-        </div>
+        <div class="menu-btn" (click)="abrirMenu()"><span></span><span></span><span></span></div>
+        <div class="header-logo"><img src="assets/LOGO_IF.jpg" alt="Logo" /></div>
+        <div class="header-right" (click)="abrirModal()"><ion-icon name="add-circle-outline"></ion-icon></div>
       </div>
 
       <img src="assets/Glaceado.png" class="glaceado" alt="" />
 
-      <!-- MAIN -->
       <div class="main-content">
-
-        <div class="page-header">
-          <h1 class="page-title">Egresos</h1>
-        </div>
+        <div class="page-header"><h1 class="page-title">Egresos</h1></div>
 
         <!-- SELECTOR SEMANA -->
         <div class="semana-selector">
-          <button class="nav-btn" (click)="semanaAnterior()">
-            <ion-icon name="chevron-back-outline"></ion-icon>
-          </button>
+          <button class="nav-btn" (click)="semanaAnterior()"><ion-icon name="chevron-back-outline"></ion-icon></button>
           <div class="dias-scroll">
             <div class="dia-item" *ngFor="let dia of semanaActual"
-              [class.dia-activo]="esDiaSeleccionado(dia)"
-              [class.dia-hoy]="esHoy(dia)"
+              [class.dia-activo]="esDiaSeleccionado(dia)" [class.dia-hoy]="esHoy(dia)"
               (click)="seleccionarDia(dia)">
               <span class="dia-mes">{{ dia | date:'MMM':'':'es' }}</span>
               <span class="dia-numero">{{ dia | date:'d' }}</span>
               <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
             </div>
           </div>
-          <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </button>
+          <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
         </div>
 
         <div class="mes-anio-btn" (click)="abrirDatePicker()">
@@ -102,70 +69,55 @@
           </div>
         </div>
 
-        <!-- LOADING -->
         <div class="loading-egresos" *ngIf="cargando">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Cargando egresos...</p>
+          <ion-spinner name="crescent"></ion-spinner><p>Cargando egresos...</p>
         </div>
 
-        <!-- CONTENIDO -->
         <div *ngIf="!cargando">
-
-          <!-- SIN EGRESOS -->
           <div class="sin-egresos" *ngIf="egresos.length === 0">
-            <div class="sin-egresos-icono">
-              <ion-icon name="trending-down-outline"></ion-icon>
-            </div>
+            <div class="sin-egresos-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
             <p class="sin-egresos-titulo">Sin egresos</p>
             <p class="sin-egresos-sub">No hay registros para este día</p>
-            <button class="btn-agregar-vacio" (click)="abrirModal()">
-              <ion-icon name="add-outline"></ion-icon> Añadir egreso
-            </button>
+            <button class="btn-agregar-vacio" (click)="abrirModal()"><ion-icon name="add-outline"></ion-icon> Añadir egreso</button>
           </div>
 
-          <!-- LISTA DE EGRESOS -->
           <div class="egresos-lista" *ngIf="egresos.length > 0">
 
-            <!-- Cards individuales -->
             <div class="egreso-card" *ngFor="let egreso of egresos">
-              <div class="egreso-icono">
-                <ion-icon name="trending-down-outline"></ion-icon>
-              </div>
+              <div class="egreso-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
               <div class="egreso-info">
                 <p class="egreso-detalle">{{ egreso.detalle }}</p>
                 <div class="egreso-meta">
                   <span class="meta-pill responsable">
                     <ion-icon name="person-outline"></ion-icon>
-                    {{ egreso.responsable }}
+                    {{ getLabelBeneficiario(egreso.responsable) }}
                   </span>
                   <span class="meta-pill beneficiario"
                     [class.pill-vehiculo]="egreso.beneficiario === 'Vehiculo'"
                     [class.pill-fabrica]="egreso.beneficiario === 'Fabrica'">
-                    <ion-icon
-                      [name]="egreso.beneficiario === 'Vehiculo' ? 'car-outline' :
-                               egreso.beneficiario === 'Fabrica'  ? 'business-outline' :
-                               'person-outline'">
-                    </ion-icon>
-                    {{ egreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
-                       egreso.beneficiario === 'Fabrica'  ? 'Fábrica'  : egreso.beneficiario }}
+                    <ion-icon [name]="egreso.beneficiario === 'Vehiculo' ? 'car-outline' : egreso.beneficiario === 'Fabrica' ? 'business-outline' : 'person-outline'"></ion-icon>
+                    {{ egreso.beneficiario === 'Vehiculo' ? 'Vehículo' : egreso.beneficiario === 'Fabrica' ? 'Fábrica' : getLabelBeneficiario(egreso.beneficiario) }}
                   </span>
                 </div>
               </div>
               <span class="egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
-              <button class="btn-borrar-egreso" (click)="confirmarBorrar(egreso)">
-                <ion-icon name="trash-outline"></ion-icon>
-              </button>
+              <!-- BOTONES EDITAR + BORRAR -->
+              <div class="egreso-acciones">
+                <button class="btn-editar-egreso" (click)="abrirEditar(egreso)">
+                  <ion-icon name="pencil-outline"></ion-icon>
+                </button>
+                <button class="btn-borrar-egreso" (click)="confirmarBorrar(egreso)">
+                  <ion-icon name="trash-outline"></ion-icon>
+                </button>
+              </div>
             </div>
 
-            <!-- TOTAL -->
             <div class="total-card">
               <span class="total-label">Total del día</span>
               <span class="total-valor">${{ totalEgresos | number:'1.2-2' }}</span>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -173,22 +125,15 @@
   <!-- ===== MODAL AÑADIR EGRESO ===== -->
   <div class="modal-overlay" *ngIf="mostrarModal" (click)="cerrarModal()">
     <div class="modal-card" (click)="$event.stopPropagation()">
-
       <div class="modal-header">
-        <div class="modal-icono">
-          <ion-icon name="trending-down-outline"></ion-icon>
-        </div>
+        <div class="modal-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
         <h2 class="modal-titulo">Añadir Egreso</h2>
       </div>
-
-      <!-- DETALLE -->
       <div class="form-group">
         <label>Detalle</label>
         <input type="text" [(ngModel)]="nuevoEgreso.detalle" placeholder="¿En qué se gasta?" />
         <span class="field-error" *ngIf="errores.detalle">{{ errores.detalle }}</span>
       </div>
-
-      <!-- RESPONSABLE + BENEFICIARIO -->
       <div class="form-row">
         <div class="form-group half">
           <label>Responsable</label>
@@ -199,58 +144,38 @@
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarResponsableDropdown"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarResponsableDropdown">
-            <div class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="nuevoEgreso.responsable === u.username"
               (click)="seleccionarResponsable(u.username)">
-              <ion-icon name="person-outline"></ion-icon>
-              {{ u.nombre }} {{ u.apellido }}
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
           </div>
           <span class="field-error" *ngIf="errores.responsable">{{ errores.responsable }}</span>
         </div>
         <div class="form-group half">
           <label>Beneficiario</label>
-          <!-- Selector custom para poder colorear Vehículo y Fábrica -->
           <div class="custom-select-wrap" (click)="toggleBeneficiario()">
-            <span class="custom-select-valor"
-              [class.placeholder]="!nuevoEgreso.beneficiario"
+            <span class="custom-select-valor" [class.placeholder]="!nuevoEgreso.beneficiario"
               [class.chip-vehiculo]="nuevoEgreso.beneficiario === 'Vehiculo'"
               [class.chip-fabrica]="nuevoEgreso.beneficiario === 'Fabrica'">
-              {{ nuevoEgreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
-                 nuevoEgreso.beneficiario === 'Fabrica'  ? 'Fábrica'  :
-                 nuevoEgreso.beneficiario ? getLabelBeneficiario(nuevoEgreso.beneficiario) : 'Seleccionar' }}
+              {{ nuevoEgreso.beneficiario === 'Vehiculo' ? 'Vehículo' : nuevoEgreso.beneficiario === 'Fabrica' ? 'Fábrica' : nuevoEgreso.beneficiario ? getLabelBeneficiario(nuevoEgreso.beneficiario) : 'Seleccionar' }}
             </span>
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdown"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdown">
             <p class="dropdown-grupo">Personas</p>
-            <div class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="nuevoEgreso.beneficiario === u.username"
               (click)="seleccionarBeneficiario(u.username)">
-              <ion-icon name="person-outline"></ion-icon>
-              {{ u.nombre }} {{ u.apellido }}
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
             <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-vehiculo"
-              [class.item-activo]="nuevoEgreso.beneficiario === 'Vehiculo'"
-              (click)="seleccionarBeneficiario('Vehiculo')">
-              <ion-icon name="car-outline"></ion-icon>
-              Vehículo
-            </div>
-            <div class="dropdown-item item-fabrica"
-              [class.item-activo]="nuevoEgreso.beneficiario === 'Fabrica'"
-              (click)="seleccionarBeneficiario('Fabrica')">
-              <ion-icon name="business-outline"></ion-icon>
-              Fábrica
-            </div>
+            <div class="dropdown-item item-vehiculo" [class.item-activo]="nuevoEgreso.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiario('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
+            <div class="dropdown-item item-fabrica"  [class.item-activo]="nuevoEgreso.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiario('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
           </div>
           <span class="field-error" *ngIf="errores.beneficiario">{{ errores.beneficiario }}</span>
         </div>
       </div>
-
-      <!-- VALOR -->
       <div class="form-group">
         <label>Valor</label>
         <div class="valor-input-wrap">
@@ -259,9 +184,7 @@
         </div>
         <span class="field-error" *ngIf="errores.valor">{{ errores.valor }}</span>
       </div>
-
       <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
-
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
         <button class="btn-anadir" (click)="guardarEgreso()" [disabled]="guardando">
@@ -269,24 +192,94 @@
           {{ guardando ? 'Guardando...' : 'Añadir' }}
         </button>
       </div>
-
     </div>
   </div>
+
+  <!-- ===== MODAL EDITAR EGRESO ===== -->
+  <div class="modal-overlay" *ngIf="mostrarEditarModal" (click)="cerrarEditar()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icono" style="background: linear-gradient(135deg, #1565C0, #0D47A1)">
+          <ion-icon name="pencil-outline"></ion-icon>
+        </div>
+        <h2 class="modal-titulo">Editar Egreso</h2>
+      </div>
+      <div class="form-group">
+        <label>Detalle</label>
+        <input type="text" [(ngModel)]="egresoEditando.detalle" placeholder="¿En qué se gasta?" />
+        <span class="field-error" *ngIf="erroresEditar.detalle">{{ erroresEditar.detalle }}</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Responsable</label>
+          <div class="custom-select-wrap" (click)="toggleResponsableEditar()">
+            <span class="custom-select-valor" [class.placeholder]="!egresoEditando.responsable">
+              {{ egresoEditando.responsable ? getLabelBeneficiario(egresoEditando.responsable) : 'Seleccionar' }}
+            </span>
+            <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarResponsableDropdownEditar"></ion-icon>
+          </div>
+          <div class="custom-dropdown" *ngIf="mostrarResponsableDropdownEditar">
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
+              [class.item-activo]="egresoEditando.responsable === u.username"
+              (click)="seleccionarResponsableEditar(u.username)">
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
+            </div>
+          </div>
+          <span class="field-error" *ngIf="erroresEditar.responsable">{{ erroresEditar.responsable }}</span>
+        </div>
+        <div class="form-group half">
+          <label>Beneficiario</label>
+          <div class="custom-select-wrap" (click)="toggleBeneficiarioEditar()">
+            <span class="custom-select-valor" [class.placeholder]="!egresoEditando.beneficiario"
+              [class.chip-vehiculo]="egresoEditando.beneficiario === 'Vehiculo'"
+              [class.chip-fabrica]="egresoEditando.beneficiario === 'Fabrica'">
+              {{ egresoEditando.beneficiario === 'Vehiculo' ? 'Vehículo' : egresoEditando.beneficiario === 'Fabrica' ? 'Fábrica' : egresoEditando.beneficiario ? getLabelBeneficiario(egresoEditando.beneficiario) : 'Seleccionar' }}
+            </span>
+            <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdownEditar"></ion-icon>
+          </div>
+          <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdownEditar">
+            <p class="dropdown-grupo">Personas</p>
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
+              [class.item-activo]="egresoEditando.beneficiario === u.username"
+              (click)="seleccionarBeneficiarioEditar(u.username)">
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
+            </div>
+            <p class="dropdown-grupo">Otros</p>
+            <div class="dropdown-item item-vehiculo" [class.item-activo]="egresoEditando.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiarioEditar('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
+            <div class="dropdown-item item-fabrica"  [class.item-activo]="egresoEditando.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiarioEditar('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
+          </div>
+          <span class="field-error" *ngIf="erroresEditar.beneficiario">{{ erroresEditar.beneficiario }}</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Valor</label>
+        <div class="valor-input-wrap">
+          <span class="valor-prefix">$</span>
+          <input type="number" [(ngModel)]="egresoEditando.valor" placeholder="0.00" min="0" />
+        </div>
+        <span class="field-error" *ngIf="erroresEditar.valor">{{ erroresEditar.valor }}</span>
+      </div>
+      <span class="field-error" *ngIf="erroresEditar.general">{{ erroresEditar.general }}</span>
+      <div class="modal-btns">
+        <button class="btn-cancelar" (click)="cerrarEditar()">Cancelar</button>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #1565C0, #0D47A1); box-shadow: 0 4px 12px rgba(21,101,192,0.3)"
+          (click)="guardarEdicion()" [disabled]="guardandoEdicion">
+          <ion-spinner name="crescent" *ngIf="guardandoEdicion" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+          {{ guardandoEdicion ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== MODAL CONFIRMAR BORRAR ===== -->
   <div class="modal-overlay" *ngIf="mostrarConfirmarBorrar">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #E53935, #B71C1C)">
-          <ion-icon name="trash-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #E53935, #B71C1C)"><ion-icon name="trash-outline"></ion-icon></div>
         <h2 class="modal-titulo">¿Borrar egreso?</h2>
       </div>
-      <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 8px 0">
-        {{ egresoABorrar?.detalle }}
-      </p>
-      <p style="text-align:center; color:#E53935; font-weight:900; font-size:18px; margin: 0 0 20px 0">
-        ${{ egresoABorrar?.valor | number:'1.2-2' }}
-      </p>
+      <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 8px 0">{{ egresoABorrar?.detalle }}</p>
+      <p style="text-align:center; color:#E53935; font-weight:900; font-size:18px; margin: 0 0 20px 0">${{ egresoABorrar?.valor | number:'1.2-2' }}</p>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cancelarBorrar()" [disabled]="borrando">Cancelar</button>
         <button class="btn-anadir" style="background: linear-gradient(135deg, #E53935, #B71C1C); box-shadow: 0 4px 12px rgba(229,57,53,0.3)"

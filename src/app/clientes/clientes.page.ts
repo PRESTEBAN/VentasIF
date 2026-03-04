@@ -58,6 +58,10 @@ export class ClientesPage implements OnInit, OnDestroy {
   guardandoAbono = false;
   mensajeAbono = '';
 
+  // ── MODAL CONFIRMAR ELIMINAR ───────────────────────────────────────────────
+  mostrarConfirmarEliminar = false;
+  eliminando = false;
+
   constructor(
     public router: Router,
     private clienteService: ClienteService,
@@ -87,7 +91,6 @@ export class ClientesPage implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -98,22 +101,18 @@ export class ClientesPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
 
-    // Clientes cambiaron (crear/editar/eliminar/abono/pago)
     const cliSub = this.socketService.on('clientes_actualizado').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       this.cargarClientesSilencioso();
-      // Si hay detalle abierto, recargar movimientos también
       if (this.mostrarDetalle && this.clienteDetalle) {
         this.cargarMovimientos(this.clienteDetalle.id!);
       }
     });
 
-    // Abono registrado → refrescar movimientos si hay detalle abierto
     const ordenSub = this.socketService.on('orden_actualizada').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       if (this.mostrarDetalle && this.clienteDetalle) {
@@ -129,7 +128,6 @@ export class ClientesPage implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarClientesSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     this.clienteService.getAllConSaldos().subscribe({
@@ -206,23 +204,23 @@ export class ClientesPage implements OnInit, OnDestroy {
     }
   }
 
-abrirEditar() {
-  if (!this.clienteDetalle) return;
-  const c = this.clienteDetalle;
-  this.editCliente = {
-    cedula:       c.cedula        || '',
-    nombre:       c.nombre        || '',
-    apellido:     c.apellido      || '',
-    negocio:      c.nombre_negocio || '',
-    email:        c.email         || '',
-    direccion:    c.direccion     || '',
-    sector:       c.sector        || '',
-    telefono:     c.telefono      || '',   // ← este era el null
-    esParticular: c.tipo_cliente === 'particular',
-  };
-  this.erroresEditar = {};
-  this.mostrarEditar = true;
-}
+  abrirEditar() {
+    if (!this.clienteDetalle) return;
+    const c = this.clienteDetalle;
+    this.editCliente = {
+      cedula:       c.cedula         || '',
+      nombre:       c.nombre         || '',
+      apellido:     c.apellido       || '',
+      negocio:      c.nombre_negocio || '',
+      email:        c.email          || '',
+      direccion:    c.direccion      || '',
+      sector:       c.sector         || '',
+      telefono:     c.telefono       || '',
+      esParticular: c.tipo_cliente === 'particular',
+    };
+    this.erroresEditar = {};
+    this.mostrarEditar = true;
+  }
 
   cerrarEditar() { this.mostrarEditar = false; this.erroresEditar = {}; }
 
@@ -264,15 +262,32 @@ abrirEditar() {
     });
   }
 
+  // ── ELIMINAR CON MODAL PROPIO ─────────────────────────────────────────────
   confirmarEliminar() {
+    this.mostrarConfirmarEliminar = true;
+  }
+
+  cancelarEliminar() {
+    this.mostrarConfirmarEliminar = false;
+  }
+
+  ejecutarEliminar() {
     if (!this.clienteDetalle) return;
-    const nombre = `${this.clienteDetalle.nombre} ${this.clienteDetalle.apellido}`;
-    if (confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`)) {
-      this.clienteService.remove(this.clienteDetalle.id!).subscribe({
-        next: () => { this.cerrarEditar(); this.cerrarDetalle(); this.cargarClientes(); },
-        error: (err) => { this.erroresEditar.general = err.error?.error || 'Error al eliminar'; }
-      });
-    }
+    this.eliminando = true;
+    this.clienteService.remove(this.clienteDetalle.id!).subscribe({
+      next: () => {
+        this.eliminando = false;
+        this.mostrarConfirmarEliminar = false;
+        this.cerrarEditar();
+        this.cerrarDetalle();
+        this.cargarClientes();
+      },
+      error: (err) => {
+        this.eliminando = false;
+        this.mostrarConfirmarEliminar = false;
+        this.erroresEditar.general = err.error?.error || 'Error al eliminar';
+      }
+    });
   }
 
   abrirAbono() { this.abonoData = { ventaId: null, monto: null }; this.erroresAbono = {}; this.mensajeAbono = ''; this.mostrarAbono = true; }

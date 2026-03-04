@@ -345,4 +345,32 @@
     </ng-template>
   </ion-modal>
 
+  <ion-modal [isOpen]="mostrarConfirmarEliminar" (didDismiss)="cancelarEliminar()"
+    [breakpoints]="[0, 0.35]" [initialBreakpoint]="0.35">
+    <ng-template>
+      <ion-content class="modal-form-content">
+        <div class="modal-body confirmar-body">
+          <div class="confirmar-icono">
+            <ion-icon name="warning-outline"></ion-icon>
+          </div>
+          <h2 class="confirmar-titulo">Eliminar cliente</h2>
+          <p class="confirmar-texto">
+            ¿Estás seguro de eliminar a
+            <strong>{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</strong>?
+            Esta acción no se puede deshacer.
+          </p>
+          <div class="confirmar-acciones">
+            <button class="btn-cancelar" (click)="cancelarEliminar()" [disabled]="eliminando">
+              Cancelar
+            </button>
+            <button class="btn-eliminar-confirm" (click)="ejecutarEliminar()" [disabled]="eliminando">
+              <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+              {{ eliminando ? 'Eliminando...' : 'Sí, eliminar' }}
+            </button>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>

@@ -53,13 +53,21 @@ export class EgresosPage implements OnInit, OnDestroy {
     return this.egresos.reduce((acc, e) => acc + +e.valor, 0);
   }
 
-  // ---- MODAL ----
+  // ---- MODAL AÑADIR ----
   mostrarModal = false;
   guardando    = false;
   mostrarBeneficiarioDropdown = false;
   mostrarResponsableDropdown  = false;
   nuevoEgreso: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
   errores: any = {};
+
+  // ---- MODAL EDITAR ----
+  mostrarEditarModal = false;
+  guardandoEdicion   = false;
+  mostrarBeneficiarioDropdownEditar = false;
+  mostrarResponsableDropdownEditar  = false;
+  egresoEditando: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
+  erroresEditar: any = {};
 
   // ---- BORRAR ----
   mostrarConfirmarBorrar = false;
@@ -101,7 +109,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -112,7 +119,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
@@ -120,16 +126,16 @@ export class EgresosPage implements OnInit, OnDestroy {
     const egresoSub = this.socketService.on<{ accion: string; egreso?: Egreso; id?: string }>('egresos_actualizado').subscribe((data) => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
 
-      // Solo actuar si el egreso es del día seleccionado
       const fechaHoy = this.formatearFecha(this.fechaSeleccionada);
       const esHoy    = this.formatearFecha(new Date()) === fechaHoy;
 
       if (data?.accion === 'crear' && data.egreso) {
-        // Solo agregar si estamos viendo el día de hoy
         if (esHoy) {
           const yaExiste = this.egresos.some(e => e.id === data.egreso!.id);
           if (!yaExiste) this.egresos = [...this.egresos, data.egreso];
         }
+      } else if (data?.accion === 'editar' && data.egreso) {
+        this.egresos = this.egresos.map(e => e.id === data.egreso!.id ? data.egreso! : e);
       } else if (data?.accion === 'borrar' && data.id) {
         this.egresos = this.egresos.filter(e => e.id !== +data.id!);
       }
@@ -143,7 +149,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarEgresosSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
@@ -162,7 +167,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  // ---- USUARIOS ----
   cargarUsuarios() {
     this.http.get<Usuario[]>(`${this.API}/egresos/usuarios`, { headers: this.getHeaders() })
       .subscribe({
@@ -178,7 +182,6 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
-  // ---- CALENDARIO ----
   generarSemana(base: Date) {
     const dias: Date[] = [];
     for (let i = 0; i < 7; i++) {
@@ -210,16 +213,11 @@ export class EgresosPage implements OnInit, OnDestroy {
   esSemanaActual(): boolean {
     const ultimoDia = new Date(this.semanaActual[this.semanaActual.length - 1]);
     const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    ultimoDia.setHours(0, 0, 0, 0);
+    hoy.setHours(0, 0, 0, 0); ultimoDia.setHours(0, 0, 0, 0);
     return ultimoDia >= hoy;
   }
 
-  seleccionarDia(dia: Date) {
-    this.fechaSeleccionada = new Date(dia);
-    this.cargarEgresos();
-  }
-
+  seleccionarDia(dia: Date) { this.fechaSeleccionada = new Date(dia); this.cargarEgresos(); }
   esDiaSeleccionado(dia: Date): boolean { return dia.toDateString() === this.fechaSeleccionada.toDateString(); }
   esHoy(dia: Date): boolean { return dia.toDateString() === new Date().toDateString(); }
   abrirDatePicker()  { this.mostrarDatePicker = true;  }
@@ -245,7 +243,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     return `${fecha.getFullYear()}-${m}-${d}`;
   }
 
-  // ---- EGRESOS ----
   cargarEgresos() {
     this.cargando = true; this.egresos = [];
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${this.formatearFecha(this.fechaSeleccionada)}`, { headers: this.getHeaders() })
@@ -255,7 +252,7 @@ export class EgresosPage implements OnInit, OnDestroy {
       });
   }
 
-  // ---- MODAL ----
+  // ---- MODAL AÑADIR ----
   abrirModal() {
     this.nuevoEgreso = { detalle: '', responsable: this.usuarios[0]?.username || '', beneficiario: '', valor: 0 };
     this.errores = {};
@@ -298,6 +295,50 @@ export class EgresosPage implements OnInit, OnDestroy {
     });
   }
 
+  // ---- MODAL EDITAR ----
+  abrirEditar(egreso: Egreso) {
+    this.egresoEditando = { ...egreso };
+    this.erroresEditar = {};
+    this.mostrarBeneficiarioDropdownEditar = false;
+    this.mostrarResponsableDropdownEditar  = false;
+    this.mostrarEditarModal = true;
+  }
+
+  cerrarEditar() {
+    this.mostrarEditarModal = false;
+    this.mostrarBeneficiarioDropdownEditar = false;
+    this.mostrarResponsableDropdownEditar  = false;
+    this.erroresEditar = {};
+  }
+
+  toggleResponsableEditar() { this.mostrarResponsableDropdownEditar = !this.mostrarResponsableDropdownEditar; }
+  seleccionarResponsableEditar(valor: string) { this.egresoEditando.responsable = valor; this.mostrarResponsableDropdownEditar = false; }
+  toggleBeneficiarioEditar() { this.mostrarBeneficiarioDropdownEditar = !this.mostrarBeneficiarioDropdownEditar; }
+  seleccionarBeneficiarioEditar(valor: string) { this.egresoEditando.beneficiario = valor; this.mostrarBeneficiarioDropdownEditar = false; }
+
+  guardarEdicion() {
+    this.erroresEditar = {};
+    let valido = true;
+    if (!this.egresoEditando.detalle.trim())    { this.erroresEditar.detalle      = 'El detalle es requerido'; valido = false; }
+    if (!this.egresoEditando.responsable)       { this.erroresEditar.responsable  = 'Requerido'; valido = false; }
+    if (!this.egresoEditando.beneficiario)      { this.erroresEditar.beneficiario = 'Requerido'; valido = false; }
+    if (!this.egresoEditando.valor || this.egresoEditando.valor <= 0) { this.erroresEditar.valor = 'Ingresa un valor válido'; valido = false; }
+    if (!valido) return;
+
+    this.guardandoEdicion = true;
+    this.http.put<Egreso>(`${this.API}/egresos/${this.egresoEditando.id}`,
+      { detalle: this.egresoEditando.detalle.trim(), responsable: this.egresoEditando.responsable, beneficiario: this.egresoEditando.beneficiario, valor: this.egresoEditando.valor },
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (updated) => {
+        this.egresos = this.egresos.map(e => e.id === updated.id ? updated : e);
+        this.guardandoEdicion = false;
+        this.cerrarEditar();
+      },
+      error: () => { this.guardandoEdicion = false; this.erroresEditar.general = 'Error al guardar, intenta de nuevo'; }
+    });
+  }
+
   // ---- BORRAR ----
   confirmarBorrar(egreso: Egreso) { this.egresoABorrar = egreso; this.mostrarConfirmarBorrar = true; }
   cancelarBorrar() { this.mostrarConfirmarBorrar = false; this.egresoABorrar = null; }
@@ -316,7 +357,6 @@ export class EgresosPage implements OnInit, OnDestroy {
       });
   }
 
-  // ---- MENU ----
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
