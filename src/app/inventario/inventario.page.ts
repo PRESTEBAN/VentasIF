@@ -24,7 +24,7 @@ export class InventarioPage implements OnInit, OnDestroy {
   modoIngreso = false;
   guardandoIngreso = false;
   mensajeIngreso = '';
-
+ 
   modoEditarPrecios = false;
   guardandoPrecios = false;
   editPrecios: { [producto_id: number]: { mayor: number; menor: number } } = {};
@@ -36,7 +36,7 @@ export class InventarioPage implements OnInit, OnDestroy {
     unidad_medida: 'unidad',
     precio_x_mayor: null as number | null,
     precio_x_menor: null as number | null,
-    stock_inicial: null as number | null,
+    stock_inicial: null as number | null, 
   };
   erroresNuevo: any = {};
   guardandoNuevo = false;
