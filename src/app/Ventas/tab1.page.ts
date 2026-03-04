@@ -7,6 +7,7 @@ import { InventarioService } from '../services/inventario';
 import { VentasRutaService } from '../services/ventas-ruta';
 import { CarritoEstadoService } from '../services/carrito-estado';
 import { CarritoPendienteService } from '../services/carrito-pendiente';
+import { PrinterService } from '../services/printer';
 import { Subscription } from 'rxjs';
 import { ToastController } from '@ionic/angular';
 
@@ -47,10 +48,24 @@ export class Tab1Page implements OnInit, OnDestroy {
   productos: Producto[] = [];
   cargandoProductos = false;
   ivaPercent: number = 0;
-
   guardandoCarrito = false;
 
   private carritoSub!: Subscription;
+  private pollingInterval: any = null;
+  private readonly POLLING_MS = 15000;
+
+  // ── Impresión ──
+  mostrarModalImpresion = false;
+  estadoImpresion: 'preguntar' | 'impreso' | 'error' = 'preguntar';
+  errorImpresion  = '';
+  imprimiendo     = false;
+  ultimoRecibo:   any = null; // datos del último pedido para reimprimir
+
+  // ── Bluetooth ──
+  mostrarModalBT  = false;
+  escaneandoBT    = false;
+  conectandoBT    = '';
+  dispositivosBT: any[] = [];
 
   constructor(
     public router: Router,
@@ -61,6 +76,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     private ventasRutaService: VentasRutaService,
     private carritoEstado: CarritoEstadoService,
     private carritoPendiente: CarritoPendienteService,
+    public printerService: PrinterService,
     private toastCtrl: ToastController
   ) { }
 
@@ -74,14 +90,49 @@ export class Tab1Page implements OnInit, OnDestroy {
     });
   }
 
-  // Se ejecuta cada vez que el usuario entra a esta pantalla
-  // Recarga productos y stock desde la BD para mantener sincronía
   ionViewWillEnter() {
     this.cargarProductos();
+    this.cargarClientes();
+    this.iniciarPolling();
+  }
+
+  ionViewWillLeave() {
+    this.detenerPolling();
   }
 
   ngOnDestroy() {
     if (this.carritoSub) this.carritoSub.unsubscribe();
+    this.detenerPolling();
+  }
+
+  iniciarPolling() {
+    this.detenerPolling();
+    this.pollingInterval = setInterval(() => this.actualizarStockSilencioso(), this.POLLING_MS);
+  }
+
+  detenerPolling() {
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+  }
+
+  // Recarga stock en segundo plano sin spinner ni interrupciones
+  actualizarStockSilencioso() {
+    // No actualizar si el modal de producto está abierto — evita resetear cantidad
+    if (this.mostrarProducto) return;
+
+    this.inventarioService.getBodega().subscribe({
+      next: (inventario) => {
+        this.productos = this.productos.map(p => {
+          const inv = inventario.find((i: any) => i.producto_id === p.id);
+          const stockBD = inv ? inv.stock_actual : 0;
+          // Restar lo que ya está en el carrito para mantener consistencia
+          const enCarrito = this.carrito
+            .filter(item => item.producto_id === p.id)
+            .reduce((acc, item) => acc + item.cantidad, 0);
+          return { ...p, stock: stockBD - enCarrito };
+        });
+      },
+      error: () => {}
+    });
   }
 
   cargarProductos() {
@@ -466,55 +517,129 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (!this.clienteSeleccionado) {
       this.toastCtrl.create({
         message: 'Selecciona un cliente primero',
-        duration: 2000,
-        position: 'bottom',
-        color: 'warning'
+        duration: 2000, position: 'bottom', color: 'warning'
       }).then(t => t.present());
       return;
     }
 
     const totales = this.calcularTotal();
     const tipoPagoMap: any = {
-      'Efectivo': 'efectivo',
-      'Transferencia': 'transferencia',
-      'Pendiente': 'credito',
-      'Cheques': 'cheques'
+      'Efectivo': 'efectivo', 'Transferencia': 'transferencia',
+      'Pendiente': 'credito', 'Cheques': 'cheques'
     };
 
     const payload = {
-      cliente_id: this.clienteSeleccionado.id,
-      subtotal: totales.subtotal,
-      descuento: totales.descuento,
-      total: totales.total,
-      tipo_pago: tipoPagoMap[this.formaPago] || 'efectivo',
-      monto_pagado: this.formaPago !== 'Pendiente' ? totales.total : 0,
+      cliente_id:     this.clienteSeleccionado.id,
+      subtotal:       totales.subtotal,
+      descuento:      totales.descuento,
+      total:          totales.total,
+      tipo_pago:      tipoPagoMap[this.formaPago] || 'efectivo',
+      monto_pagado:   this.formaPago !== 'Pendiente' ? totales.total : 0,
       saldo_generado: this.formaPago === 'Pendiente' ? totales.total : 0,
-      iva: totales.iva,
-      notas: null,
+      iva:            totales.iva,
+      notas:          null,
       monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
-      vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
-      productos: this.carrito.map(item => ({
-        producto_id: item.producto_id,
-        cantidad: item.cantidad,
+      vuelto:         this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
+      productos:      this.carrito.map(item => ({
+        producto_id:     item.producto_id,
+        cantidad:        item.cantidad,
         precio_unitario: item.precio_unitario,
-        descuento: item.descuento
+        descuento:       item.descuento
       }))
     };
 
     this.ventasRutaService.create(payload).subscribe({
       next: () => {
+        // Guardar datos del recibo para imprimir
+        this.ultimoRecibo = {
+          clienteNombre:  `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
+          clienteCedula:  this.clienteSeleccionado!.cedula,
+          items: this.carrito.map(i => ({
+            nombre:          i.nombre,
+            cantidad:        i.cantidad,
+            precio_unitario: i.precio_unitario,
+            descuento:       i.descuento,
+            subtotal:        i.subtotal
+          })),
+          subtotal:      totales.subtotal,
+          descuento:     totales.descuento,
+          iva:           totales.iva,
+          ivaPercent:    this.ivaPercent,
+          total:         totales.total,
+          formaPago:     this.formaPago,
+          montoRecibido: this.montoRecibido || 0,
+          vuelto:        this.calcularVuelto()
+        };
+
         this.carritoPendiente.eliminar(this.clienteSeleccionado!.id!).subscribe();
-        this.carrito = [];
+        this.carrito             = [];
         this.clienteSeleccionado = null;
-        this.busquedaCliente = '';
-        this.montoRecibido = 0;
+        this.busquedaCliente     = '';
+        this.montoRecibido       = 0;
         this.cerrarCarrito();
-        // Recargar stock desde BD después de finalizar la venta
         this.cargarProductos();
+
+        // Abrir modal de impresión
+        this.estadoImpresion       = 'preguntar';
+        this.errorImpresion        = '';
+        this.mostrarModalImpresion = true;
       },
-      error: (err) => {
-        console.error('Error guardando pedido:', err);
-      }
+      error: (err) => { console.error('Error guardando pedido:', err); }
     });
+  }
+
+  // ── IMPRESIÓN ──
+  cerrarModalImpresion() { this.mostrarModalImpresion = false; }
+
+  async imprimirRecibo() {
+    if (!this.ultimoRecibo) return;
+    this.imprimiendo = true;
+    try {
+      await this.printerService.imprimirRecibo(this.ultimoRecibo);
+      this.estadoImpresion = 'impreso';
+    } catch (err: any) {
+      this.estadoImpresion = 'error';
+      this.errorImpresion  = err?.message || 'Error de conexión con la impresora';
+    } finally {
+      this.imprimiendo = false;
+    }
+  }
+
+  // ── BLUETOOTH ──
+  abrirConexionBT() {
+    this.mostrarModalBT = true;
+    this.escanearBT();
+  }
+
+  cerrarConexionBT() { this.mostrarModalBT = false; }
+
+  escanearBT() {
+    this.escaneandoBT   = true;
+    this.dispositivosBT = [];
+    this.printerService.escanearDispositivos()
+      .then(devices => { this.dispositivosBT = devices; })
+      .catch(() => { this.dispositivosBT = []; })
+      .finally(() => { this.escaneandoBT = false; });
+  }
+
+  conectarImpresora(dispositivo: any) {
+    if (this.conectandoBT === dispositivo.address) return;
+    this.conectandoBT = dispositivo.address;
+    this.printerService.conectar(dispositivo.address, dispositivo.name)
+      .then(() => {
+        this.conectandoBT = '';
+        this.cerrarConexionBT();
+        this.toastCtrl.create({
+          message: `✓ Conectado a ${dispositivo.name || dispositivo.address}`,
+          duration: 2000, position: 'bottom', color: 'success'
+        }).then(t => t.present());
+      })
+      .catch(() => {
+        this.conectandoBT = '';
+        this.toastCtrl.create({
+          message: 'Error al conectar. Verifica que la impresora esté encendida.',
+          duration: 3000, position: 'bottom', color: 'danger'
+        }).then(t => t.present());
+      });
   }
 }

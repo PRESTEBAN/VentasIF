@@ -42,15 +42,18 @@ export class Tab3Page implements OnInit, OnDestroy {
   }
 
   // ── Card 3: Desglose (ingresa el usuario) ──
-  billetes:              number | null = null;
-  monedas:               number | null = null;
+  billetes:               number | null = null;
+  monedas:                number | null = null;
   transferenciasDesglose: number | null = null;
-  totalDesglose:         number = 0;
+  chequesDesglose:        number | null = null;
+  totalDesglose:          number = 0;
 
   // ── Modal resultado ──
   mostrarResultado = false;
   estadoCierre: 'cuadrado' | 'sobra' | 'falta' = 'cuadrado';
-  diferencia: number = 0;
+  diferencia:     number = 0;
+  guardandoCierre = false;
+  errorGuardar    = '';
 
   constructor(
     public router: Router,
@@ -169,7 +172,11 @@ export class Tab3Page implements OnInit, OnDestroy {
   }
 
   recalcularTotal() {
-    this.totalDesglose = (this.billetes || 0) + (this.monedas || 0) + (this.transferenciasDesglose || 0);
+    this.totalDesglose =
+      (this.billetes               || 0) +
+      (this.monedas                || 0) +
+      (this.transferenciasDesglose || 0) +
+      (this.chequesDesglose        || 0);
   }
 
   revisar() {
@@ -187,13 +194,90 @@ export class Tab3Page implements OnInit, OnDestroy {
       this.diferencia   = Math.abs(diff);
     }
 
+    this.errorGuardar     = '';
     this.mostrarResultado = true;
   }
 
-  cerrarResultado() { this.mostrarResultado = false; }
+  cerrarResultado() { this.mostrarResultado = false; this.errorGuardar = ''; }
 
   finalizarDia() {
-    this.mostrarResultado = false;
+    if (this.estadoCierre !== 'cuadrado') return;
+
+    this.guardandoCierre = true;
+    this.errorGuardar    = '';
+
+    const fecha = this.formatearFechaHoy();
+
+    // Verificar órdenes pendientes Y egresos del día en paralelo
+    forkJoin({
+      ordenes: this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
+      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,     { headers: this.getHeaders() })
+    }).subscribe({
+      next: ({ ordenes, egresos }) => {
+        // Filtrar órdenes que NO están entregadas
+        const pendientes = (ordenes || []).filter(o =>
+          !o.entregado_vendedor && o.estado !== 'entregado' && o.estado !== 'anulado'
+        );
+
+        if (pendientes.length > 0) {
+          this.guardandoCierre = false;
+          this.errorGuardar = `⚠️ Hay ${pendientes.length} orden${pendientes.length > 1 ? 'es' : ''} sin entregar. Finalízalas en Órdenes antes de cerrar.`;
+          return;
+        }
+
+        // Todo ok — guardar cierre
+        this.guardarCierre(fecha);
+      },
+      error: () => {
+        this.guardandoCierre = false;
+        this.errorGuardar = 'Error al verificar datos. Intenta de nuevo.';
+      }
+    });
+  }
+
+  private guardarCierre(fecha: string) {
+    const payload = {
+      fecha_cierre:         fecha,
+      efectivo_billetes:    this.billetes               || 0,
+      efectivo_monedas:     this.monedas                || 0,
+      total_transferencias: this.transferenciasDesglose || 0,
+      total_cheques:        this.chequesDesglose        || 0,
+      total_creditos:       this.totalPendientes,
+      total_egresos:        this.totalEgresos,
+      notas:                null,
+    };
+
+    this.http.post(`${this.API}/cierres`, payload, { headers: this.getHeaders() })
+      .subscribe({
+        next: () => {
+          // Notificar backend que el día está cerrado
+          this.http.put(`${this.API}/ventas-ruta/cerrar-dia`, { fecha }, { headers: this.getHeaders() })
+            .subscribe({ next: () => {}, error: () => {} });
+
+          // Reset completo — conteo físico y totales
+          this.guardandoCierre        = false;
+          this.mostrarResultado       = false;
+          this.errorGuardar           = '';
+          this.billetes               = null;
+          this.monedas                = null;
+          this.transferenciasDesglose = null;
+          this.chequesDesglose        = null;
+          this.totalDesglose          = 0;
+
+          // Reset totales del día
+          this.ventasRealizadas    = 0;
+          this.totalEfectivo       = 0;
+          this.totalTransferencias = 0;
+          this.totalCheques        = 0;
+          this.totalPendientes     = 0;
+          this.totalIngresosVentas = 0;
+          this.totalEgresos        = 0;
+        },
+        error: () => {
+          this.guardandoCierre = false;
+          this.errorGuardar    = 'Error al guardar el cierre. Intenta de nuevo.';
+        }
+      });
   }
 
   // ---- MENU ----

@@ -162,9 +162,22 @@
                 <input type="number" [(ngModel)]="transferenciasDesglose" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
               </div>
             </div>
+            <div class="fila-input">
+              <span class="input-label"><ion-icon name="document-text-outline" class="fila-icon"></ion-icon>Cheques</span>
+              <div class="input-wrap">
+                <span class="input-prefix">$</span>
+                <input type="number" [(ngModel)]="chequesDesglose" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
+              </div>
+            </div>
+            <div class="fila-separador"></div>
+            <!-- Créditos (solo lectura, viene de ventas pendientes) -->
+            <div class="fila-dato">
+              <span class="dato-label"><ion-icon name="time-outline" class="fila-icon"></ion-icon>Créditos (pendientes)</span>
+              <span class="dato-valor rojo-txt">${{ totalPendientes | number:'1.2-2' }}</span>
+            </div>
             <div class="fila-separador"></div>
             <div class="fila-dato bold-row">
-              <span class="dato-label">Total contado</span>
+              <span class="dato-label">Saldo neta</span>
               <span class="dato-valor azul-txt">${{ totalDesglose | number:'1.2-2' }}</span>
             </div>
           </div>
@@ -202,25 +215,39 @@
           <ion-icon [name]="estadoCierre === 'sobra' ? 'arrow-up-outline' : 'arrow-down-outline'"></ion-icon>
           {{ estadoCierre === 'sobra' ? 'Sobran' : 'Faltan' }} ${{ diferencia | number:'1.2-2' }}
         </div>
+        <p class="bloqueo-msg">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          Corrige el conteo para poder finalizar
+        </p>
       </ng-container>
 
       <div class="resultado-detalle">
         <div class="detalle-fila">
-          <span>Esperado</span>
+          <span>Esperado (Total en caja)</span>
           <span class="detalle-val">${{ totalGeneral | number:'1.2-2' }}</span>
         </div>
         <div class="detalle-fila">
-          <span>Contado</span>
+          <span>Contado (Saldo neta)</span>
           <span class="detalle-val">${{ totalDesglose | number:'1.2-2' }}</span>
         </div>
       </div>
+
+      <!-- Error al guardar -->
+      <p class="error-guardar" *ngIf="errorGuardar">
+        <ion-icon name="warning-outline"></ion-icon> {{ errorGuardar }}
+      </p>
 
       <div class="resultado-btns">
         <button class="btn-resultado btn-volver" (click)="cerrarResultado()">
           <ion-icon name="arrow-back-outline"></ion-icon> Volver
         </button>
-        <button class="btn-resultado btn-finalizar" (click)="finalizarDia()">
-          Finalizar <ion-icon name="checkmark-outline"></ion-icon>
+        <button class="btn-resultado btn-finalizar"
+          [disabled]="estadoCierre !== 'cuadrado' || guardandoCierre"
+          [class.disabled]="estadoCierre !== 'cuadrado'"
+          (click)="finalizarDia()">
+          <ion-spinner name="crescent" *ngIf="guardandoCierre" style="width:16px;height:16px;margin-right:4px"></ion-spinner>
+          {{ guardandoCierre ? 'Guardando...' : 'Finalizar' }}
+          <ion-icon name="checkmark-outline" *ngIf="!guardandoCierre"></ion-icon>
         </button>
       </div>
     </div>

@@ -446,3 +446,89 @@
 }
 
 .iva-symbol { font-size: 12px; color: #888; }
+
+/* ===== MODALES IMPRESIÓN / BLUETOOTH ===== */
+.print-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.65); z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.print-card {
+  background: #fff; border-radius: 24px; width: 88%; max-width: 320px;
+  padding: 28px 22px 22px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.print-icono-wrap {
+  width: 68px; height: 68px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 36px; color: #fff; }
+  &.ok    { background: linear-gradient(135deg, #43A047, #2E7D32); box-shadow: 0 6px 20px rgba(67,160,71,0.35); }
+  &.error { background: linear-gradient(135deg, #E53935, #B71C1C); box-shadow: 0 6px 20px rgba(229,57,53,0.35); }
+  &.bt    { background: linear-gradient(135deg, #1565C0, #0D47A1); box-shadow: 0 6px 20px rgba(21,101,192,0.35); }
+}
+
+.print-titulo {
+  font-size: 20px; font-weight: 900; margin: 0; color: #2D1B0E; text-align: center;
+  &.error { color: #C62828; }
+}
+
+.print-sub {
+  font-size: 13px; color: #888; margin: 0; text-align: center;
+}
+
+.print-aviso {
+  display: flex; align-items: center; gap: 8px;
+  background: #E3F2FD; border: 1px solid #90CAF9; border-radius: 10px;
+  padding: 8px 12px; width: 100%; box-sizing: border-box;
+  ion-icon { font-size: 16px; color: #1565C0; flex-shrink: 0; }
+  span { font-size: 12px; color: #1565C0; font-weight: 600; }
+}
+
+.print-btns {
+  display: flex; gap: 8px; width: 100%; flex-wrap: wrap;
+}
+
+.print-btn {
+  flex: 1; padding: 11px 8px; border: none; border-radius: 12px;
+  font-size: 12px; font-weight: 700; cursor: pointer; min-width: 80px;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  -webkit-appearance: none; transition: transform 0.15s;
+  ion-icon { font-size: 15px; }
+  &:active { transform: scale(0.96); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.print-btn-skip    { background: #F0E6DA; color: #590F23; }
+.print-btn-print   { background: linear-gradient(135deg, #590F23, #8B2020); color: #fff; box-shadow: 0 4px 12px rgba(89,15,35,0.3); }
+.print-btn-connect { background: linear-gradient(135deg, #1565C0, #0D47A1); color: #fff; box-shadow: 0 4px 12px rgba(21,101,192,0.3); }
+
+/* BLUETOOTH lista */
+.bt-loading {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px 0;
+  p { font-size: 13px; color: #888; margin: 0; }
+}
+
+.bt-lista { width: 100%; display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; }
+
+.bt-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; background: #F9F4EE; border-radius: 12px;
+  border: 1px solid #F0E6DA; cursor: pointer;
+  &:active { background: #F0E6DA; }
+  ion-icon:first-child { font-size: 20px; color: #590F23; flex-shrink: 0; }
+}
+
+.bt-info { flex: 1; p { margin: 0; } }
+.bt-nombre { font-size: 13px; font-weight: 700; color: #2D1B0E; }
+.bt-mac    { font-size: 10px; color: #AAA; }
+
+.bt-vacio {
+  text-align: center; font-size: 12px; color: #AAA;
+  padding: 10px 0; width: 100%;
+}

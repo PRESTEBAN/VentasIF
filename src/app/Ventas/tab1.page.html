@@ -378,3 +378,109 @@
   </ion-modal>
 
 </ion-content>
+
+<!-- ===== MODAL IMPRESIÓN ===== -->
+<div class="print-overlay" *ngIf="mostrarModalImpresion" (click)="cerrarModalImpresion()">
+  <div class="print-card" (click)="$event.stopPropagation()">
+
+    <!-- ÉXITO — preguntar si imprimir -->
+    <ng-container *ngIf="estadoImpresion === 'preguntar'">
+      <div class="print-icono-wrap ok">
+        <ion-icon name="checkmark-outline"></ion-icon>
+      </div>
+      <h2 class="print-titulo">¡Pedido registrado!</h2>
+      <p class="print-sub">¿Deseas imprimir el recibo?</p>
+      <div class="print-aviso" *ngIf="!printerService.dispositivoConectado">
+        <ion-icon name="bluetooth-outline"></ion-icon>
+        <span>Sin impresora conectada.</span>
+      </div>
+      <div class="print-btns">
+        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">
+          <ion-icon name="close-outline"></ion-icon> No imprimir
+        </button>
+        <button class="print-btn print-btn-connect"
+          *ngIf="!printerService.dispositivoConectado"
+          (click)="abrirConexionBT()">
+          <ion-icon name="bluetooth-outline"></ion-icon> Conectar
+        </button>
+        <button class="print-btn print-btn-print"
+          *ngIf="printerService.dispositivoConectado"
+          (click)="imprimirRecibo()" [disabled]="imprimiendo">
+          <ion-spinner name="crescent" *ngIf="imprimiendo" style="width:14px;height:14px"></ion-spinner>
+          <ion-icon name="print-outline" *ngIf="!imprimiendo"></ion-icon>
+          {{ imprimiendo ? 'Imprimiendo...' : 'Imprimir' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- IMPRESO OK -->
+    <ng-container *ngIf="estadoImpresion === 'impreso'">
+      <div class="print-icono-wrap ok">
+        <ion-icon name="print-outline"></ion-icon>
+      </div>
+      <h2 class="print-titulo">¡Impreso!</h2>
+      <div class="print-btns">
+        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
+        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo">
+          <ion-icon name="refresh-outline"></ion-icon> Reimprimir
+        </button>
+      </div>
+    </ng-container>
+
+    <!-- ERROR -->
+    <ng-container *ngIf="estadoImpresion === 'error'">
+      <div class="print-icono-wrap error">
+        <ion-icon name="alert-outline"></ion-icon>
+      </div>
+      <h2 class="print-titulo error">Error al imprimir</h2>
+      <p class="print-sub">{{ errorImpresion }}</p>
+      <div class="print-btns">
+        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
+        <button class="print-btn print-btn-connect" (click)="abrirConexionBT()">
+          <ion-icon name="bluetooth-outline"></ion-icon> Reconectar
+        </button>
+        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo">
+          <ion-icon name="print-outline"></ion-icon> Reintentar
+        </button>
+      </div>
+    </ng-container>
+
+  </div>
+</div>
+
+<!-- ===== MODAL BLUETOOTH ===== -->
+<div class="print-overlay" *ngIf="mostrarModalBT" (click)="cerrarConexionBT()">
+  <div class="print-card" (click)="$event.stopPropagation()">
+    <div class="print-icono-wrap bt">
+      <ion-icon name="bluetooth-outline"></ion-icon>
+    </div>
+    <h2 class="print-titulo">Conectar impresora</h2>
+
+    <div class="bt-loading" *ngIf="escaneandoBT">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Buscando dispositivos pareados...</p>
+    </div>
+
+    <div class="bt-lista" *ngIf="!escaneandoBT">
+      <div class="bt-item" *ngFor="let d of dispositivosBT" (click)="conectarImpresora(d)">
+        <ion-icon name="print-outline"></ion-icon>
+        <div class="bt-info">
+          <p class="bt-nombre">{{ d.name || 'Desconocido' }}</p>
+          <p class="bt-mac">{{ d.address }}</p>
+        </div>
+        <ion-spinner name="crescent" *ngIf="conectandoBT === d.address" style="width:18px;height:18px"></ion-spinner>
+        <ion-icon name="checkmark-circle" *ngIf="printerService.dispositivoConectado?.id === d.address" style="color:#2E7D32;font-size:20px"></ion-icon>
+      </div>
+      <p class="bt-vacio" *ngIf="dispositivosBT.length === 0">
+        No hay dispositivos pareados. Paréalos primero en Ajustes Bluetooth del celular.
+      </p>
+    </div>
+
+    <div class="print-btns">
+      <button class="print-btn print-btn-skip" (click)="cerrarConexionBT()">Cerrar</button>
+      <button class="print-btn print-btn-connect" (click)="escanearBT()" [disabled]="escaneandoBT">
+        <ion-icon name="search-outline"></ion-icon> Buscar
+      </button>
+    </div>
+  </div>
+</div>
