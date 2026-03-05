@@ -532,51 +532,88 @@
   text-align: center; font-size: 12px; color: #AAA;
   padding: 10px 0; width: 100%;
 }
+/* ── CÉDULA / RUC ─────────────────────────────────────────── */
+/* Pega esto al FINAL de tu tab1.page.scss existente           */
 
-/* ── AGREGAR AL FINAL DE tab1.page.scss ── */
+.cedula-ruc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-/* Lista de clientes coincidentes */
-.coincidentes-lista {
-  margin-top: 10px;
-  border-radius: 12px;
+/* Wrap del input — ocupa todo el espacio menos el checkbox */
+.cedula-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  background: #f9f9f9;
   overflow: hidden;
-  border: 1px solid #F0E6DA;
-  animation: slideDown 0.2s ease;
+  transition: border-color 0.2s;
+
+  &:focus-within { border-color: #590F23; }
+
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    min-width: 0;
+    &::placeholder { color: #bbb; }
+  }
+
+  /* Sufijo 001 que aparece pegado al input cuando esRuc = true */
+  .ruc-sufijo {
+    padding: 10px 10px 10px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #590F23;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Checkbox RUC */
+.ruc-checkbox-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
 }
 
-.coincidentes-titulo {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 11px; font-weight: 700; color: #A07050;
-  background: #FDF0E8; padding: 8px 12px; margin: 0;
-  ion-icon { font-size: 14px; }
+.ruc-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #ccc;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+
+  ion-icon {
+    font-size: 14px;
+    color: #fff;
+  }
+
+  &.activo {
+    background: #590F23;
+    border-color: #590F23;
+  }
 }
 
-.coincidente-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; background: #fff; cursor: pointer;
-  border-bottom: 1px solid #F8F0E8;
-  &:last-child { border-bottom: none; }
-  &:active { background: #FDF6EE; }
-}
-
-.coinc-avatar {
-  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #590F23, #8B2020);
-  display: flex; align-items: center; justify-content: center;
-  ion-icon { font-size: 20px; color: #fff; }
-}
-
-.coinc-datos { flex: 1; p { margin: 0; } }
-.coinc-nombre { font-size: 13px; font-weight: 700; color: #2D1B0E; }
-.coinc-sub    { font-size: 11px; color: #AAA; margin-top: 2px !important; }
-.coinc-arrow  { font-size: 16px; color: #CCC; flex-shrink: 0; }
-
-.carrito-sin-guardar {
-  display: flex; align-items: center; margin-right: 6px;
-  ion-icon { font-size: 18px; color: #E65100; }
+.ruc-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

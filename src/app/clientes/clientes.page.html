@@ -102,8 +102,8 @@
             </div>
             <div class="cliente-info">
               <p class="cli-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</p>
-              <p class="cli-negocio">{{ cliente.nombre_negocio || cliente.cedula }}</p>
-              <p class="cli-cedula" *ngIf="cliente.nombre_negocio">{{ cliente.cedula }}</p>
+              <p class="cli-negocio">{{ cliente.nombre_negocio || cliente.cedula_ruc }}</p>
+              <p class="cli-cedula" *ngIf="cliente.nombre_negocio">{{ cliente.cedula_ruc }}</p>
             </div>
             <div class="cliente-saldo">
               <p class="saldo-label">Saldo</p>
@@ -134,11 +134,31 @@
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
+
+          <!-- ── CÉDULA / RUC ── -->
           <div class="form-group">
-            <label>Cédula*</label>
-            <input type="text" [(ngModel)]="nuevoCliente.cedula" placeholder="C.I." />
-            <span class="field-error" *ngIf="errores.cedula">{{ errores.cedula }}</span>
+            <label>Cédula / RUC*</label>
+            <div class="cedula-ruc-row">
+              <div class="cedula-input-wrap" [class.con-ruc]="nuevoCliente.esRuc">
+                <input
+                  type="text"
+                  [(ngModel)]="nuevoCliente.cedula_ruc"
+                  placeholder="10 dígitos"
+                  maxlength="10"
+                  (ngModelChange)="onCedulaChange($event)"
+                />
+                <span class="ruc-sufijo" *ngIf="nuevoCliente.esRuc">001</span>
+              </div>
+              <div class="ruc-checkbox-wrap" (click)="toggleRuc()">
+                <div class="ruc-check" [class.activo]="nuevoCliente.esRuc">
+                  <ion-icon name="checkmark-outline" *ngIf="nuevoCliente.esRuc"></ion-icon>
+                </div>
+                <span class="ruc-label">RUC</span>
+              </div>
+            </div>
+            <span class="field-error" *ngIf="errores.cedula_ruc">{{ errores.cedula_ruc }}</span>
           </div>
+
           <div class="form-group">
             <label>Tipo Cliente*</label>
             <div class="switch-row">
@@ -185,8 +205,6 @@
       </ion-header>
       <ion-content class="detalle-content" *ngIf="clienteDetalle">
         <div class="detalle-body">
-
-          <!-- HERO -->
           <div class="detalle-hero">
             <div class="detalle-avatar">
               <span class="avatar-inicial-hero">{{ clienteDetalle.nombre.charAt(0) }}{{ clienteDetalle.apellido.charAt(0) }}</span>
@@ -206,10 +224,7 @@
             </div>
           </div>
 
-          <!-- CARDS INFO -->
           <div class="detalle-cards">
-
-            <!-- Contacto -->
             <div class="detalle-card">
               <p class="detalle-card-titulo">Contacto</p>
               <div class="info-fila">
@@ -234,7 +249,6 @@
               </div>
             </div>
 
-            <!-- Financiero -->
             <div class="detalle-card" *ngIf="(clienteDetalle.limite_credito || 0) > 0 || clienteDetalle.ultima_compra">
               <p class="detalle-card-titulo">Financiero</p>
               <div class="fin-item" *ngIf="(clienteDetalle.limite_credito || 0) > 0">
@@ -251,7 +265,6 @@
               </div>
             </div>
 
-            <!-- Movimientos -->
             <div class="detalle-card">
               <p class="detalle-card-titulo">Movimientos</p>
               <div class="loading-mov" *ngIf="cargandoMovimientos"><ion-spinner name="crescent"></ion-spinner></div>
@@ -270,7 +283,6 @@
               </div>
               <div class="sin-movimientos" *ngIf="!cargandoMovimientos && movimientos.length === 0"><p>Sin movimientos registrados</p></div>
             </div>
-
           </div>
         </div>
       </ion-content>
@@ -288,15 +300,37 @@
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group half"><label>Cédula*</label><input type="text" [(ngModel)]="editCliente.cedula" placeholder="C.I." /><span class="field-error" *ngIf="erroresEditar.cedula">{{ erroresEditar.cedula }}</span></div>
-            <div class="form-group half">
-              <label>Tipo Cliente*</label>
-              <div class="switch-row">
-                <span [class.tipo-active]="!editCliente.esParticular">Neg.</span>
-                <div class="switch-track" [class.on]="editCliente.esParticular" (click)="editCliente.esParticular = !editCliente.esParticular"><div class="switch-thumb"></div></div>
-                <span [class.tipo-active]="editCliente.esParticular">Part.</span>
+
+          <!-- ── CÉDULA / RUC (editar) ── -->
+          <div class="form-group">
+            <label>Cédula / RUC*</label>
+            <div class="cedula-ruc-row">
+              <div class="cedula-input-wrap" [class.con-ruc]="editCliente.esRuc">
+                <input
+                  type="text"
+                  [(ngModel)]="editCliente.cedula_ruc"
+                  placeholder="10 dígitos"
+                  maxlength="10"
+                  (ngModelChange)="onCedulaEditarChange($event)"
+                />
+                <span class="ruc-sufijo" *ngIf="editCliente.esRuc">001</span>
               </div>
+              <div class="ruc-checkbox-wrap" (click)="toggleRucEditar()">
+                <div class="ruc-check" [class.activo]="editCliente.esRuc">
+                  <ion-icon name="checkmark-outline" *ngIf="editCliente.esRuc"></ion-icon>
+                </div>
+                <span class="ruc-label">RUC</span>
+              </div>
+            </div>
+            <span class="field-error" *ngIf="erroresEditar.cedula_ruc">{{ erroresEditar.cedula_ruc }}</span>
+          </div>
+
+          <div class="form-group">
+            <label>Tipo Cliente*</label>
+            <div class="switch-row">
+              <span [class.tipo-active]="!editCliente.esParticular">Neg.</span>
+              <div class="switch-track" [class.on]="editCliente.esParticular" (click)="editCliente.esParticular = !editCliente.esParticular"><div class="switch-thumb"></div></div>
+              <span [class.tipo-active]="editCliente.esParticular">Part.</span>
             </div>
           </div>
           <div class="form-row">
@@ -360,9 +394,7 @@
             Esta acción no se puede deshacer.
           </p>
           <div class="confirmar-acciones">
-            <button class="btn-cancelar" (click)="cancelarEliminar()" [disabled]="eliminando">
-              Cancelar
-            </button>
+            <button class="btn-cancelar" (click)="cancelarEliminar()" [disabled]="eliminando">Cancelar</button>
             <button class="btn-eliminar-confirm" (click)="ejecutarEliminar()" [disabled]="eliminando">
               <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
               {{ eliminando ? 'Eliminando...' : 'Sí, eliminar' }}

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { ClienteService, Cliente, Movimiento } from '../services/cliente';
 import { AuthService } from '../services/auth';
 import { SocketService } from '../services/socket';
+import { PrinterService, DatosReciboAbono } from '../services/printer';
 import { Subscription } from 'rxjs';
 
 type OrdenCampo = 'nombre' | 'saldo' | 'fecha_creacion' | 'fecha_modificacion';
@@ -38,7 +39,11 @@ export class ClientesPage implements OnInit, OnDestroy {
   ];
 
   mostrarAgregarCliente = false;
-  nuevoCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
+  nuevoCliente = {
+    cedula_ruc: '', nombre: '', apellido: '', negocio: '',
+    email: '', direccion: '', sector: '', telefono: '',
+    esParticular: false, esRuc: false
+  };
   errores: any = {};
   guardando = false;
 
@@ -48,7 +53,11 @@ export class ClientesPage implements OnInit, OnDestroy {
   cargandoMovimientos = false;
 
   mostrarEditar = false;
-  editCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
+  editCliente = {
+    cedula_ruc: '', nombre: '', apellido: '', negocio: '',
+    email: '', direccion: '', sector: '', telefono: '',
+    esParticular: false, esRuc: false
+  };
   erroresEditar: any = {};
   guardandoEdicion = false;
 
@@ -58,7 +67,6 @@ export class ClientesPage implements OnInit, OnDestroy {
   guardandoAbono = false;
   mensajeAbono = '';
 
-  // ── MODAL CONFIRMAR ELIMINAR ───────────────────────────────────────────────
   mostrarConfirmarEliminar = false;
   eliminando = false;
 
@@ -66,7 +74,8 @@ export class ClientesPage implements OnInit, OnDestroy {
     public router: Router,
     private clienteService: ClienteService,
     private authService: AuthService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private printerService: PrinterService
   ) {}
 
   ngOnInit() {
@@ -150,7 +159,7 @@ export class ClientesPage implements OnInit, OnDestroy {
       ? this.clientes.filter(c =>
           c.nombre.toLowerCase().includes(q) ||
           c.apellido.toLowerCase().includes(q) ||
-          c.cedula.includes(q) ||
+          c.cedula_ruc.includes(q) ||
           (c.nombre_negocio?.toLowerCase().includes(q) ?? false)
         )
       : [...this.clientes];
@@ -207,8 +216,10 @@ export class ClientesPage implements OnInit, OnDestroy {
   abrirEditar() {
     if (!this.clienteDetalle) return;
     const c = this.clienteDetalle;
+    // Detectar si es RUC (13 dígitos terminando en 001)
+    const esRuc = c.cedula_ruc.length === 13 && c.cedula_ruc.endsWith('001');
     this.editCliente = {
-      cedula:       c.cedula         || '',
+      cedula_ruc:   esRuc ? c.cedula_ruc.slice(0, 10) : (c.cedula_ruc || ''),
       nombre:       c.nombre         || '',
       apellido:     c.apellido       || '',
       negocio:      c.nombre_negocio || '',
@@ -217,6 +228,7 @@ export class ClientesPage implements OnInit, OnDestroy {
       sector:       c.sector         || '',
       telefono:     c.telefono       || '',
       esParticular: c.tipo_cliente === 'particular',
+      esRuc,
     };
     this.erroresEditar = {};
     this.mostrarEditar = true;
@@ -224,11 +236,28 @@ export class ClientesPage implements OnInit, OnDestroy {
 
   cerrarEditar() { this.mostrarEditar = false; this.erroresEditar = {}; }
 
+  // ── CÉDULA / RUC (editar) ─────────────────────────────────────────────────
+  onCedulaEditarChange(valor: string) {
+    this.editCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
+  }
+
+  toggleRucEditar() {
+    this.editCliente.esRuc = !this.editCliente.esRuc;
+    if (this.erroresEditar.cedula_ruc) this.erroresEditar.cedula_ruc = '';
+  }
+
+  private getCedulaEditarParaGuardar(): string {
+    const base = this.editCliente.cedula_ruc.trim();
+    return this.editCliente.esRuc ? `${base}001` : base;
+  }
+
   guardarEdicion() {
     this.erroresEditar = {};
     let valido = true;
-    if (!this.editCliente.cedula.trim() || !/^\d{10}$/.test(this.editCliente.cedula.trim()))
-      { this.erroresEditar.cedula = 'Cédula inválida (10 dígitos)'; valido = false; }
+
+    const cedulaBase = this.editCliente.cedula_ruc.trim();
+    if (!cedulaBase || !/^\d{10}$/.test(cedulaBase))
+      { this.erroresEditar.cedula_ruc = 'Cédula inválida (10 dígitos)'; valido = false; }
     if (!this.editCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.editCliente.nombre))
       { this.erroresEditar.nombre = 'Nombre inválido'; valido = false; }
     if (!this.editCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.editCliente.apellido))
@@ -243,11 +272,15 @@ export class ClientesPage implements OnInit, OnDestroy {
     if (!valido) return;
 
     const payload: Partial<Cliente> = {
-      cedula: this.editCliente.cedula.trim(), nombre: this.editCliente.nombre.trim(),
-      apellido: this.editCliente.apellido.trim(), nombre_negocio: this.editCliente.negocio.trim() || null,
-      tipo_cliente: this.editCliente.esParticular ? 'particular' : 'negocio',
-      direccion: this.editCliente.direccion.trim(), sector: this.editCliente.sector.trim() || null,
-      telefono: tel, email: this.editCliente.email.trim() || null,
+      cedula_ruc:     this.getCedulaEditarParaGuardar(),
+      nombre:         this.editCliente.nombre.trim(),
+      apellido:       this.editCliente.apellido.trim(),
+      nombre_negocio: this.editCliente.negocio.trim() || null,
+      tipo_cliente:   this.editCliente.esParticular ? 'particular' : 'negocio',
+      direccion:      this.editCliente.direccion.trim(),
+      sector:         this.editCliente.sector.trim() || null,
+      telefono:       tel,
+      email:          this.editCliente.email.trim() || null,
     };
 
     this.guardandoEdicion = true;
@@ -262,14 +295,9 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
-  // ── ELIMINAR CON MODAL PROPIO ─────────────────────────────────────────────
-  confirmarEliminar() {
-    this.mostrarConfirmarEliminar = true;
-  }
-
-  cancelarEliminar() {
-    this.mostrarConfirmarEliminar = false;
-  }
+  // ── ELIMINAR ──────────────────────────────────────────────────────────────
+  confirmarEliminar() { this.mostrarConfirmarEliminar = true; }
+  cancelarEliminar()  { this.mostrarConfirmarEliminar = false; }
 
   ejecutarEliminar() {
     if (!this.clienteDetalle) return;
@@ -290,6 +318,7 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── ABONO ─────────────────────────────────────────────────────────────────
   abrirAbono() { this.abonoData = { ventaId: null, monto: null }; this.erroresAbono = {}; this.mensajeAbono = ''; this.mostrarAbono = true; }
   cerrarAbono() { this.mostrarAbono = false; this.erroresAbono = {}; this.mensajeAbono = ''; }
 
@@ -307,27 +336,69 @@ export class ClientesPage implements OnInit, OnDestroy {
         this.mensajeAbono = res.mensaje;
         this.cargarMovimientos(this.clienteDetalle!.id!);
         this.cargarClientes();
+
+        // Imprimir recibo de abono
+        const c = this.clienteDetalle!;
+        const saldoAntes  = +(c.saldo || 0);
+        const montoAbono  = +this.abonoData.monto!;
+        const saldoResta  = +(res.saldo_restante ?? (saldoAntes - montoAbono));
+        const user = this.authService.getUsuario();
+        this.printerService.imprimirReciboAbono({
+          ventaId:          this.abonoData.ventaId!,
+          clienteNombre:    `${c.nombre} ${c.apellido}`,
+          clienteCedula:    c.cedula_ruc || '',
+          clienteTelefono:  c.telefono   || '',
+          clienteDireccion: c.direccion  || '',
+          vendedor:         user?.nombre || user?.username || 'Admin',
+          valorTotalVenta:  +(res.valor_total ?? 0),
+          saldoPendiente:   saldoAntes,
+          valorAbono:       montoAbono,
+          saldoRestante:    saldoResta,
+        }).catch(err => console.warn('[Printer] Error al imprimir abono:', err));
+
         setTimeout(() => this.cerrarAbono(), 1500);
       },
       error: (err) => { this.guardandoAbono = false; this.erroresAbono.general = err.error?.error || 'Error al registrar abono'; }
     });
   }
 
+  // ── AGREGAR CLIENTE ───────────────────────────────────────────────────────
   abrirAgregarCliente() { this.mostrarAgregarCliente = true; }
 
   cerrarAgregarCliente() {
     this.mostrarAgregarCliente = false;
-    this.nuevoCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
+    this.nuevoCliente = {
+      cedula_ruc: '', nombre: '', apellido: '', negocio: '',
+      email: '', direccion: '', sector: '', telefono: '',
+      esParticular: false, esRuc: false
+    };
     this.errores = {};
+  }
+
+  // ── CÉDULA / RUC (agregar) ────────────────────────────────────────────────
+  onCedulaChange(valor: string) {
+    this.nuevoCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
+  }
+
+  toggleRuc() {
+    this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
+    if (this.errores.cedula_ruc) this.errores.cedula_ruc = '';
+  }
+
+  private getCedulaParaGuardar(): string {
+    const base = this.nuevoCliente.cedula_ruc.trim();
+    return this.nuevoCliente.esRuc ? `${base}001` : base;
   }
 
   guardarCliente() {
     this.errores = {};
     let valido = true;
-    const cedula = this.nuevoCliente.cedula.trim();
-    if (!cedula) { this.errores.cedula = 'La cédula es requerida'; valido = false; }
-    else if (/[^0-9]/.test(cedula)) { this.errores.cedula = 'Solo números'; valido = false; }
-    else if (cedula.length !== 10) { this.errores.cedula = 'Debe tener 10 dígitos'; valido = false; }
+    const cedulaBase = this.nuevoCliente.cedula_ruc.trim();
+
+    if (!cedulaBase) { this.errores.cedula_ruc = 'La cédula es requerida'; valido = false; }
+    else if (/[^0-9]/.test(cedulaBase)) { this.errores.cedula_ruc = 'Solo números'; valido = false; }
+    else if (cedulaBase.length !== 10) { this.errores.cedula_ruc = 'Debe tener 10 dígitos'; valido = false; }
+
     if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre))
       { this.errores.nombre = 'Nombre inválido'; valido = false; }
     if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido))
@@ -343,12 +414,17 @@ export class ClientesPage implements OnInit, OnDestroy {
     if (!valido) return;
 
     const payload: Cliente = {
-      cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
+      cedula_ruc: this.getCedulaParaGuardar(),
+      nombre:         this.nuevoCliente.nombre.trim(),
+      apellido:       this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
-      tipo_cliente: this.nuevoCliente.esParticular ? 'particular' : 'negocio',
-      direccion: this.nuevoCliente.direccion.trim(), sector: this.nuevoCliente.sector.trim() || null,
-      telefono: tel, email: this.nuevoCliente.email.trim() || null,
-      limite_credito: 0, notas: null,
+      tipo_cliente:   this.nuevoCliente.esParticular ? 'particular' : 'negocio',
+      direccion:      this.nuevoCliente.direccion.trim(),
+      sector:         this.nuevoCliente.sector.trim() || null,
+      telefono:       tel,
+      email:          this.nuevoCliente.email.trim() || null,
+      limite_credito: 0,
+      notas:          null,
     };
 
     this.guardando = true;

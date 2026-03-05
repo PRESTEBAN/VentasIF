@@ -2,10 +2,8 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-      <!-- OVERLAY MENU -->
       <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
 
-      <!-- MENU LATERAL -->
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
           <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
@@ -47,7 +45,6 @@
         </div>
       </div>
 
-      <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -65,10 +62,7 @@
 
       <div class="main-content">
 
-        <!-- CLIENTE CARD -->
         <div class="cliente-card" [class.cliente-activo]="clienteSeleccionado">
-
-          <!-- Sin cliente seleccionado -->
           <div *ngIf="!clienteSeleccionado">
             <div class="cliente-top">
               <div class="cliente-top-left">
@@ -97,42 +91,32 @@
                 <ion-icon name="arrow-forward-outline"></ion-icon>
               </div>
             </div>
-
-            <!-- Error -->
             <p class="error-cliente" *ngIf="errorCliente">
               <ion-icon name="alert-circle-outline"></ion-icon>
               {{ errorCliente }}
             </p>
-
-            <!-- Lista de coincidencias múltiples -->
             <div class="coincidentes-lista" *ngIf="clientesCoincidentes.length > 0">
               <p class="coincidentes-titulo">
                 <ion-icon name="people-outline"></ion-icon>
                 {{ clientesCoincidentes.length }} clientes encontrados
               </p>
               <div class="coincidente-item" *ngFor="let c of clientesCoincidentes" (click)="seleccionarCliente(c)">
-                <div class="coinc-avatar">
-                  <ion-icon name="person-outline"></ion-icon>
-                </div>
+                <div class="coinc-avatar"><ion-icon name="person-outline"></ion-icon></div>
                 <div class="coinc-datos">
                   <p class="coinc-nombre">{{ c.nombre }} {{ c.apellido }}</p>
-                  <p class="coinc-sub">{{ c.cedula }}{{ c.nombre_negocio ? ' · ' + c.nombre_negocio : '' }}</p>
+                  <p class="coinc-sub">{{ c.cedula_ruc }}{{ c.nombre_negocio ? ' · ' + c.nombre_negocio : '' }}</p>
                 </div>
                 <ion-icon name="chevron-forward-outline" class="coinc-arrow"></ion-icon>
               </div>
             </div>
           </div>
 
-          <!-- Con cliente seleccionado -->
           <div class="cliente-seleccionado-row" *ngIf="clienteSeleccionado">
-            <div class="cliente-avatar">
-              <ion-icon name="person-outline"></ion-icon>
-            </div>
+            <div class="cliente-avatar"><ion-icon name="person-outline"></ion-icon></div>
             <div class="cliente-datos">
               <p class="cliente-nombre-sel">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
-              <p class="cliente-cedula-sel">{{ clienteSeleccionado.cedula }}</p>
+              <p class="cliente-cedula-sel">{{ clienteSeleccionado.cedula_ruc }}</p>
             </div>
-            <!-- Indicador carrito sin guardar -->
             <div class="carrito-sin-guardar" *ngIf="carrito.length > 0 && !carritoGuardadoEnBD">
               <ion-icon name="warning-outline"></ion-icon>
             </div>
@@ -140,16 +124,13 @@
               <ion-icon name="close-outline"></ion-icon>
             </div>
           </div>
-
         </div>
 
-        <!-- CARGANDO -->
         <div class="loading-productos" *ngIf="cargandoProductos">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando productos...</p>
         </div>
 
-        <!-- GRID PRODUCTOS -->
         <div class="productos-grid" *ngIf="!cargandoProductos">
           <div
             class="producto-card"
@@ -160,17 +141,13 @@
             <div class="stock-badge" *ngIf="(producto.stock ?? 0) <= 5 && (producto.stock ?? 0) > 0">
               <ion-icon name="warning-outline"></ion-icon>
             </div>
-            <div class="producto-img-placeholder">
-              <ion-icon name="cube-outline"></ion-icon>
-            </div>
+            <div class="producto-img-placeholder"><ion-icon name="cube-outline"></ion-icon></div>
             <p class="producto-nombre">{{ producto.nombre }}</p>
             <p class="producto-descripcion">{{ producto.descripcion || producto.categoria }}</p>
             <div class="producto-footer">
               <span class="producto-precio">${{ (+producto.precio_x_mayor).toFixed(2) }}</span>
               <div class="stock-wrap">
-                <span class="producto-stock" [class.stock-bajo]="(producto.stock ?? 0) <= 5">
-                  {{ producto.stock }}
-                </span>
+                <span class="producto-stock" [class.stock-bajo]="(producto.stock ?? 0) <= 5">{{ producto.stock }}</span>
                 <span class="stock-label">stock</span>
               </div>
             </div>
@@ -200,11 +177,33 @@
       </ion-header>
       <ion-content class="modal-content">
         <div class="modal-body">
+
+          <!-- ── CÉDULA / RUC ── -->
           <div class="form-group">
-            <label>Cédula*</label>
-            <input type="text" [(ngModel)]="nuevoCliente.cedula" placeholder="C.I." />
-            <span class="field-error" *ngIf="erroresCliente.cedula">{{ erroresCliente.cedula }}</span>
+            <label>Cédula / RUC*</label>
+            <div class="cedula-ruc-row">
+              <!-- Input cédula con sufijo 001 visual cuando es RUC -->
+              <div class="cedula-input-wrap" [class.con-ruc]="nuevoCliente.esRuc">
+                <input
+                  type="text"
+                  [(ngModel)]="nuevoCliente.cedula_ruc"
+                  placeholder="10 dígitos"
+                  maxlength="10"
+                  (ngModelChange)="onCedulaChange($event)"
+                />
+                <span class="ruc-sufijo" *ngIf="nuevoCliente.esRuc">001</span>
+              </div>
+              <!-- Checkbox RUC -->
+              <div class="ruc-checkbox-wrap" (click)="toggleRuc()">
+                <div class="ruc-check" [class.activo]="nuevoCliente.esRuc">
+                  <ion-icon name="checkmark-outline" *ngIf="nuevoCliente.esRuc"></ion-icon>
+                </div>
+                <span class="ruc-label">RUC</span>
+              </div>
+            </div>
+            <span class="field-error" *ngIf="erroresCliente.cedula_ruc">{{ erroresCliente.cedula_ruc }}</span>
           </div>
+
           <div class="form-group">
             <label>Tipo Cliente:*</label>
             <div class="switch-row">
@@ -269,9 +268,7 @@
         <ion-toolbar>
           <ion-title>{{ productoSeleccionado?.nombre }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarProducto()">
-              <ion-icon name="close-outline"></ion-icon>
-            </ion-button>
+            <ion-button (click)="cerrarProducto()"><ion-icon name="close-outline"></ion-icon></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -323,9 +320,7 @@
         <ion-toolbar>
           <ion-title>Carrito</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarCarrito()">
-              <ion-icon name="close-outline"></ion-icon>
-            </ion-button>
+            <ion-button (click)="cerrarCarrito()"><ion-icon name="close-outline"></ion-icon></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -333,7 +328,7 @@
         <div class="modal-body">
           <div class="carrito-cliente" *ngIf="clienteSeleccionado">
             <p class="carrito-cli-nombre">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
-            <p class="carrito-cli-cedula">{{ clienteSeleccionado.cedula }}</p>
+            <p class="carrito-cli-cedula">{{ clienteSeleccionado.cedula_ruc }}</p>
           </div>
           <div class="carrito-tabla" *ngIf="carrito.length > 0">
             <div class="tabla-head">

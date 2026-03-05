@@ -216,6 +216,43 @@
 }
 .btn-eliminar { width: 100%; padding: 13px; background: transparent; color: #e53935; border: 1.5px solid #FFCDD2; border-radius: 30px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; -webkit-appearance: none; }
 
+/* ── CÉDULA / RUC ── */
+.cedula-ruc-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.cedula-input-wrap {
+  flex: 1; display: flex; align-items: center;
+  border: 1.5px solid #E8D5BF; border-radius: 12px;
+  background: #FDFAF6; overflow: hidden; transition: border-color 0.2s;
+  &:focus-within { border-color: #590F23; background: #fff; }
+  input {
+    flex: 1; border: none; background: transparent;
+    padding: 11px 14px; font-size: 14px; color: #2D1B0E;
+    outline: none; min-width: 0; font-weight: 500;
+    &::placeholder { color: #C4A882; font-weight: 400; }
+  }
+  .ruc-sufijo {
+    padding: 11px 12px 11px 0; font-size: 13px;
+    font-weight: 800; color: #590F23; letter-spacing: 1px; flex-shrink: 0;
+  }
+}
+.ruc-checkbox-wrap {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; cursor: pointer; flex-shrink: 0; user-select: none;
+}
+.ruc-check {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 2px solid #ccc; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+  ion-icon { font-size: 14px; color: #fff; }
+  &.activo { background: #590F23; border-color: #590F23; }
+}
+.ruc-label {
+  font-size: 10px; font-weight: 700; color: #888;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
 /* ── MODAL DETALLE ── */
 .detalle-content { --background: #F7EFE6; }
 .detalle-body { padding: 0 0 40px 0; display: flex; flex-direction: column; align-items: center; }
@@ -309,60 +346,11 @@
 .valor-wrap input { flex: 1; border: none; background: transparent; padding: 11px 14px 11px 0; font-size: 14px; color: #2D1B0E; outline: none; font-weight: 500; &::placeholder { color: #C4A882; } }
 
 .confirmar-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 24px 20px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 20px;
 }
-
-.confirmar-icono {
-  font-size: 2.5rem;
-  color: #e53935;
-  margin-bottom: 10px;
-}
-
-.confirmar-titulo {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #590F23;
-  margin: 0 0 8px;
-}
-
-.confirmar-texto {
-  font-size: 0.88rem;
-  color: #555;
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-.confirmar-acciones {
-  display: flex;
-  gap: 12px;
-  width: 100%;
-}
-
-.btn-cancelar {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1.5px solid #ccc;
-  background: white;
-  color: #555;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.btn-eliminar-confirm {
-  flex: 1;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #e53935;
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+.confirmar-icono { font-size: 2.5rem; color: #e53935; margin-bottom: 10px; }
+.confirmar-titulo { font-size: 1.1rem; font-weight: 700; color: #590F23; margin: 0 0 8px; }
+.confirmar-texto { font-size: 0.88rem; color: #555; margin-bottom: 20px; line-height: 1.5; }
+.confirmar-acciones { display: flex; gap: 12px; width: 100%; }
+.btn-cancelar { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid #ccc; background: white; color: #555; font-size: 0.9rem; font-weight: 600; }
+.btn-eliminar-confirm { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #e53935; color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }

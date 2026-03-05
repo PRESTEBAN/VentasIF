@@ -7,7 +7,7 @@ import { AuthService } from './auth';
 
 export interface Cliente {
   id?: number;
-  cedula: string;
+  cedula_ruc: string;
   nombre: string;
   apellido: string;
   nombre_negocio?: string | null;
@@ -55,7 +55,7 @@ export class ClienteService {
   private apiUrl = `${environment.apiUrl}/api/v1/clientes`;
   private abonosUrl = `${environment.apiUrl}/api/v1/abonos`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({ 'Authorization': `Bearer ${this.authService.getToken()}` });
@@ -76,10 +76,10 @@ export class ClienteService {
           const s = saldos.find(x => x.id === c.id);
           return {
             ...c,
-            saldo:              s ? +s.saldo_pendiente    : 0,
-            limite_credito:     s ? +s.limite_credito     : 0,
+            saldo: s ? +s.saldo_pendiente : 0,
+            limite_credito: s ? +s.limite_credito : 0,
             credito_disponible: s ? +s.credito_disponible : 0,
-            ultima_compra:      s?.ultima_compra ?? null,
+            ultima_compra: s?.ultima_compra ?? null,
           };
         })
       )

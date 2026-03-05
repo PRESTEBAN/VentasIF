@@ -523,6 +523,95 @@ export class PrinterService {
 
     await this.escribirTexto(t);
   }
+
+  // ── RECIBO DE ABONO ───────────────────────────────────────────────────────
+  async imprimirReciboAbono(datos: DatosReciboAbono): Promise<void> {
+    const conectado = await this.estaConectado();
+    if (!conectado) {
+      await this.intentarReconectar();
+      const reintento = await this.estaConectado();
+      if (!reintento) throw new Error('Impresora no conectada');
+    }
+
+    const ESC      = '\x1B';
+    const LF       = '\n';
+    const BOLD_ON  = ESC + 'E\x01';
+    const BOLD_OFF = ESC + 'E\x00';
+    const CENTER   = ESC + 'a\x01';
+    const LEFT     = ESC + 'a\x00';
+    const CUT      = ESC + 'm';
+    const ANCHO    = 32;
+    const LINEA    = '-'.repeat(ANCHO);
+
+    const col2 = (izq: string, der: string): string =>
+      izq + ' '.repeat(Math.max(1, ANCHO - izq.length - der.length)) + der;
+
+    const ahora  = new Date();
+    const fecha  = `${ahora.getDate().toString().padStart(2,'0')}/${(ahora.getMonth()+1).toString().padStart(2,'0')}/${ahora.getFullYear()}`;
+    const hora   = `${ahora.getHours().toString().padStart(2,'0')}:${ahora.getMinutes().toString().padStart(2,'0')}`;
+    const nroRecibo = String(datos.ventaId).padStart(6, '0');
+
+    // ── LOGO ──────────────────────────────────────────────────────────────
+    await this.escribirTexto(CENTER);
+    await this.escribirBytes(LOGO_BYTES);
+    await this.escribirTexto(LF);
+
+    // ── CABECERA ──────────────────────────────────────────────────────────
+    let t = CENTER;
+    t += BOLD_ON + 'INDUSTRIAL FATIMA' + BOLD_OFF + LF;
+    t += 'CALLE DEL BATAN 4-56 Y EL ORO' + LF;
+    t += 'industrialfatima@hotmail.com'   + LF;
+    t += '0990718782 / (07)288-01-09'     + LF;
+    t += LINEA + LF;
+    t += BOLD_ON + 'No.Recibo(abonado): ' + nroRecibo + BOLD_OFF + LF;
+    t += LINEA + LF;
+
+    // ── DATOS DEL CLIENTE ─────────────────────────────────────────────────
+    t += LEFT;
+    t += ' '.repeat(7) + 'DATOS DEL CLIENTE' + LF;
+    t += LINEA + LF;
+    t += col2('FECHA:', `${fecha} ${hora}`) + LF;
+    t += col2('NOMBRE:', (datos.clienteNombre || 'CONSUMIDOR FINAL').substring(0, 18)) + LF;
+    t += col2('C.I.:', datos.clienteCedula || '0000000000') + LF;
+    t += col2('TELF./CEL.:', datos.clienteTelefono || '-') + LF;
+    t += col2('DIREC.:', (datos.clienteDireccion || '-').substring(0, 18)) + LF;
+    t += col2('Vendedor:', (datos.vendedor || 'Admin').substring(0, 18)) + LF;
+    t += LINEA + LF;
+
+    // ── SECCIÓN ABONO ─────────────────────────────────────────────────────
+    t += CENTER;
+    t += BOLD_ON + 'Abono' + BOLD_OFF + LF;
+    t += LINEA + LF;
+    t += LEFT;
+    t += col2('fecha de la venta:', 'dd/mm/aaaa') + LF;
+    t += col2('Valor total orden:', `$${(+datos.valorTotalVenta).toFixed(2)}`) + LF;
+    t += col2('Saldo Pendiente:', `$${(+datos.saldoPendiente).toFixed(2)}`) + LF;
+    t += BOLD_ON + col2('Valor Abono:', `$${(+datos.valorAbono).toFixed(2)}`) + BOLD_OFF + LF;
+    t += col2('Saldo Restante:', `$${(+datos.saldoRestante).toFixed(2)}`) + LF;
+    t += LINEA + LF;
+
+    // ── PIE ───────────────────────────────────────────────────────────────
+    t += CENTER;
+    t += '*Este documento no tiene validez legal*' + LF;
+    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + LF;
+    t += 'VUELVA PRONTO!!' + BOLD_OFF + LF;
+    t += LF + LF + LF + CUT;
+
+    await this.escribirTexto(t);
+  }
+}
+
+export interface DatosReciboAbono {
+  ventaId:           number;
+  clienteNombre:     string;
+  clienteCedula?:    string;
+  clienteTelefono?:  string;
+  clienteDireccion?: string;
+  vendedor?:         string;
+  valorTotalVenta:   number;
+  saldoPendiente:    number;
+  valorAbono:        number;
+  saldoRestante:     number;
 }
 
 export interface DatosRecibo {

@@ -32,9 +32,10 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   mostrarAgregarCliente = false;
   nuevoCliente = {
-    cedula: '', nombre: '', apellido: '',
+    cedula_ruc: '', nombre: '', apellido: '',
     negocio: '', email: '', direccion: '',
-    sector: '', telefono: '', esParticular: false
+    sector: '', telefono: '', esParticular: false,
+    esRuc: false   // ← nuevo flag RUC
   };
   erroresCliente: any = {};
   guardandoCliente = false;
@@ -53,7 +54,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   ivaPercent: number = 0;
   guardandoCarrito = false;
 
-  // ── Carrito estado ────────────────────────────────────────────────────────
   carritoGuardadoEnBD = false;
   mostrarConfirmarLimpiar = false;
 
@@ -62,7 +62,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   private pollingInterval: any = null;
   private readonly POLLING_MS = 15000;
 
-  // ── Impresión ──
   mostrarModalImpresion = false;
   estadoImpresion: 'preguntar' | 'impreso' | 'error' = 'preguntar';
   errorImpresion  = '';
@@ -70,7 +69,6 @@ export class Tab1Page implements OnInit, OnDestroy {
   ultimoRecibo:   any = null;
   serviciosDebug  = '';
 
-  // ── Bluetooth ──
   mostrarModalBT  = false;
   escaneandoBT    = false;
   conectandoBT    = '';
@@ -95,9 +93,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
     this.vendedorNombreCompleto = [user?.nombre, user?.apellido].filter(Boolean).join(' ') || this.usuarioActual;
-    this.carritoSub = this.carritoEstado.abrirCarrito.subscribe(() => {
-      this.mostrarCarrito = true;
-    });
+    this.carritoSub = this.carritoEstado.abrirCarrito.subscribe(() => { this.mostrarCarrito = true; });
   }
 
   ionViewWillEnter() {
@@ -133,18 +129,15 @@ export class Tab1Page implements OnInit, OnDestroy {
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
-
     const invSub = this.socketService.on('inventario_actualizado').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       if (this.mostrarProducto) return;
       this.actualizarStockSilencioso();
     });
-
     const cliSub = this.socketService.on('clientes_actualizado').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       this.cargarClientes();
     });
-
     this.socketSubs = [invSub, cliSub];
   }
 
@@ -162,9 +155,7 @@ export class Tab1Page implements OnInit, OnDestroy {
         this.productos = this.productos.map(p => {
           const inv = inventario.find((i: any) => i.producto_id === p.id);
           const stockBD = inv ? inv.stock_actual : 0;
-          const enCarrito = this.carrito
-            .filter(item => item.producto_id === p.id)
-            .reduce((acc, item) => acc + item.cantidad, 0);
+          const enCarrito = this.carrito.filter(item => item.producto_id === p.id).reduce((acc, item) => acc + item.cantidad, 0);
           return { ...p, stock: stockBD - enCarrito };
         });
       },
@@ -177,9 +168,7 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.cargandoProductos = true;
     this.productoService.getAll().subscribe({
       next: (data: Producto[]) => {
-        const productosNormalizados = data.map(p => ({
-          ...p, precio_x_mayor: +p.precio_x_mayor, precio_x_menor: +p.precio_x_menor, stock: 0
-        }));
+        const productosNormalizados = data.map(p => ({ ...p, precio_x_mayor: +p.precio_x_mayor, precio_x_menor: +p.precio_x_menor, stock: 0 }));
         this.inventarioService.getBodega().subscribe({
           next: (inventario) => {
             const productosConStock = productosNormalizados.map(p => {
@@ -187,9 +176,7 @@ export class Tab1Page implements OnInit, OnDestroy {
               return { ...p, stock: inv ? inv.stock_actual : 0 };
             });
             this.productos = productosConStock.map(p => {
-              const enCarrito = this.carrito
-                .filter(item => item.producto_id === p.id)
-                .reduce((acc, item) => acc + item.cantidad, 0);
+              const enCarrito = this.carrito.filter(item => item.producto_id === p.id).reduce((acc, item) => acc + item.cantidad, 0);
               return { ...p, stock: (p.stock ?? 0) - enCarrito };
             });
             this.cargandoProductos = false;
@@ -225,9 +212,11 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (!valor || valor.length < 2) { this.errorCliente = 'Ingresa una cédula (10 dígitos) o apellido válido'; return; }
 
     const esCedula = /^\d{10}$/.test(valor);
+    const esRuc    = /^\d{13}$/.test(valor);
     let coincidencias: Cliente[];
-    if (esCedula) {
-      coincidencias = this.clientes.filter(c => c.cedula === valor);
+
+    if (esCedula || esRuc) {
+      coincidencias = this.clientes.filter(c => c.cedula_ruc === valor);
     } else {
       const q = valor.toLowerCase();
       coincidencias = this.clientes.filter(c =>
@@ -257,7 +246,6 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // ── LIMPIAR CLIENTE ───────────────────────────────────────────────────────
   limpiarCliente() {
-    // Carrito con cambios sin guardar → pedir confirmación
     if (this.carrito.length > 0 && !this.carritoGuardadoEnBD) {
       this.mostrarConfirmarLimpiar = true;
       return;
@@ -267,30 +255,21 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   confirmarLimpiarCliente() {
     this.mostrarConfirmarLimpiar = false;
-    // Descartar: borrar de BD también
-    if (this.clienteSeleccionado) {
-      this.carritoPendiente.eliminar(this.clienteSeleccionado.id!).subscribe();
-    }
+    if (this.clienteSeleccionado) { this.carritoPendiente.eliminar(this.clienteSeleccionado.id!).subscribe(); }
     this._ejecutarLimpiarCliente();
   }
 
-  cancelarLimpiarCliente() {
-    this.mostrarConfirmarLimpiar = false;
-  }
+  cancelarLimpiarCliente() { this.mostrarConfirmarLimpiar = false; }
 
   private _ejecutarLimpiarCliente() {
-    // Si estaba guardado, persistir el estado actual antes de limpiar
     if (this.carritoGuardadoEnBD && this.carrito.length > 0 && this.clienteSeleccionado) {
       this.carritoPendiente.guardar({
-        cliente_id: this.clienteSeleccionado.id!,
-        items: this.carrito,
-        iva_percent: this.ivaPercent,
+        cliente_id: this.clienteSeleccionado.id!, items: this.carrito, iva_percent: this.ivaPercent,
         forma_pago: this.formaPago,
         monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
         vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
       }).subscribe();
     }
-
     this.clienteSeleccionado = null;
     this.clientesCoincidentes = [];
     this.busquedaCliente = '';
@@ -327,17 +306,40 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   cerrarAgregarCliente() {
     this.mostrarAgregarCliente = false;
-    this.nuevoCliente = { cedula: '', nombre: '', apellido: '', negocio: '', email: '', direccion: '', sector: '', telefono: '', esParticular: false };
+    this.nuevoCliente = {
+      cedula_ruc: '', nombre: '', apellido: '', negocio: '', email: '',
+      direccion: '', sector: '', telefono: '', esParticular: false, esRuc: false
+    };
     this.erroresCliente = {};
+  }
+
+  // ── CÉDULA / RUC ──────────────────────────────────────────────────────────
+  // Solo permite números, máximo 10 dígitos (el 001 se agrega automáticamente al guardar)
+  onCedulaChange(valor: string) {
+    this.nuevoCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
+  }
+
+  toggleRuc() {
+    this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
+    if (this.erroresCliente.cedula_ruc) this.erroresCliente.cedula_ruc = '';
+  }
+
+  // Devuelve el valor final a guardar: cédula sola o cédula + "001" si es RUC
+  private getCedulaParaGuardar(): string {
+    const cedula = this.nuevoCliente.cedula_ruc.trim();
+    return this.nuevoCliente.esRuc ? `${cedula}001` : cedula;
   }
 
   guardarCliente() {
     this.erroresCliente = {};
     let valido = true;
-    const cedula = this.nuevoCliente.cedula.trim();
-    if (!cedula) { this.erroresCliente.cedula = 'La cédula es requerida'; valido = false; }
-    else if (/[^0-9]/.test(cedula)) { this.erroresCliente.cedula = 'Solo números'; valido = false; }
-    else if (cedula.length !== 10) { this.erroresCliente.cedula = 'Debe tener 10 dígitos'; valido = false; }
+    const cedula = this.nuevoCliente.cedula_ruc.trim();
+
+    // La cédula base siempre debe ser exactamente 10 dígitos
+    if (!cedula) { this.erroresCliente.cedula_ruc = 'La cédula es requerida'; valido = false; }
+    else if (/[^0-9]/.test(cedula)) { this.erroresCliente.cedula_ruc = 'Solo números'; valido = false; }
+    else if (cedula.length !== 10) { this.erroresCliente.cedula_ruc = 'Debe tener 10 dígitos'; valido = false; }
+
     if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre))
       { this.erroresCliente.nombre = 'Nombre inválido'; valido = false; }
     if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido))
@@ -353,12 +355,19 @@ export class Tab1Page implements OnInit, OnDestroy {
     if (!valido) return;
 
     const clientePayload: Cliente = {
-      cedula, nombre: this.nuevoCliente.nombre.trim(), apellido: this.nuevoCliente.apellido.trim(),
+      cedula_ruc: this.getCedulaParaGuardar(),  // ← cédula o RUC (13 dígitos)
+      nombre: this.nuevoCliente.nombre.trim(),
+      apellido: this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
       tipo_cliente: this.nuevoCliente.esParticular ? 'particular' : 'negocio',
-      direccion: this.nuevoCliente.direccion.trim(), sector: this.nuevoCliente.sector.trim() || null,
-      telefono: tel, email: this.nuevoCliente.email.trim() || null, limite_credito: 0, notas: null,
+      direccion: this.nuevoCliente.direccion.trim(),
+      sector: this.nuevoCliente.sector.trim() || null,
+      telefono: tel,
+      email: this.nuevoCliente.email.trim() || null,
+      limite_credito: 0,
+      notas: null,
     };
+
     this.guardandoCliente = true;
     this.clienteService.create(clientePayload).subscribe({
       next: () => { this.guardandoCliente = false; this.cargarClientes(); this.cerrarAgregarCliente(); },
@@ -441,8 +450,7 @@ export class Tab1Page implements OnInit, OnDestroy {
       vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null
     }).subscribe({
       next: async () => {
-        this.guardandoCarrito = false;
-        this.carritoGuardadoEnBD = true;
+        this.guardandoCarrito = false; this.carritoGuardadoEnBD = true;
         const toast = await this.toastCtrl.create({ message: 'Carrito guardado ✓', duration: 2000, position: 'bottom', color: 'success' });
         await toast.present();
       },
@@ -483,12 +491,12 @@ export class Tab1Page implements OnInit, OnDestroy {
     this.ventasRutaService.create(payload).subscribe({
       next: (res: any) => {
         this.ultimoRecibo = {
-          ventaId:           res?.id,
-          clienteNombre:     `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
-          clienteCedula:     this.clienteSeleccionado!.cedula,
-          clienteTelefono:   this.clienteSeleccionado!.telefono  || '-',
-          clienteDireccion:  this.clienteSeleccionado!.direccion || '-',
-          vendedor:          this.vendedorNombreCompleto,
+          ventaId: res?.id,
+          clienteNombre: `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
+          clienteCedula: this.clienteSeleccionado!.cedula_ruc,
+          clienteTelefono: this.clienteSeleccionado!.telefono || '-',
+          clienteDireccion: this.clienteSeleccionado!.direccion || '-',
+          vendedor: this.vendedorNombreCompleto,
           items: this.carrito.map(i => ({ nombre: i.nombre, cantidad: i.cantidad, precio_unitario: i.precio_unitario, descuento: i.descuento, subtotal: i.subtotal })),
           subtotal: totales.subtotal, descuento: totales.descuento, iva: totales.iva,
           ivaPercent: this.ivaPercent, total: totales.total, formaPago: this.formaPago,
