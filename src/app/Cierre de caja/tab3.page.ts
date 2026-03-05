@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { forkJoin, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { SocketService } from '../services/socket';
 
 @Component({
@@ -27,21 +27,27 @@ export class Tab3Page implements OnInit, OnDestroy {
   diaSemana = '';
   fechaHoy  = '';
 
-  // ── Card 1: Resumen de ventas ──
+  // ── Datos del cierre activo (vienen del backend) ──
+  cierreActivoId:      number = 0;
   ventasRealizadas:    number = 0;
   totalEfectivo:       number = 0;
   totalTransferencias: number = 0;
   totalCheques:        number = 0;
   totalPendientes:     number = 0;
-  totalIngresosVentas: number = 0;
+  totalIngresosVentas: number = 0;  // efectivo + transf + cheques (sin créditos)
+  totalAbonos:         number = 0;  // abonos recibidos en este cierre
+  totalEgresos:        number = 0;
 
-  // ── Card 2: Egresos ──
-  totalEgresos: number = 0;
+  // ── Total general — NUNCA negativo ──
+  get totalGeneral(): number {
+    return Math.max(0, this.totalIngresosVentas + this.totalAbonos - this.totalEgresos);
+  }
 
-  // ── Total general ──
-  get totalGeneral(): number { return this.totalIngresosVentas - this.totalEgresos; }
+  get egresosExceden(): boolean {
+    return this.totalEgresos > (this.totalIngresosVentas + this.totalAbonos);
+  }
 
-  // ── Card 3: Desglose ──
+  // ── Conteo físico ──
   billetes:               number | null = null;
   monedas:                number | null = null;
   transferenciasDesglose: number | null = null;
@@ -84,7 +90,6 @@ export class Tab3Page implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -95,34 +100,33 @@ export class Tab3Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
 
-    // Nueva venta → actualizar totales
     const ventaSub = this.socketService.on('nueva_venta').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       this.cargarDatosSilencioso();
     });
 
-    // Egreso creado o borrado → actualizar totales
     const egresoSub = this.socketService.on('egresos_actualizado').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       this.cargarDatosSilencioso();
     });
 
-    // Cierre registrado por otro usuario → resetear todo igual que quien cerró
-    const cierreSub = this.socketService.on('cierre_registrado').subscribe(() => {
+    const abonoSub = this.socketService.on('clientes_actualizado').subscribe((data: any) => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
-      this.ventasRealizadas = 0; this.totalEfectivo = 0; this.totalTransferencias = 0;
-      this.totalCheques = 0; this.totalPendientes = 0; this.totalIngresosVentas = 0; this.totalEgresos = 0;
-      this.billetes = null; this.monedas = null; this.transferenciasDesglose = null;
-      this.chequesDesglose = null; this.totalDesglose = 0;
-      this.mostrarResultado = false; this.errorGuardar = '';
+      if (data?.accion === 'abono') this.cargarDatosSilencioso();
     });
 
-    this.socketSubs = [ventaSub, egresoSub, cierreSub];
+    // Cuando se cierra caja: resetear todo y recargar (nuevo cierre ya abierto)
+    const cierreSub = this.socketService.on('cierre_registrado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.resetearConteo();
+      this.cargarDatos();
+    });
+
+    this.socketSubs = [ventaSub, egresoSub, abonoSub, cierreSub];
   }
 
   detenerSocket() {
@@ -130,69 +134,37 @@ export class Tab3Page implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-  // ── CARGA ─────────────────────────────────────────────────────────────────
-  cargarDatosSilencioso() {
-    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
-    const fecha = this.formatearFechaHoy();
-    forkJoin({
-      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
-      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,     { headers: this.getHeaders() })
-    }).subscribe({
-      next: ({ ventas, egresos }) => {
-        this.procesarVentas(ventas || []);
-        this.procesarEgresos(egresos || []);
-      },
-      error: () => {}
-    });
-  }
-
-  cargarDatos() {
-    this.cargando = true;
-    const fecha = this.formatearFechaHoy();
-    forkJoin({
-      ventas:  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`,  { headers: this.getHeaders() }),
-      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,      { headers: this.getHeaders() })
-    }).subscribe({
-      next: ({ ventas, egresos }) => {
-        this.procesarVentas(ventas || []);
-        this.procesarEgresos(egresos || []);
-        this.cargando = false;
-      },
-      error: () => { this.cargando = false; }
-    });
-  }
-
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
-  private formatearFechaHoy(): string {
-    const hoy = new Date();
-    const d = hoy.getDate().toString().padStart(2, '0');
-    const m = (hoy.getMonth() + 1).toString().padStart(2, '0');
-    return `${hoy.getFullYear()}-${m}-${d}`;
-  }
-
-  private procesarVentas(ventas: any[]) {
-    this.ventasRealizadas    = ventas.length;
-    this.totalEfectivo       = 0;
-    this.totalTransferencias = 0;
-    this.totalCheques        = 0;
-    this.totalPendientes     = 0;
-    ventas.forEach(v => {
-      const total = parseFloat(v.total) || 0;
-      const tipo  = (v.tipo_pago || v.forma_pago || '').toLowerCase();
-      if (tipo === 'efectivo')           this.totalEfectivo       += total;
-      else if (tipo === 'transferencia') this.totalTransferencias += total;
-      else if (tipo === 'cheques')       this.totalCheques        += total;
-      else if (tipo === 'credito' || tipo === 'pendiente') this.totalPendientes += total;
+  cargarDatos() {
+    this.cargando = true;
+    this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
+      next: (data) => { this.procesarCierreActivo(data); this.cargando = false; },
+      error: () => { this.cargando = false; }
     });
-    this.totalIngresosVentas = this.totalEfectivo + this.totalTransferencias + this.totalCheques;
   }
 
-  private procesarEgresos(egresos: any[]) {
-    this.totalEgresos = egresos.reduce((acc, e) => acc + (parseFloat(e.valor) || 0), 0);
+  cargarDatosSilencioso() {
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
+    this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
+      next: (data) => this.procesarCierreActivo(data),
+      error: () => {}
+    });
+  }
+
+  private procesarCierreActivo(data: any) {
+    this.cierreActivoId      = data.id;
+    this.ventasRealizadas    = data.total_ordenes    || 0;
+    this.totalEfectivo       = parseFloat(data.efectivo_ventas)      || 0;
+    this.totalTransferencias = parseFloat(data.transferencia_ventas) || 0;
+    this.totalCheques        = parseFloat(data.cheques_ventas)       || 0;
+    this.totalPendientes     = parseFloat(data.creditos_ventas)      || 0;
+    this.totalEgresos        = parseFloat(data.egresos_total)        || 0;
+    this.totalAbonos         = parseFloat(data.abonos_total)         || 0;
+    this.totalIngresosVentas = this.totalEfectivo + this.totalTransferencias + this.totalCheques;
   }
 
   setFecha() {
@@ -211,12 +183,22 @@ export class Tab3Page implements OnInit, OnDestroy {
   }
 
   revisar() {
+    this.errorGuardar = '';
+
+    if (this.egresosExceden) {
+      this.estadoCierre = 'falta';
+      this.diferencia   = this.totalEgresos - (this.totalIngresosVentas + this.totalAbonos);
+      this.errorGuardar = `⚠️ Los egresos ($${this.totalEgresos.toFixed(2)}) superan los ingresos del período ($${(this.totalIngresosVentas + this.totalAbonos).toFixed(2)}). Corrige los egresos antes de cerrar.`;
+      this.mostrarResultado = true;
+      return;
+    }
+
     const TOLERANCIA = 0.01;
     const diff = this.totalDesglose - this.totalGeneral;
     if (Math.abs(diff) <= TOLERANCIA) { this.estadoCierre = 'cuadrado'; this.diferencia = 0; }
     else if (diff > 0) { this.estadoCierre = 'sobra'; this.diferencia = Math.abs(diff); }
     else               { this.estadoCierre = 'falta'; this.diferencia = Math.abs(diff); }
-    this.errorGuardar = ''; this.mostrarResultado = true;
+    this.mostrarResultado = true;
   }
 
   cerrarResultado() { this.mostrarResultado = false; this.errorGuardar = ''; }
@@ -225,12 +207,13 @@ export class Tab3Page implements OnInit, OnDestroy {
     if (this.estadoCierre !== 'cuadrado') return;
     this.guardandoCierre = true;
     this.errorGuardar    = '';
-    const fecha = this.formatearFechaHoy();
-    forkJoin({
-      ordenes: this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fecha}`, { headers: this.getHeaders() }),
-      egresos: this.http.get<any[]>(`${this.API}/egresos?fecha=${fecha}`,     { headers: this.getHeaders() })
-    }).subscribe({
-      next: ({ ordenes }) => {
+
+    // Verificar órdenes sin entregar del cierre activo
+    this.http.get<any[]>(
+      `${this.API}/ventas-ruta?cierre_id=${this.cierreActivoId}`,
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: (ordenes) => {
         const pendientes = (ordenes || []).filter(o =>
           !o.entregado_vendedor && o.estado !== 'entregado' && o.estado !== 'anulado'
         );
@@ -239,38 +222,42 @@ export class Tab3Page implements OnInit, OnDestroy {
           this.errorGuardar = `⚠️ Hay ${pendientes.length} orden${pendientes.length > 1 ? 'es' : ''} sin entregar. Finalízalas en Órdenes antes de cerrar.`;
           return;
         }
-        this.guardarCierre(fecha);
+        this.guardarCierre();
       },
-      error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al verificar datos. Intenta de nuevo.'; }
+      error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al verificar datos.'; }
     });
   }
 
-  private guardarCierre(fecha: string) {
+  private guardarCierre() {
     const payload = {
-      fecha_cierre:         fecha,
       efectivo_billetes:    this.billetes               || 0,
       efectivo_monedas:     this.monedas                || 0,
       total_transferencias: this.transferenciasDesglose || 0,
       total_cheques:        this.chequesDesglose        || 0,
       total_creditos:       this.totalPendientes,
-      total_egresos:        this.totalEgresos,
       notas:                null,
     };
     this.http.post(`${this.API}/cierres`, payload, { headers: this.getHeaders() }).subscribe({
       next: () => {
-        this.http.put(`${this.API}/ventas-ruta/cerrar-dia`, { fecha }, { headers: this.getHeaders() })
-          .subscribe({ next: () => {}, error: () => {} });
-        this.guardandoCierre = false; this.mostrarResultado = false; this.errorGuardar = '';
-        this.billetes = null; this.monedas = null; this.transferenciasDesglose = null;
-        this.chequesDesglose = null; this.totalDesglose = 0;
-        this.ventasRealizadas = 0; this.totalEfectivo = 0; this.totalTransferencias = 0;
-        this.totalCheques = 0; this.totalPendientes = 0; this.totalIngresosVentas = 0; this.totalEgresos = 0;
+        this.guardandoCierre = false;
+        this.mostrarResultado = false;
+        this.errorGuardar = '';
+        this.resetearConteo();
+        // cargarDatos se dispara vía socket 'cierre_registrado'
+        // pero hacemos reload manual por si el socket tarda
+        setTimeout(() => this.cargarDatos(), 500);
       },
       error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al guardar el cierre. Intenta de nuevo.'; }
     });
   }
 
-  // ── MENU ──────────────────────────────────────────────────────────────────
+  private resetearConteo() {
+    this.billetes = null; this.monedas = null;
+    this.transferenciasDesglose = null; this.chequesDesglose = null;
+    this.totalDesglose = 0;
+    this.mostrarResultado = false; this.errorGuardar = '';
+  }
+
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
