@@ -232,9 +232,19 @@ export class EgresosPage implements OnInit, OnDestroy {
             u.username?.toLowerCase() !== 'admin' &&
             u.nombre?.toLowerCase()   !== 'admin'
           );
+          // Si el modal ya está abierto sin responsable asignado, asignarlo ahora
+          if (this.mostrarModal && !this.nuevoEgreso.responsable) {
+            this.nuevoEgreso.responsable = this.getResponsablePorDefecto();
+          }
         },
         error: () => {}
       });
+  }
+
+  private getResponsablePorDefecto(): string {
+    const username = this.usernameActual.toLowerCase().trim();
+    const usuarioEnLista = this.usuarios.find(u => u.username.toLowerCase().trim() === username);
+    return usuarioEnLista ? usuarioEnLista.username : '';
   }
 
   get esDiaDeHoy(): boolean {
@@ -308,17 +318,7 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   // ---- MODAL AÑADIR ------------------------------------------------------
   abrirModal() {
-    // Responsable por defecto: usuario actual si está en la lista (excluye admin)
-    const username = this.usernameActual.toLowerCase().trim();
-    console.log('=== abrirModal DEBUG ===');
-    console.log('usernameActual:', this.usernameActual);
-    console.log('username normalizado:', username);
-    console.log('lista usuarios:', this.usuarios.map(u => u.username));
-    const usuarioEnLista = this.usuarios.find(u => u.username.toLowerCase().trim() === username);
-    console.log('usuarioEnLista:', usuarioEnLista);
-    const responsablePorDefecto = usuarioEnLista ? usuarioEnLista.username : '';
-    console.log('responsablePorDefecto:', responsablePorDefecto);
-    this.nuevoEgreso = { detalle: '', responsable: responsablePorDefecto, beneficiario: '', valor: 0 };
+    this.nuevoEgreso = { detalle: '', responsable: this.getResponsablePorDefecto(), beneficiario: '', valor: 0 };
     this.errores = {};
     this.mostrarModal = true;
   }
