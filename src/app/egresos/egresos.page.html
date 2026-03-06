@@ -75,18 +75,6 @@
 
         <div *ngIf="!cargando">
 
-          <!-- ── BANNER SALDO DISPONIBLE ── -->
-          <div class="saldo-banner" [class.saldo-ok]="!advertenciaExceso" [class.saldo-alerta]="advertenciaExceso">
-            <div class="saldo-banner-row">
-              <ion-icon [name]="advertenciaExceso ? 'warning-outline' : 'wallet-outline'"></ion-icon>
-              <span class="saldo-banner-label">{{ advertenciaExceso ? 'Egresos exceden ingresos del día' : 'Saldo disponible hoy' }}</span>
-              <span class="saldo-banner-valor">${{ advertenciaExceso ? '0.00' : saldoDisponible.toFixed(2) }}</span>
-            </div>
-            <p class="saldo-banner-sub" *ngIf="ingresosDelDia > 0 || advertenciaExceso">
-              Ingresos: ${{ ingresosDelDia.toFixed(2) }}
-              <span *ngIf="totalEgresos > 0"> &nbsp;·&nbsp; Egresos: ${{ totalEgresos.toFixed(2) }}</span>
-            </p>
-          </div>
 
           <div class="sin-egresos" *ngIf="egresos.length === 0">
             <div class="sin-egresos-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
@@ -136,11 +124,7 @@
         <div class="modal-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
         <h2 class="modal-titulo">Añadir Egreso</h2>
       </div>
-      <!-- saldo disponible en el modal -->
-      <div class="modal-saldo-info" [class.modal-saldo-cero]="saldoDisponible === 0">
-        <ion-icon name="wallet-outline"></ion-icon>
-        <span>Disponible: <strong>${{ saldoDisponible.toFixed(2) }}</strong></span>
-      </div>
+
       <div class="form-group">
         <label>Detalle</label>
         <input type="text" [(ngModel)]="nuevoEgreso.detalle" placeholder="¿En qué se gasta?" />
@@ -192,16 +176,16 @@
         <label>Valor</label>
         <div class="valor-input-wrap">
           <span class="valor-prefix">$</span>
-          <input type="number" [(ngModel)]="nuevoEgreso.valor" placeholder="0.00" min="0" [max]="saldoDisponible" />
+          <input type="number" [(ngModel)]="nuevoEgreso.valor" placeholder="0.00" min="0" />
         </div>
         <span class="field-error" *ngIf="errores.valor">{{ errores.valor }}</span>
       </div>
       <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
-        <button class="btn-anadir" (click)="guardarEgreso()" [disabled]="guardando || saldoDisponible === 0">
+        <button class="btn-anadir" (click)="guardarEgreso()" [disabled]="guardando">
           <ion-spinner name="crescent" *ngIf="guardando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
-          {{ guardando ? 'Guardando...' : saldoDisponible === 0 ? 'Sin saldo' : 'Añadir' }}
+          {{ guardando ? 'Guardando...' : 'Añadir' }}
         </button>
       </div>
     </div>

@@ -48,17 +48,13 @@ export class EgresosPage implements OnInit, OnDestroy {
   egresos:          Egreso[]  = [];
   usuarios:         Usuario[] = [];
   cargando          = false;
-  ingresosDelDia    = 0;
-  advertenciaExceso = false;
   cierreActivoId    = 0;
 
   get totalEgresos(): number {
     return this.egresos.reduce((acc, e) => acc + +e.valor, 0);
   }
 
-  get saldoDisponible(): number {
-    return Math.max(0, this.ingresosDelDia - this.totalEgresos);
-  }
+
 
   // ---- MODAL AÑADIR ----
   mostrarModal = false;
@@ -148,7 +144,6 @@ export class EgresosPage implements OnInit, OnDestroy {
       } else if (data?.accion === 'borrar' && data.id) {
         this.egresos = this.egresos.filter(e => e.id !== +data.id!);
       }
-      this.actualizarAdvertencia();
     });
 
     this.socketSubs = [egresoSub];
@@ -181,25 +176,17 @@ export class EgresosPage implements OnInit, OnDestroy {
 
     // Siempre cargar egresos por FECHA (muestra todo el día sin importar cuántos cierres hubo)
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
-      next: (egresos) => { this.egresos = egresos; this.actualizarAdvertencia(); this.cargando = false; },
+      next: (egresos) => { this.egresos = egresos; this.cargando = false; },
       error: () => { this.egresos = []; this.cargando = false; }
     });
 
-    // Si es hoy → también obtener ingresos del cierre activo para el banner de saldo
+    // Si es hoy → obtener cierre activo (para poder añadir egresos)
     if (esDiaDeHoy) {
       this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
-        next: (cierre) => {
-          this.cierreActivoId = cierre.id;
-          this.ingresosDelDia = (parseFloat(cierre.efectivo_ventas)      || 0)
-                              + (parseFloat(cierre.transferencia_ventas) || 0)
-                              + (parseFloat(cierre.cheques_ventas)       || 0)
-                              + (parseFloat(cierre.abonos_total)         || 0);
-          this.actualizarAdvertencia();
-        },
+        next: (cierre) => { this.cierreActivoId = cierre.id; },
         error: () => {}
       });
     } else {
-      this.ingresosDelDia = 0;
       this.cierreActivoId = 0;
     }
   }
@@ -213,28 +200,18 @@ export class EgresosPage implements OnInit, OnDestroy {
 
     if (!esDiaDeHoy) return; // días pasados no necesitan polling
 
-    // Actualizar ingresos del cierre activo (para el banner de saldo)
+    // Actualizar cierre activo (para poder añadir egresos)
     this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
-      next: (cierre) => {
-        const nuevosIngresos = (parseFloat(cierre.efectivo_ventas)      || 0)
-                             + (parseFloat(cierre.transferencia_ventas) || 0)
-                             + (parseFloat(cierre.cheques_ventas)       || 0)
-                             + (parseFloat(cierre.abonos_total)         || 0);
-        if (nuevosIngresos !== this.ingresosDelDia) {
-          this.ingresosDelDia = nuevosIngresos;
-          this.actualizarAdvertencia();
-        }
-        this.cierreActivoId = cierre.id;
-      },
+      next: (cierre) => { this.cierreActivoId = cierre.id; },
       error: () => {}
     });
 
-    // Actualizar egresos por fecha (incluye todos los cierres del día)
+    // Actualizar egresos por fecha
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
       next: (egresos) => {
         const cambio = egresos.length !== this.egresos.length ||
           egresos.some((e, i) => e.id !== this.egresos[i]?.id || +e.valor !== +this.egresos[i]?.valor);
-        if (cambio) { this.egresos = egresos; this.actualizarAdvertencia(); }
+        if (cambio) { this.egresos = egresos; }
       },
       error: () => {}
     });
@@ -242,9 +219,7 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   cargarEgresos() { this.cargarDatos(); }
 
-  private actualizarAdvertencia() {
-    this.advertenciaExceso = this.totalEgresos > this.ingresosDelDia;
-  }
+
 
   cargarUsuarios() {
     this.http.get<Usuario[]>(`${this.API}/egresos/usuarios`, { headers: this.getHeaders() })
@@ -353,10 +328,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (!this.nuevoEgreso.beneficiario)      { this.errores.beneficiario = 'Requerido'; valido = false; }
     if (!this.nuevoEgreso.valor || this.nuevoEgreso.valor <= 0) { this.errores.valor = 'Ingresa un valor válido'; valido = false; }
 
-    if (valido && +this.nuevoEgreso.valor > this.saldoDisponible) {
-      this.errores.valor = `Excede el saldo disponible ($${this.saldoDisponible.toFixed(2)})`;
-      valido = false;
-    }
 
     if (!valido) return;
 
@@ -399,15 +370,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (!this.egresoEditando.beneficiario)      { this.erroresEditar.beneficiario = 'Requerido'; valido = false; }
     if (!this.egresoEditando.valor || this.egresoEditando.valor <= 0) { this.erroresEditar.valor = 'Ingresa un valor válido'; valido = false; }
 
-    if (valido) {
-      const valorOriginal   = +(this.egresos.find(e => e.id === this.egresoEditando.id)?.valor || 0);
-      const saldoConEdicion = this.saldoDisponible + valorOriginal;
-      if (+this.egresoEditando.valor > saldoConEdicion) {
-        this.erroresEditar.valor = `Excede el saldo disponible ($${saldoConEdicion.toFixed(2)})`;
-        valido = false;
-      }
-    }
-
     if (!valido) return;
 
     this.guardandoEdicion = true;
@@ -417,7 +379,6 @@ export class EgresosPage implements OnInit, OnDestroy {
     ).subscribe({
       next: (updated) => {
         this.egresos = this.egresos.map(e => e.id === updated.id ? updated : e);
-        this.actualizarAdvertencia();
         this.guardandoEdicion = false;
         this.cerrarEditar();
       },
@@ -436,7 +397,6 @@ export class EgresosPage implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.egresos = this.egresos.filter(e => e.id !== this.egresoABorrar!.id);
-          this.actualizarAdvertencia();
           this.borrando = false;
           this.cancelarBorrar();
         },
