@@ -438,6 +438,12 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
   cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
+  forzarCerrarCarrito() {
+    this.puedesCerrarCarrito = true; // desbloquear canDismiss
+    this.mostrarCarrito = false;
+    this.montoRecibido = 0;
+  }
+
   calcularTotal() {
     const subtotal = this.carrito.reduce((acc, i) => acc + i.subtotal, 0);
     const descuento = this.carrito.reduce((acc, i) => acc + (i.cantidad * i.precio_unitario * i.descuento / 100), 0);
