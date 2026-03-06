@@ -179,8 +179,14 @@ export class EgresosPage implements OnInit, OnDestroy {
     const selecStr   = this.formatearFecha(this.fechaSeleccionada);
     const esDiaDeHoy = selecStr === hoyStr;
 
+    // Siempre cargar egresos por FECHA (muestra todo el día sin importar cuántos cierres hubo)
+    this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
+      next: (egresos) => { this.egresos = egresos; this.actualizarAdvertencia(); this.cargando = false; },
+      error: () => { this.egresos = []; this.cargando = false; }
+    });
+
+    // Si es hoy → también obtener ingresos del cierre activo para el banner de saldo
     if (esDiaDeHoy) {
-      // Hoy → usar cierre activo (ingresos + egresos del cierre)
       this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
         next: (cierre) => {
           this.cierreActivoId = cierre.id;
@@ -188,21 +194,13 @@ export class EgresosPage implements OnInit, OnDestroy {
                               + (parseFloat(cierre.transferencia_ventas) || 0)
                               + (parseFloat(cierre.cheques_ventas)       || 0)
                               + (parseFloat(cierre.abonos_total)         || 0);
-          this.http.get<Egreso[]>(`${this.API}/egresos?cierre_id=${cierre.id}`, { headers: this.getHeaders() }).subscribe({
-            next: (egresos) => { this.egresos = egresos; this.actualizarAdvertencia(); this.cargando = false; },
-            error: () => { this.egresos = []; this.cargando = false; }
-          });
+          this.actualizarAdvertencia();
         },
-        error: () => { this.cargando = false; }
+        error: () => {}
       });
     } else {
-      // Día pasado → solo mostrar egresos por fecha (solo lectura, sin saldo)
       this.ingresosDelDia = 0;
       this.cierreActivoId = 0;
-      this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
-        next: (egresos) => { this.egresos = egresos; this.actualizarAdvertencia(); this.cargando = false; },
-        error: () => { this.egresos = []; this.cargando = false; }
-      });
     }
   }
 
@@ -215,27 +213,28 @@ export class EgresosPage implements OnInit, OnDestroy {
 
     if (!esDiaDeHoy) return; // días pasados no necesitan polling
 
+    // Actualizar ingresos del cierre activo (para el banner de saldo)
     this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
       next: (cierre) => {
         const nuevosIngresos = (parseFloat(cierre.efectivo_ventas)      || 0)
                              + (parseFloat(cierre.transferencia_ventas) || 0)
                              + (parseFloat(cierre.cheques_ventas)       || 0)
                              + (parseFloat(cierre.abonos_total)         || 0);
-        // Solo actualizar ingresos si cambiaron
         if (nuevosIngresos !== this.ingresosDelDia) {
           this.ingresosDelDia = nuevosIngresos;
           this.actualizarAdvertencia();
         }
         this.cierreActivoId = cierre.id;
-        this.http.get<Egreso[]>(`${this.API}/egresos?cierre_id=${cierre.id}`, { headers: this.getHeaders() }).subscribe({
-          next: (egresos) => {
-            // Solo reasignar si la cantidad o algún valor cambió (evita re-render innecesario)
-            const cambio = egresos.length !== this.egresos.length ||
-              egresos.some((e, i) => e.id !== this.egresos[i]?.id || +e.valor !== +this.egresos[i]?.valor);
-            if (cambio) { this.egresos = egresos; this.actualizarAdvertencia(); }
-          },
-          error: () => {}
-        });
+      },
+      error: () => {}
+    });
+
+    // Actualizar egresos por fecha (incluye todos los cierres del día)
+    this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
+      next: (egresos) => {
+        const cambio = egresos.length !== this.egresos.length ||
+          egresos.some((e, i) => e.id !== this.egresos[i]?.id || +e.valor !== +this.egresos[i]?.valor);
+        if (cambio) { this.egresos = egresos; this.actualizarAdvertencia(); }
       },
       error: () => {}
     });

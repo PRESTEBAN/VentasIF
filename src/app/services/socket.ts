@@ -40,14 +40,13 @@ export class SocketService implements OnDestroy {
         const handler = (data: T) => observer.next(data);
         this.socket.on(evento, handler);
 
-        // Reactivar listener tras reconexión
+
         const onReconnect = () => {
           this.socket?.off(evento, handler);
           this.socket?.on(evento, handler);
         };
         this.socket.on('connect', onReconnect);
 
-        // Cleanup al desuscribirse
         return () => {
           this.socket?.off(evento, handler);
           this.socket?.off('connect', onReconnect);
