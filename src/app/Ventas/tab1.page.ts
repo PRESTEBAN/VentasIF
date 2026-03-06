@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { ProductoService, Producto } from '../services/producto';
 import { ClienteService, Cliente } from '../services/cliente';
@@ -10,7 +10,7 @@ import { CarritoPendienteService } from '../services/carrito-pendiente';
 import { PrinterService } from '../services/printer';
 import { SocketService } from '../services/socket';
 import { Subscription } from 'rxjs';
-import { ToastController } from '@ionic/angular';
+import { ToastController, IonModal } from '@ionic/angular';
 
 @Component({
   selector: 'app-tab1',
@@ -46,6 +46,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   mostrarCarrito = false;
   puedesCerrarCarrito: boolean | (() => Promise<boolean>) = true;
+  @ViewChild('modalCarrito') modalCarritoRef!: IonModal;
   carrito: any[] = [];
   formaPago = 'Efectivo';
   montoRecibido: number = 0;
@@ -439,9 +440,19 @@ export class Tab1Page implements OnInit, OnDestroy {
   cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
   forzarCerrarCarrito() {
-    this.puedesCerrarCarrito = true; // desbloquear canDismiss
-    this.mostrarCarrito = false;
-    this.montoRecibido = 0;
+    this.puedesCerrarCarrito = true;
+    if (this.modalCarritoRef) {
+      this.modalCarritoRef.dismiss().then(() => {
+        this.mostrarCarrito = false;
+        this.montoRecibido = 0;
+      }).catch(() => {
+        this.mostrarCarrito = false;
+        this.montoRecibido = 0;
+      });
+    } else {
+      this.mostrarCarrito = false;
+      this.montoRecibido = 0;
+    }
   }
 
   calcularTotal() {

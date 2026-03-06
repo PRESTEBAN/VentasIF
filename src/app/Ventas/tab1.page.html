@@ -314,7 +314,7 @@
   </ion-modal>
 
   <!-- ===== MODAL CARRITO ===== -->
-  <ion-modal [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="puedesCerrarCarrito">
+  <ion-modal #modalCarrito [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="puedesCerrarCarrito">
     <ng-template>
       <ion-header>
         <ion-toolbar>
