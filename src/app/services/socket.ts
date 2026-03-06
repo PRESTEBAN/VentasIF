@@ -10,7 +10,6 @@ export class SocketService implements OnDestroy {
   private readonly URL = environment.apiUrl;
 
   connect() {
-    // Si ya existe el socket (conectado o no), no crear otro
     if (this.socket) return;
 
     this.socket = io(this.URL, {
@@ -31,7 +30,7 @@ export class SocketService implements OnDestroy {
 
   on<T = any>(evento: string): Observable<T> {
     return new Observable(observer => {
-      // Esperar a que el socket exista
+
       const waitAndListen = () => {
         if (!this.socket) {
           setTimeout(waitAndListen, 100);
