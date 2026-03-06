@@ -116,7 +116,7 @@ export class HistorialPage implements OnInit, OnDestroy {
         },
         error: () => { }
       });
-  }
+  } 
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
