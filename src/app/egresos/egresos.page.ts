@@ -217,13 +217,23 @@ export class EgresosPage implements OnInit, OnDestroy {
 
     this.http.get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() }).subscribe({
       next: (cierre) => {
+        const nuevosIngresos = (parseFloat(cierre.efectivo_ventas)      || 0)
+                             + (parseFloat(cierre.transferencia_ventas) || 0)
+                             + (parseFloat(cierre.cheques_ventas)       || 0)
+                             + (parseFloat(cierre.abonos_total)         || 0);
+        // Solo actualizar ingresos si cambiaron
+        if (nuevosIngresos !== this.ingresosDelDia) {
+          this.ingresosDelDia = nuevosIngresos;
+          this.actualizarAdvertencia();
+        }
         this.cierreActivoId = cierre.id;
-        this.ingresosDelDia = (parseFloat(cierre.efectivo_ventas)      || 0)
-                            + (parseFloat(cierre.transferencia_ventas) || 0)
-                            + (parseFloat(cierre.cheques_ventas)       || 0)
-                            + (parseFloat(cierre.abonos_total)         || 0);
         this.http.get<Egreso[]>(`${this.API}/egresos?cierre_id=${cierre.id}`, { headers: this.getHeaders() }).subscribe({
-          next: (egresos) => { this.egresos = egresos; this.actualizarAdvertencia(); },
+          next: (egresos) => {
+            // Solo reasignar si la cantidad o algún valor cambió (evita re-render innecesario)
+            const cambio = egresos.length !== this.egresos.length ||
+              egresos.some((e, i) => e.id !== this.egresos[i]?.id || +e.valor !== +this.egresos[i]?.valor);
+            if (cambio) { this.egresos = egresos; this.actualizarAdvertencia(); }
+          },
           error: () => {}
         });
       },
