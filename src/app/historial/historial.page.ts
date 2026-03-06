@@ -110,11 +110,11 @@ export class HistorialPage implements OnInit, OnDestroy {
           (data || []).forEach(v => {
             const venta = this.mapearVenta(v);
             if (!idsActuales.has(venta.id)) {
-              this.ventas = [...this.ventas, venta];
+              this.ventas = [venta, ...this.ventas];
             }
           });
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -191,7 +191,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => {
-          this.ventas = (data || []).map(v => this.mapearVenta(v));
+          this.ventas = (data || []).map(v => this.mapearVenta(v)).reverse();
           this.cargando = false;
         },
         error: () => {
@@ -342,7 +342,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']);  }
-  irAEgresos()    { this.cerrarMenu(); this.router.navigate(['/egresos']);   }
+  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
 }

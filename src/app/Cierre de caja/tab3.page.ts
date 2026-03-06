@@ -208,7 +208,6 @@ export class Tab3Page implements OnInit, OnDestroy {
     this.guardandoCierre = true;
     this.errorGuardar    = '';
 
-    // Verificar órdenes sin entregar del cierre activo
     this.http.get<any[]>(
       `${this.API}/ventas-ruta?cierre_id=${this.cierreActivoId}`,
       { headers: this.getHeaders() }
@@ -243,8 +242,6 @@ export class Tab3Page implements OnInit, OnDestroy {
         this.mostrarResultado = false;
         this.errorGuardar = '';
         this.resetearConteo();
-        // cargarDatos se dispara vía socket 'cierre_registrado'
-        // pero hacemos reload manual por si el socket tarda
         setTimeout(() => this.cargarDatos(), 500);
       },
       error: () => { this.guardandoCierre = false; this.errorGuardar = 'Error al guardar el cierre. Intenta de nuevo.'; }
