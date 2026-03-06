@@ -48,6 +48,7 @@ export class ClientesPage implements OnInit, OnDestroy {
   guardando = false;
 
   mostrarDetalle = false;
+  puedesCerrarDetalle: boolean | (() => Promise<boolean>) = true;
   clienteDetalle: Cliente | null = null;
   movimientos: Movimiento[] = [];
   cargandoMovimientos = false;
@@ -191,6 +192,14 @@ export class ClientesPage implements OnInit, OnDestroy {
   verDetalle(cliente: Cliente) {
     this.clienteDetalle = cliente;
     this.movimientos = [];
+    // Solo permite cerrar con swipe si el scroll del modal está en el top
+    this.puedesCerrarDetalle = () => new Promise(resolve => {
+      const modalContent = document.querySelector('ion-modal .detalle-content');
+      if (!modalContent) { resolve(true); return; }
+      (modalContent as any).getScrollElement().then((el: HTMLElement) => {
+        resolve(el.scrollTop < 10);
+      }).catch(() => resolve(true));
+    });
     this.mostrarDetalle = true;
     this.cargarMovimientos(cliente.id!);
   }

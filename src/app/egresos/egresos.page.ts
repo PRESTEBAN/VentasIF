@@ -391,7 +391,7 @@ export class EgresosPage implements OnInit, OnDestroy {
     if (!this.egresoEditando.valor || this.egresoEditando.valor <= 0) { this.erroresEditar.valor = 'Ingresa un valor válido'; valido = false; }
 
     if (!valido) return;
-
+ 
     this.guardandoEdicion = true;
     this.http.put<Egreso>(`${this.API}/egresos/${this.egresoEditando.id}`,
       { detalle: this.egresoEditando.detalle.trim(), responsable: this.egresoEditando.responsable, beneficiario: this.egresoEditando.beneficiario, valor: this.egresoEditando.valor },
