@@ -28,11 +28,12 @@ export interface Cliente {
 }
 
 export interface Movimiento {
-  venta_id: number;
-  detalle: string;
-  fecha: string;
-  valor: number;
-  estado: string;
+  venta_id:        number;
+  num_orden:       string;
+  fecha:           string;
+  valor:           number;
+  saldo_orden:     number;
+  estado:          string;
   saldo_acumulado: number;
 }
 
