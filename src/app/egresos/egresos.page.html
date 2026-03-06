@@ -102,9 +102,14 @@
                 </div>
               </div>
               <span class="egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
-              <div class="egreso-acciones" *ngIf="esDiaDeHoy">
+              <!-- Editable: cierre activo -->
+              <div class="egreso-acciones" *ngIf="esEgresoEditable(egreso)">
                 <button class="btn-editar-egreso" (click)="abrirEditar(egreso)"><ion-icon name="pencil-outline"></ion-icon></button>
                 <button class="btn-borrar-egreso" (click)="confirmarBorrar(egreso)"><ion-icon name="trash-outline"></ion-icon></button>
+              </div>
+              <!-- Bloqueado: cierre cerrado -->
+              <div class="egreso-cerrado-icon" *ngIf="esDiaDeHoy && !esEgresoEditable(egreso)">
+                <ion-icon name="lock-closed-outline"></ion-icon>
               </div>
             </div>
             <div class="total-card">

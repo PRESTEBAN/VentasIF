@@ -12,6 +12,7 @@ export interface Egreso {
   beneficiario: string;
   valor: number;
   fecha?: string;
+  cierre_id?: number;
 }
 
 export interface Usuario {
@@ -31,8 +32,9 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   private readonly API = 'https://ventasif-if-api.onrender.com/api/v1';
 
-  menuAbierto   = false;
-  usuarioActual = '';
+  menuAbierto      = false;
+  usuarioActual    = '';
+  usernameActual   = '';
 
   private pollingInterval: any = null;
   private readonly POLLING_MS  = 15000;
@@ -88,7 +90,8 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     const user = this.authService.getUsuario();
-    this.usuarioActual = user?.nombre || user?.username || '';
+    this.usuarioActual  = user?.nombre || user?.username || '';
+    this.usernameActual = user?.username || '';
     const base = new Date(this.fechaSeleccionada);
     base.setDate(base.getDate() - 3);
     this.semanaBase = base;
@@ -238,6 +241,13 @@ export class EgresosPage implements OnInit, OnDestroy {
     return this.formatearFecha(this.fechaSeleccionada) === this.formatearFecha(new Date());
   }
 
+  // Un egreso es editable si pertenece al cierre activo (no a un cierre ya cerrado)
+  esEgresoEditable(egreso: Egreso): boolean {
+    if (!this.esDiaDeHoy) return false;
+    // Si el egreso no tiene cierre_id o coincide con el cierre activo, es editable
+    return !egreso.cierre_id || egreso.cierre_id === this.cierreActivoId;
+  }
+
   get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
   // ---- CALENDARIO --------------------------------------------------------
@@ -298,7 +308,17 @@ export class EgresosPage implements OnInit, OnDestroy {
 
   // ---- MODAL AÑADIR ------------------------------------------------------
   abrirModal() {
-    this.nuevoEgreso = { detalle: '', responsable: this.usuarios[0]?.username || '', beneficiario: '', valor: 0 };
+    // Responsable por defecto: usuario actual si está en la lista (excluye admin)
+    const username = this.usernameActual.toLowerCase().trim();
+    console.log('=== abrirModal DEBUG ===');
+    console.log('usernameActual:', this.usernameActual);
+    console.log('username normalizado:', username);
+    console.log('lista usuarios:', this.usuarios.map(u => u.username));
+    const usuarioEnLista = this.usuarios.find(u => u.username.toLowerCase().trim() === username);
+    console.log('usuarioEnLista:', usuarioEnLista);
+    const responsablePorDefecto = usuarioEnLista ? usuarioEnLista.username : '';
+    console.log('responsablePorDefecto:', responsablePorDefecto);
+    this.nuevoEgreso = { detalle: '', responsable: responsablePorDefecto, beneficiario: '', valor: 0 };
     this.errores = {};
     this.mostrarModal = true;
   }

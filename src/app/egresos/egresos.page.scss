@@ -487,22 +487,10 @@
   &:disabled { opacity: 0.6; }
 }
 
-/* BORRAR EGRESO */
-.btn-borrar-egreso {
-  background: #FFF0F0; border: 1px solid #FFCDD2; border-radius: 10px;
-  width: 34px; height: 34px; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; margin-left: 6px;
-  ion-icon { font-size: 16px; color: #E53935; }
-  &:active { background: #FFCDD2; transform: scale(0.93); }
-}
-
+/* ACCIONES EGRESO */
 .egreso-acciones {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  align-items: center; flex-shrink: 0;
 }
 
 .btn-editar-egreso {
@@ -518,62 +506,14 @@
   background: #FFF0F0; border: 1px solid #FFCDD2; border-radius: 10px;
   width: 34px; height: 34px;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; margin-left: 0;  // ← quitar el margin-left que tenía antes
+  cursor: pointer;
   ion-icon { font-size: 16px; color: #E53935; }
   &:active { background: #FFCDD2; transform: scale(0.93); }
 }
 
-/* ── BANNER SALDO DISPONIBLE ── */
-.saldo-banner {
-  margin: 0 16px 14px 16px;
-  border-radius: 14px;
-  padding: 12px 14px;
-  transition: all 0.3s;
-
-  &.saldo-ok {
-    background: linear-gradient(135deg, rgba(46,125,50,0.08), rgba(76,175,80,0.05));
-    border: 1.5px solid rgba(76,175,80,0.25);
-  }
-  &.saldo-alerta {
-    background: linear-gradient(135deg, rgba(229,57,53,0.08), rgba(183,28,28,0.05));
-    border: 1.5px solid rgba(229,57,53,0.30);
-    animation: pulse-alerta 1.8s ease-in-out infinite;
-  }
-}
-@keyframes pulse-alerta {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(229,57,53,0.15); }
-  50%       { box-shadow: 0 0 0 6px rgba(229,57,53,0); }
-}
-.saldo-banner-row {
-  display: flex; align-items: center; gap: 8px;
-  ion-icon { font-size: 18px; flex-shrink: 0; }
-  .saldo-ok & ion-icon   { color: #2E7D32; }
-  .saldo-alerta & ion-icon { color: #E53935; }
-}
-.saldo-banner-label {
-  flex: 1; font-size: 13px; font-weight: 600;
-  .saldo-ok & { color: #2E7D32; }
-  .saldo-alerta & { color: #C62828; }
-}
-.saldo-banner-valor {
-  font-size: 15px; font-weight: 900;
-  .saldo-ok & { color: #2E7D32; }
-  .saldo-alerta & { color: #C62828; }
-}
-.saldo-banner-sub {
-  font-size: 11px; color: #888; margin: 4px 0 0 26px; font-weight: 500;
-}
-
-/* ── INFO DE SALDO EN MODAL ── */
-.modal-saldo-info {
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(46,125,50,0.07); border: 1px solid rgba(76,175,80,0.25);
-  border-radius: 10px; padding: 8px 12px; margin-bottom: 14px;
-  font-size: 13px; color: #2E7D32; font-weight: 600;
-  ion-icon { font-size: 16px; }
-  strong { font-weight: 800; }
-  &.modal-saldo-cero {
-    background: rgba(229,57,53,0.07); border-color: rgba(229,57,53,0.25);
-    color: #C62828;
-  }
+/* ── EGRESO DE CIERRE CERRADO ── */
+.egreso-cerrado-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 18px; color: #CCC; }
 }

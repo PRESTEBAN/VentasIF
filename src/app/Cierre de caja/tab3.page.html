@@ -7,7 +7,7 @@
 
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
-          <img src="assets/LOGO_IF.png" alt="Logo" class="menu-logo" />
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
           <p class="menu-titulo">Industrial Fátima</p>
           <p class="menu-usuario"><ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}</p>
         </div>
@@ -30,7 +30,7 @@
       <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()"><span></span><span></span><span></span></div>
-        <div class="header-logo"><img src="assets/LOGO_IF.png" alt="Logo" /></div>
+        <div class="header-logo"><img src="assets/LOGO_IF.jpg" alt="Logo" /></div>
         <div class="reload-btn" (click)="cargarDatos()"><ion-icon name="refresh-outline"></ion-icon></div>
       </div>
 
@@ -105,10 +105,13 @@
               <span class="dato-label">Total Egresos</span>
               <span class="dato-valor rojo-txt">${{ totalEgresos | number:'1.2-2' }}</span>
             </div>
-            <p class="aviso-exceso" *ngIf="egresosExceden">
+            <div class="aviso-exceso" *ngIf="egresosExceden">
               <ion-icon name="warning-outline"></ion-icon>
-              Los egresos superan los ingresos. Corrige en Egresos.
-            </p>
+              <div class="aviso-exceso-texto">
+                <strong>Los egresos superan los ingresos</strong>
+                <span>No puedes cerrar caja hasta corregirlo. Ve a <b>Egresos</b> y revisa los registros.</span>
+              </div>
+            </div>
           </div>
 
           <!-- TOTAL GENERAL -->
@@ -157,6 +160,11 @@
               <span class="dato-label">Saldo neta</span>
               <span class="dato-valor azul-txt">${{ totalDesglose | number:'1.2-2' }}</span>
             </div>
+          </div>
+
+          <div class="bloqueo-egresos-banner" *ngIf="egresosExceden">
+            <ion-icon name="lock-closed-outline"></ion-icon>
+            <span>Cierre bloqueado — corrige los egresos primero</span>
           </div>
 
           <button class="btn-revisar" (click)="revisar()" [disabled]="egresosExceden">
