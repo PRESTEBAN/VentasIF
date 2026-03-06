@@ -31,7 +31,7 @@
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()"><span></span><span></span><span></span></div>
         <div class="header-logo"><img src="assets/LOGO_IF.jpg" alt="Logo" /></div>
-        <div class="header-right" (click)="abrirModal()"><ion-icon name="add-circle-outline"></ion-icon></div>
+        <div class="header-right" (click)="abrirModal()" *ngIf="esDiaDeHoy"><ion-icon name="add-circle-outline"></ion-icon></div>
       </div>
 
       <img src="assets/Glaceado.png" class="glaceado" alt="" />
@@ -92,7 +92,7 @@
             <div class="sin-egresos-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
             <p class="sin-egresos-titulo">Sin egresos</p>
             <p class="sin-egresos-sub">No hay registros para este día</p>
-            <button class="btn-agregar-vacio" (click)="abrirModal()"><ion-icon name="add-outline"></ion-icon> Añadir egreso</button>
+            <button class="btn-agregar-vacio" (click)="abrirModal()" *ngIf="esDiaDeHoy"><ion-icon name="add-outline"></ion-icon> Añadir egreso</button>
           </div>
 
           <div class="egresos-lista" *ngIf="egresos.length > 0">
@@ -114,7 +114,7 @@
                 </div>
               </div>
               <span class="egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
-              <div class="egreso-acciones">
+              <div class="egreso-acciones" *ngIf="esDiaDeHoy">
                 <button class="btn-editar-egreso" (click)="abrirEditar(egreso)"><ion-icon name="pencil-outline"></ion-icon></button>
                 <button class="btn-borrar-egreso" (click)="confirmarBorrar(egreso)"><ion-icon name="trash-outline"></ion-icon></button>
               </div>

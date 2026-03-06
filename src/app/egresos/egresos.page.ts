@@ -250,6 +250,10 @@ export class EgresosPage implements OnInit, OnDestroy {
       });
   }
 
+  get esDiaDeHoy(): boolean {
+    return this.formatearFecha(this.fechaSeleccionada) === this.formatearFecha(new Date());
+  }
+
   get usuariosSinAdmin(): Usuario[] { return this.usuarios; }
 
   // ---- CALENDARIO --------------------------------------------------------
