@@ -339,9 +339,10 @@ export class ClientesPage implements OnInit, OnDestroy {
 
         // Imprimir recibo de abono
         const c = this.clienteDetalle!;
-        const saldoAntes  = +(c.saldo || 0);
         const montoAbono  = +this.abonoData.monto!;
-        const saldoResta  = +(res.saldo_restante ?? (saldoAntes - montoAbono));
+        const saldoResta  = +(res.saldo_restante ?? 0);
+        // saldo de la orden antes del abono = saldo restante + lo que se abonó ahora
+        const saldoAntes  = saldoResta + montoAbono;
         const user = this.authService.getUsuario();
         this.printerService.imprimirReciboAbono({
           ventaId:          this.abonoData.ventaId!,
@@ -350,6 +351,7 @@ export class ClientesPage implements OnInit, OnDestroy {
           clienteTelefono:  c.telefono   || '',
           clienteDireccion: c.direccion  || '',
           vendedor:         user?.nombre || user?.username || 'Admin',
+          fechaVenta:       res.fecha_venta   || '',
           valorTotalVenta:  +(res.valor_total ?? 0),
           saldoPendiente:   saldoAntes,
           valorAbono:       montoAbono,

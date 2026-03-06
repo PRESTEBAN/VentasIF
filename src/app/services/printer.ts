@@ -583,7 +583,13 @@ export class PrinterService {
     t += BOLD_ON + 'Abono' + BOLD_OFF + LF;
     t += LINEA + LF;
     t += LEFT;
-    t += col2('fecha de la venta:', 'dd/mm/aaaa') + LF;
+    // Formatear fecha de la venta
+    let fechaVentaStr = 'Sin fecha';
+    if (datos.fechaVenta) {
+      const fv = new Date(datos.fechaVenta);
+      fechaVentaStr = `${fv.getDate().toString().padStart(2,'0')}/${(fv.getMonth()+1).toString().padStart(2,'0')}/${fv.getFullYear()}`;
+    }
+    t += col2('fecha de la venta:', fechaVentaStr) + LF;
     t += col2('Valor total orden:', `$${(+datos.valorTotalVenta).toFixed(2)}`) + LF;
     t += col2('Saldo Pendiente:', `$${(+datos.saldoPendiente).toFixed(2)}`) + LF;
     t += BOLD_ON + col2('Valor Abono:', `$${(+datos.valorAbono).toFixed(2)}`) + BOLD_OFF + LF;
@@ -608,6 +614,7 @@ export interface DatosReciboAbono {
   clienteTelefono?:  string;
   clienteDireccion?: string;
   vendedor?:         string;
+  fechaVenta?:       string;   // fecha de la venta original
   valorTotalVenta:   number;
   saldoPendiente:    number;
   valorAbono:        number;
