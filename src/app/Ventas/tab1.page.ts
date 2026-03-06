@@ -45,6 +45,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   itemProducto = { cantidad: 0, precio: 0, descuento: 0, subtotal: 0, tipoPrecio: 'menor' };
 
   mostrarCarrito = false;
+  puedesCerrarCarrito: boolean | (() => Promise<boolean>) = true;
   carrito: any[] = [];
   formaPago = 'Efectivo';
   montoRecibido: number = 0;
@@ -425,7 +426,16 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   // ── CARRITO ───────────────────────────────────────────────────────────────
-  abrirCarrito() { this.mostrarCarrito = true; }
+  abrirCarrito() {
+    this.puedesCerrarCarrito = () => new Promise(resolve => {
+      const modalContent = document.querySelector('ion-modal .modal-content');
+      if (!modalContent) { resolve(true); return; }
+      (modalContent as any).getScrollElement().then((el: HTMLElement) => {
+        resolve(el.scrollTop < 10);
+      }).catch(() => resolve(true));
+    });
+    this.mostrarCarrito = true;
+  }
   cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
   calcularTotal() {

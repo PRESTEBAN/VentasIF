@@ -6,7 +6,7 @@
 
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
-          <img src="assets/LOGO_IF.png" alt="Logo" class="menu-logo" />
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
           <p class="menu-titulo">Industrial Fátima</p>
           <p class="menu-usuario">
             <ion-icon name="person-circle-outline"></ion-icon>
@@ -50,7 +50,7 @@
           <span></span><span></span><span></span>
         </div>
         <div class="header-logo">
-          <img src="assets/LOGO_IF.png" alt="Logo" />
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
         <div class="carrito-btn" (click)="abrirCarrito()">
           <ion-icon name="cart-outline"></ion-icon>
@@ -262,7 +262,7 @@
   </ion-modal>
 
   <!-- ===== MODAL PRODUCTO ===== -->
-  <ion-modal [isOpen]="mostrarProducto" (didDismiss)="cerrarProducto()" [breakpoints]="[0, 0.75]" [initialBreakpoint]="0.75">
+  <ion-modal [isOpen]="mostrarProducto" (didDismiss)="cerrarProducto()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="true">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -314,7 +314,7 @@
   </ion-modal>
 
   <!-- ===== MODAL CARRITO ===== -->
-  <ion-modal [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 0.9]" [initialBreakpoint]="1">
+  <ion-modal [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="puedesCerrarCarrito">
     <ng-template>
       <ion-header>
         <ion-toolbar>

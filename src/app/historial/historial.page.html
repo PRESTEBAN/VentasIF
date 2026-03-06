@@ -3,12 +3,11 @@
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
 
-      
       <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
 
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
-          <img src="assets/LOGO_IF.png" alt="Logo" class="menu-logo" />
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
           <p class="menu-titulo">Industrial Fátima</p>
           <p class="menu-usuario">
             <ion-icon name="person-circle-outline"></ion-icon>
@@ -52,7 +51,7 @@
           <span></span><span></span><span></span>
         </div>
         <div class="header-logo">
-          <img src="assets/LOGO_IF.png" alt="Logo" />
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
         <div class="delete-btn" (click)="toggleModoEliminacion()" [class.delete-btn-active]="modoEliminacion">
           <ion-icon [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"></ion-icon>
@@ -178,8 +177,10 @@
   <ion-modal
     [isOpen]="mostrarDetalle"
     (didDismiss)="cerrarDetalle()"
-    [breakpoints]="[0, 0.92]"
-    [initialBreakpoint]="0.92"
+    [breakpoints]="[0, 1]"
+    [initialBreakpoint]="1"
+    [handle]="false"
+    [canDismiss]="puedesCerrarDetalle"
   >
     <ng-template>
       <ion-header>
