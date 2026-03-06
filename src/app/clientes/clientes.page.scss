@@ -37,7 +37,6 @@
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spinning ion-icon { animation: spin 0.8s linear infinite; }
 
-.glaceado { display: block; width: 100%; height: auto; margin-top: -55px; position: relative; z-index: 3; }
 
 /* ── MAIN CONTENT ── */
 .main-content {
