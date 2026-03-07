@@ -343,6 +343,6 @@ export class HistorialPage implements OnInit, OnDestroy {
   }
 
   irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAEgresos() { this.cerrarMenu(); this.router.navigate(['/egresos']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
+  irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
 }

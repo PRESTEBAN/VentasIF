@@ -2,7 +2,11 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+      <div
+        class="menu-overlay"
+        [class.open]="menuAbierto"
+        (click)="cerrarMenu()"
+      ></div>
 
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
@@ -15,13 +19,22 @@
         </div>
         <div class="menu-items">
           <p class="menu-seccion">Navegación</p>
-          <div class="menu-item menu-item-active" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+          <div
+            class="menu-item menu-item-active"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
+          >
             <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
           </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
+          >
             <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
           </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
+          >
             <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
           </div>
           <div class="menu-divider"></div>
@@ -35,12 +48,14 @@
           <div class="menu-item" (click)="irAInventario()">
             <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
           </div>
-          <div class="menu-item" (click)="irAEgresos()">
-            <ion-icon name="trending-down-outline"></ion-icon><span>Egresos</span>
-          </div>
+          <div class="menu-item" (click)="irACaja()">
+  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+</div>
+          
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
-            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+            <ion-icon name="log-out-outline"></ion-icon
+            ><span>Cerrar Sesión</span>
           </div>
         </div>
       </div>
@@ -54,13 +69,13 @@
         </div>
         <div class="carrito-btn" (click)="abrirCarrito()">
           <ion-icon name="cart-outline"></ion-icon>
-          <span class="carrito-badge" *ngIf="carrito.length > 0">{{ carrito.length }}</span>
+          <span class="carrito-badge" *ngIf="carrito.length > 0"
+            >{{ carrito.length }}</span
+          >
         </div>
       </div>
 
-
       <div class="main-content">
-
         <div class="cliente-card" [class.cliente-activo]="clienteSeleccionado">
           <div *ngIf="!clienteSeleccionado">
             <div class="cliente-top">
@@ -94,29 +109,54 @@
               <ion-icon name="alert-circle-outline"></ion-icon>
               {{ errorCliente }}
             </p>
-            <div class="coincidentes-lista" *ngIf="clientesCoincidentes.length > 0">
+            <div
+              class="coincidentes-lista"
+              *ngIf="clientesCoincidentes.length > 0"
+            >
               <p class="coincidentes-titulo">
                 <ion-icon name="people-outline"></ion-icon>
                 {{ clientesCoincidentes.length }} clientes encontrados
               </p>
-              <div class="coincidente-item" *ngFor="let c of clientesCoincidentes" (click)="seleccionarCliente(c)">
-                <div class="coinc-avatar"><ion-icon name="person-outline"></ion-icon></div>
+              <div
+                class="coincidente-item"
+                *ngFor="let c of clientesCoincidentes"
+                (click)="seleccionarCliente(c)"
+              >
+                <div class="coinc-avatar">
+                  <ion-icon name="person-outline"></ion-icon>
+                </div>
                 <div class="coinc-datos">
                   <p class="coinc-nombre">{{ c.nombre }} {{ c.apellido }}</p>
-                  <p class="coinc-sub">{{ c.cedula_ruc }}{{ c.nombre_negocio ? ' · ' + c.nombre_negocio : '' }}</p>
+                  <p class="coinc-sub">
+                    {{ c.cedula_ruc }}{{ c.nombre_negocio ? ' · ' +
+                    c.nombre_negocio : '' }}
+                  </p>
                 </div>
-                <ion-icon name="chevron-forward-outline" class="coinc-arrow"></ion-icon>
+                <ion-icon
+                  name="chevron-forward-outline"
+                  class="coinc-arrow"
+                ></ion-icon>
               </div>
             </div>
           </div>
 
           <div class="cliente-seleccionado-row" *ngIf="clienteSeleccionado">
-            <div class="cliente-avatar"><ion-icon name="person-outline"></ion-icon></div>
-            <div class="cliente-datos">
-              <p class="cliente-nombre-sel">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
-              <p class="cliente-cedula-sel">{{ clienteSeleccionado.cedula_ruc }}</p>
+            <div class="cliente-avatar">
+              <ion-icon name="person-outline"></ion-icon>
             </div>
-            <div class="carrito-sin-guardar" *ngIf="carrito.length > 0 && !carritoGuardadoEnBD">
+            <div class="cliente-datos">
+              <p class="cliente-nombre-sel">
+                {{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido
+                }}
+              </p>
+              <p class="cliente-cedula-sel">
+                {{ clienteSeleccionado.cedula_ruc }}
+              </p>
+            </div>
+            <div
+              class="carrito-sin-guardar"
+              *ngIf="carrito.length > 0 && !carritoGuardadoEnBD"
+            >
               <ion-icon name="warning-outline"></ion-icon>
             </div>
             <div class="cliente-cambiar-btn" (click)="limpiarCliente()">
@@ -137,32 +177,54 @@
             [class.bloqueado]="!clienteSeleccionado || (producto.stock ?? 0) <= 0"
             (click)="abrirProducto(producto)"
           >
-            <div class="stock-badge" *ngIf="(producto.stock ?? 0) <= 5 && (producto.stock ?? 0) > 0">
+            <div
+              class="stock-badge"
+              *ngIf="(producto.stock ?? 0) <= 5 && (producto.stock ?? 0) > 0"
+            >
               <ion-icon name="warning-outline"></ion-icon>
             </div>
-            <div class="producto-img-placeholder"><ion-icon name="cube-outline"></ion-icon></div>
+            <div class="producto-img-placeholder">
+              <ion-icon name="cube-outline"></ion-icon>
+            </div>
             <p class="producto-nombre">{{ producto.nombre }}</p>
-            <p class="producto-descripcion">{{ producto.descripcion || producto.categoria }}</p>
+            <p class="producto-descripcion">
+              {{ producto.descripcion || producto.categoria }}
+            </p>
             <div class="producto-footer">
-              <span class="producto-precio">${{ (+producto.precio_x_mayor).toFixed(2) }}</span>
+              <span class="producto-precio"
+                >${{ (+producto.precio_x_mayor).toFixed(2) }}</span
+              >
               <div class="stock-wrap">
-                <span class="producto-stock" [class.stock-bajo]="(producto.stock ?? 0) <= 5">{{ producto.stock }}</span>
+                <span
+                  class="producto-stock"
+                  [class.stock-bajo]="(producto.stock ?? 0) <= 5"
+                  >{{ producto.stock }}</span
+                >
                 <span class="stock-label">stock</span>
               </div>
             </div>
-            <div class="lock-overlay" *ngIf="!clienteSeleccionado || (producto.stock ?? 0) <= 0">
-              <ion-icon [name]="!clienteSeleccionado ? 'lock-closed-outline' : 'close-circle-outline'"></ion-icon>
-              <span>{{ !clienteSeleccionado ? 'Sin cliente' : 'Agotado' }}</span>
+            <div
+              class="lock-overlay"
+              *ngIf="!clienteSeleccionado || (producto.stock ?? 0) <= 0"
+            >
+              <ion-icon
+                [name]="!clienteSeleccionado ? 'lock-closed-outline' : 'close-circle-outline'"
+              ></ion-icon>
+              <span
+                >{{ !clienteSeleccionado ? 'Sin cliente' : 'Agotado' }}</span
+              >
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 
   <!-- ===== MODAL AGREGAR CLIENTE ===== -->
-  <ion-modal [isOpen]="mostrarAgregarCliente" (didDismiss)="cerrarAgregarCliente()">
+  <ion-modal
+    [isOpen]="mostrarAgregarCliente"
+    (didDismiss)="cerrarAgregarCliente()"
+  >
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -176,13 +238,15 @@
       </ion-header>
       <ion-content class="modal-content">
         <div class="modal-body">
-
           <!-- ── CÉDULA / RUC ── -->
           <div class="form-group">
             <label>Cédula / RUC*</label>
             <div class="cedula-ruc-row">
               <!-- Input cédula con sufijo 001 visual cuando es RUC -->
-              <div class="cedula-input-wrap" [class.con-ruc]="nuevoCliente.esRuc">
+              <div
+                class="cedula-input-wrap"
+                [class.con-ruc]="nuevoCliente.esRuc"
+              >
                 <input
                   type="text"
                   [(ngModel)]="nuevoCliente.cedula_ruc"
@@ -195,64 +259,125 @@
               <!-- Checkbox RUC -->
               <div class="ruc-checkbox-wrap" (click)="toggleRuc()">
                 <div class="ruc-check" [class.activo]="nuevoCliente.esRuc">
-                  <ion-icon name="checkmark-outline" *ngIf="nuevoCliente.esRuc"></ion-icon>
+                  <ion-icon
+                    name="checkmark-outline"
+                    *ngIf="nuevoCliente.esRuc"
+                  ></ion-icon>
                 </div>
                 <span class="ruc-label">RUC</span>
               </div>
             </div>
-            <span class="field-error" *ngIf="erroresCliente.cedula_ruc">{{ erroresCliente.cedula_ruc }}</span>
+            <span class="field-error" *ngIf="erroresCliente.cedula_ruc"
+              >{{ erroresCliente.cedula_ruc }}</span
+            >
           </div>
 
           <div class="form-group">
             <label>Tipo Cliente:*</label>
             <div class="switch-row">
-              <span [class.tipo-active]="!nuevoCliente.esParticular">Negocio</span>
-              <div class="switch-track" [class.on]="nuevoCliente.esParticular" (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular">
+              <span [class.tipo-active]="!nuevoCliente.esParticular"
+                >Negocio</span
+              >
+              <div
+                class="switch-track"
+                [class.on]="nuevoCliente.esParticular"
+                (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular"
+              >
                 <div class="switch-thumb"></div>
               </div>
-              <span [class.tipo-active]="nuevoCliente.esParticular">Particular</span>
+              <span [class.tipo-active]="nuevoCliente.esParticular"
+                >Particular</span
+              >
             </div>
           </div>
           <div class="form-row">
             <div class="form-group half">
               <label>Nombre*</label>
-              <input type="text" [(ngModel)]="nuevoCliente.nombre" placeholder="nombre" />
-              <span class="field-error" *ngIf="erroresCliente.nombre">{{ erroresCliente.nombre }}</span>
+              <input
+                type="text"
+                [(ngModel)]="nuevoCliente.nombre"
+                placeholder="nombre"
+              />
+              <span class="field-error" *ngIf="erroresCliente.nombre"
+                >{{ erroresCliente.nombre }}</span
+              >
             </div>
             <div class="form-group half">
               <label>Apellido*</label>
-              <input type="text" [(ngModel)]="nuevoCliente.apellido" placeholder="apellido" />
-              <span class="field-error" *ngIf="erroresCliente.apellido">{{ erroresCliente.apellido }}</span>
+              <input
+                type="text"
+                [(ngModel)]="nuevoCliente.apellido"
+                placeholder="apellido"
+              />
+              <span class="field-error" *ngIf="erroresCliente.apellido"
+                >{{ erroresCliente.apellido }}</span
+              >
             </div>
           </div>
           <div class="form-group">
             <label>Nombre de Negocio</label>
-            <input type="text" [(ngModel)]="nuevoCliente.negocio" placeholder="nombre del negocio" />
+            <input
+              type="text"
+              [(ngModel)]="nuevoCliente.negocio"
+              placeholder="nombre del negocio"
+            />
           </div>
           <div class="form-group">
             <label>E-mail</label>
-            <input type="email" [(ngModel)]="nuevoCliente.email" placeholder="E-mail" />
-            <span class="field-error" *ngIf="erroresCliente.email">{{ erroresCliente.email }}</span>
+            <input
+              type="email"
+              [(ngModel)]="nuevoCliente.email"
+              placeholder="E-mail"
+            />
+            <span class="field-error" *ngIf="erroresCliente.email"
+              >{{ erroresCliente.email }}</span
+            >
           </div>
           <div class="form-group">
             <label>Dirección*</label>
-            <input type="text" [(ngModel)]="nuevoCliente.direccion" placeholder="direccion domicilio o negocio" />
-            <span class="field-error" *ngIf="erroresCliente.direccion">{{ erroresCliente.direccion }}</span>
+            <input
+              type="text"
+              [(ngModel)]="nuevoCliente.direccion"
+              placeholder="direccion domicilio o negocio"
+            />
+            <span class="field-error" *ngIf="erroresCliente.direccion"
+              >{{ erroresCliente.direccion }}</span
+            >
           </div>
           <div class="form-row">
             <div class="form-group half">
               <label>Sector</label>
-              <input type="text" [(ngModel)]="nuevoCliente.sector" placeholder="sector" />
+              <input
+                type="text"
+                [(ngModel)]="nuevoCliente.sector"
+                placeholder="sector"
+              />
             </div>
             <div class="form-group half">
               <label>Teléfono*</label>
-              <input type="tel" [(ngModel)]="nuevoCliente.telefono" placeholder="celular" />
-              <span class="field-error" *ngIf="erroresCliente.telefono">{{ erroresCliente.telefono }}</span>
+              <input
+                type="tel"
+                [(ngModel)]="nuevoCliente.telefono"
+                placeholder="celular"
+              />
+              <span class="field-error" *ngIf="erroresCliente.telefono"
+                >{{ erroresCliente.telefono }}</span
+              >
             </div>
           </div>
-          <span class="field-error" *ngIf="erroresCliente.general">{{ erroresCliente.general }}</span>
-          <button class="btn-nativo" (click)="guardarCliente()" [disabled]="guardandoCliente">
-            <ion-spinner name="crescent" *ngIf="guardandoCliente" style="margin-right: 8px; width: 18px; height: 18px"></ion-spinner>
+          <span class="field-error" *ngIf="erroresCliente.general"
+            >{{ erroresCliente.general }}</span
+          >
+          <button
+            class="btn-nativo"
+            (click)="guardarCliente()"
+            [disabled]="guardandoCliente"
+          >
+            <ion-spinner
+              name="crescent"
+              *ngIf="guardandoCliente"
+              style="margin-right: 8px; width: 18px; height: 18px"
+            ></ion-spinner>
             {{ guardandoCliente ? 'Guardando...' : 'Guardar Cliente' }}
           </button>
         </div>
@@ -261,13 +386,22 @@
   </ion-modal>
 
   <!-- ===== MODAL PRODUCTO ===== -->
-  <ion-modal [isOpen]="mostrarProducto" (didDismiss)="cerrarProducto()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="true">
+  <ion-modal
+    [isOpen]="mostrarProducto"
+    (didDismiss)="cerrarProducto()"
+    [breakpoints]="[0, 1]"
+    [initialBreakpoint]="1"
+    [handle]="false"
+    [canDismiss]="true"
+  >
     <ng-template>
       <ion-header>
         <ion-toolbar>
           <ion-title>{{ productoSeleccionado?.nombre }}</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarProducto()"><ion-icon name="close-outline"></ion-icon></ion-button>
+            <ion-button (click)="cerrarProducto()"
+              ><ion-icon name="close-outline"></ion-icon
+            ></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -276,62 +410,114 @@
           <div class="form-group">
             <label>Tipo de Precio:</label>
             <div class="pago-btns">
-              <button [class.pago-active]="itemProducto.tipoPrecio === 'menor'" (click)="seleccionarTipoPrecio('menor')">
-                Menor ${{ (+(productoSeleccionado?.precio_x_menor || 0)).toFixed(2) }}
+              <button
+                [class.pago-active]="itemProducto.tipoPrecio === 'menor'"
+                (click)="seleccionarTipoPrecio('menor')"
+              >
+                Menor ${{ (+(productoSeleccionado?.precio_x_menor ||
+                0)).toFixed(2) }}
               </button>
-              <button [class.pago-active]="itemProducto.tipoPrecio === 'mayor'" (click)="seleccionarTipoPrecio('mayor')">
-                Mayor ${{ (+(productoSeleccionado?.precio_x_mayor || 0)).toFixed(2) }}
+              <button
+                [class.pago-active]="itemProducto.tipoPrecio === 'mayor'"
+                (click)="seleccionarTipoPrecio('mayor')"
+              >
+                Mayor ${{ (+(productoSeleccionado?.precio_x_mayor ||
+                0)).toFixed(2) }}
               </button>
             </div>
           </div>
           <div class="form-group">
             <label>Cantidad:</label>
-            <input type="number" [(ngModel)]="itemProducto.cantidad" placeholder="0"
-              [max]="productoSeleccionado?.stock ?? 0" min="0"
-              (ngModelChange)="onCantidadChange($event)" />
-            <div class="stock-aviso" *ngIf="itemProducto.cantidad >= (productoSeleccionado?.stock ?? 0) && (productoSeleccionado?.stock ?? 0) > 0">
+            <input
+              type="number"
+              [(ngModel)]="itemProducto.cantidad"
+              placeholder="0"
+              [max]="productoSeleccionado?.stock ?? 0"
+              min="0"
+              (ngModelChange)="onCantidadChange($event)"
+            />
+            <div
+              class="stock-aviso"
+              *ngIf="itemProducto.cantidad >= (productoSeleccionado?.stock ?? 0) && (productoSeleccionado?.stock ?? 0) > 0"
+            >
               <ion-icon name="warning-outline"></ion-icon>
-              <span>Solo hay <strong>{{ productoSeleccionado?.stock }}</strong> unidad{{ (productoSeleccionado?.stock ?? 0) === 1 ? '' : 'es' }} disponible{{ (productoSeleccionado?.stock ?? 0) === 1 ? '' : 's' }}</span>
+              <span
+                >Solo hay
+                <strong>{{ productoSeleccionado?.stock }}</strong> unidad{{
+                (productoSeleccionado?.stock ?? 0) === 1 ? '' : 'es' }}
+                disponible{{ (productoSeleccionado?.stock ?? 0) === 1 ? '' : 's'
+                }}</span
+              >
             </div>
           </div>
           <div class="form-group">
             <label>Precio:</label>
-            <input type="number" [(ngModel)]="itemProducto.precio" placeholder="0.00" (ngModelChange)="calcularSubtotal()" />
+            <input
+              type="number"
+              [(ngModel)]="itemProducto.precio"
+              placeholder="0.00"
+              (ngModelChange)="calcularSubtotal()"
+            />
           </div>
           <div class="form-group">
             <label>Desc (%):</label>
-            <input type="number" [(ngModel)]="itemProducto.descuento" placeholder="0" (ngModelChange)="calcularSubtotal()" />
+            <input
+              type="number"
+              [(ngModel)]="itemProducto.descuento"
+              placeholder="0"
+              (ngModelChange)="calcularSubtotal()"
+            />
           </div>
           <div class="subtotal-row">
             <span>SubTotal:</span>
-            <span class="subtotal-valor">${{ itemProducto.subtotal.toFixed(2) }}</span>
+            <span class="subtotal-valor"
+              >${{ itemProducto.subtotal.toFixed(2) }}</span
+            >
           </div>
-          <button class="btn-nativo" (click)="agregarAlCarrito()">Agregar</button>
+          <button class="btn-nativo" (click)="agregarAlCarrito()">
+            Agregar
+          </button>
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
 
   <!-- ===== MODAL CARRITO ===== -->
-  <ion-modal #modalCarrito [isOpen]="mostrarCarrito" (didDismiss)="cerrarCarrito()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false" [canDismiss]="puedesCerrarCarrito">
+  <ion-modal
+    #modalCarrito
+    [isOpen]="mostrarCarrito"
+    (didDismiss)="cerrarCarrito()"
+    [breakpoints]="[0, 1]"
+    [initialBreakpoint]="1"
+    [handle]="false"
+    [canDismiss]="puedesCerrarCarrito"
+  >
     <ng-template>
       <ion-header>
         <ion-toolbar>
           <ion-title>Carrito</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="forzarCerrarCarrito()"><ion-icon name="close-outline"></ion-icon></ion-button>
+            <ion-button (click)="forzarCerrarCarrito()"
+              ><ion-icon name="close-outline"></ion-icon
+            ></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
       <ion-content class="modal-content">
         <div class="modal-body">
           <div class="carrito-cliente" *ngIf="clienteSeleccionado">
-            <p class="carrito-cli-nombre">{{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido }}</p>
-            <p class="carrito-cli-cedula">{{ clienteSeleccionado.cedula_ruc }}</p>
+            <p class="carrito-cli-nombre">
+              {{ clienteSeleccionado.nombre }} {{ clienteSeleccionado.apellido
+              }}
+            </p>
+            <p class="carrito-cli-cedula">
+              {{ clienteSeleccionado.cedula_ruc }}
+            </p>
           </div>
           <div class="carrito-tabla" *ngIf="carrito.length > 0">
             <div class="tabla-head">
-              <span>Producto</span><span>Cant.</span><span>Total</span><span></span>
+              <span>Producto</span><span>Cant.</span><span>Total</span
+              ><span></span>
             </div>
             <div class="tabla-row" *ngFor="let item of carrito; let i = index">
               <span>{{ item.nombre }}</span>
@@ -342,74 +528,136 @@
               </button>
             </div>
           </div>
-          <p class="carrito-vacio" *ngIf="carrito.length === 0">Sin productos aún</p>
+          <p class="carrito-vacio" *ngIf="carrito.length === 0">
+            Sin productos aún
+          </p>
           <div class="totales">
             <div class="total-row">
-              <span>SubTotal:</span><span>${{ calcularTotal().subtotal.toFixed(2) }}</span>
+              <span>SubTotal:</span
+              ><span>${{ calcularTotal().subtotal.toFixed(2) }}</span>
             </div>
             <div class="total-row">
-              <span>Desc:</span><span>${{ calcularTotal().descuento.toFixed(2) }}</span>
+              <span>Desc:</span
+              ><span>${{ calcularTotal().descuento.toFixed(2) }}</span>
             </div>
             <div class="total-row iva-row">
               <span>IVA (%):</span>
               <div class="iva-input-wrap">
-                <input type="number" [(ngModel)]="ivaPercent" min="0" max="100" class="iva-input" />
+                <input
+                  type="number"
+                  [(ngModel)]="ivaPercent"
+                  min="0"
+                  max="100"
+                  class="iva-input"
+                />
                 <span class="iva-symbol">%</span>
               </div>
               <span>${{ calcularTotal().iva.toFixed(2) }}</span>
             </div>
             <div class="total-row total-final">
-              <span>Total:</span><span>${{ calcularTotal().total.toFixed(2) }}</span>
+              <span>Total:</span
+              ><span>${{ calcularTotal().total.toFixed(2) }}</span>
             </div>
           </div>
           <div class="pago-section">
             <p class="pago-label">Forma de Pago:</p>
             <div class="pago-btns">
-              <button [class.pago-active]="formaPago==='Efectivo'" (click)="formaPago='Efectivo'">Efectivo</button>
-              <button [class.pago-active]="formaPago==='Transferencia'" (click)="formaPago='Transferencia'">Transferencia</button>
-              <button [class.pago-active]="formaPago==='Pendiente'" (click)="formaPago='Pendiente'">Pendiente</button>
-              <button [class.pago-active]="formaPago==='Cheques'" (click)="formaPago='Cheques'">Cheques</button>
+              <button
+                [class.pago-active]="formaPago==='Efectivo'"
+                (click)="formaPago='Efectivo'"
+              >
+                Efectivo
+              </button>
+              <button
+                [class.pago-active]="formaPago==='Transferencia'"
+                (click)="formaPago='Transferencia'"
+              >
+                Transferencia
+              </button>
+              <button
+                [class.pago-active]="formaPago==='Pendiente'"
+                (click)="formaPago='Pendiente'"
+              >
+                Pendiente
+              </button>
+              <button
+                [class.pago-active]="formaPago==='Cheques'"
+                (click)="formaPago='Cheques'"
+              >
+                Cheques
+              </button>
             </div>
             <div class="recibe-vuelto" *ngIf="formaPago === 'Efectivo'">
               <div class="recibe-row">
                 <label>Recibe:</label>
-                <input type="number" [(ngModel)]="montoRecibido" placeholder="0.00" class="recibe-input" min="0" />
+                <input
+                  type="number"
+                  [(ngModel)]="montoRecibido"
+                  placeholder="0.00"
+                  class="recibe-input"
+                  min="0"
+                />
               </div>
               <div class="recibe-row">
                 <label>Vuelto:</label>
-                <span class="vuelto-valor">${{ calcularVuelto().toFixed(2) }}</span>
+                <span class="vuelto-valor"
+                  >${{ calcularVuelto().toFixed(2) }}</span
+                >
               </div>
             </div>
           </div>
           <div class="carrito-acciones">
-            <button class="btn-secundario" (click)="guardarPedido()">Guardar</button>
-            <button class="btn-nativo" (click)="finalizarPedido()">Finalizar</button>
+            <button class="btn-secundario" (click)="guardarPedido()">
+              Guardar
+            </button>
+            <button class="btn-nativo" (click)="finalizarPedido()">
+              Finalizar
+            </button>
           </div>
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
-
 </ion-content>
 
 <!-- ===== MODAL CONFIRMAR QUITAR CLIENTE ===== -->
 <div class="print-overlay" *ngIf="mostrarConfirmarLimpiar">
   <div class="print-card" (click)="$event.stopPropagation()">
-    <div class="print-icono-wrap" style="background: #FFF3E0;">
-      <ion-icon name="warning-outline" style="color: #E65100; font-size: 28px;"></ion-icon>
+    <div class="print-icono-wrap" style="background: #fff3e0">
+      <ion-icon
+        name="warning-outline"
+        style="color: #e65100; font-size: 28px"
+      ></ion-icon>
     </div>
-    <h2 class="print-titulo" style="color: #2D1B0E">Cambios sin guardar</h2>
-    <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 20px 0; line-height: 1.5">
-      Tienes productos en el carrito que <strong>no fueron guardados</strong>.<br/>
+    <h2 class="print-titulo" style="color: #2d1b0e">Cambios sin guardar</h2>
+    <p
+      style="
+        text-align: center;
+        color: #888;
+        font-size: 13px;
+        margin: 0 0 20px 0;
+        line-height: 1.5;
+      "
+    >
+      Tienes productos en el carrito que
+      <strong>no fueron guardados</strong>.<br />
       Si quitas el cliente, se perderán.
     </p>
     <div class="print-btns">
-      <button class="print-btn print-btn-skip" (click)="cancelarLimpiarCliente()">
+      <button
+        class="print-btn print-btn-skip"
+        (click)="cancelarLimpiarCliente()"
+      >
         <ion-icon name="arrow-back-outline"></ion-icon> Volver
       </button>
-      <button class="print-btn print-btn-print"
-        style="background: #E65100; box-shadow: 0 4px 12px rgba(230,81,0,0.3)"
-        (click)="confirmarLimpiarCliente()">
+      <button
+        class="print-btn print-btn-print"
+        style="
+          background: #e65100;
+          box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
+        "
+        (click)="confirmarLimpiarCliente()"
+      >
         <ion-icon name="trash-outline"></ion-icon> Quitar igual
       </button>
     </div>
@@ -420,41 +668,113 @@
 <div class="print-overlay" *ngIf="mostrarModalImpresion">
   <div class="print-card" (click)="$event.stopPropagation()">
     <ng-container *ngIf="estadoImpresion === 'preguntar'">
-      <div class="print-icono-wrap ok"><ion-icon name="checkmark-outline"></ion-icon></div>
+      <div class="print-icono-wrap ok">
+        <ion-icon name="checkmark-outline"></ion-icon>
+      </div>
       <h2 class="print-titulo">¡Pedido registrado!</h2>
       <p class="print-sub">¿Deseas imprimir el recibo?</p>
       <div class="print-aviso" *ngIf="!printerService.dispositivoConectado">
-        <ion-icon name="bluetooth-outline"></ion-icon><span>Sin impresora conectada.</span>
+        <ion-icon name="bluetooth-outline"></ion-icon
+        ><span>Sin impresora conectada.</span>
       </div>
       <div class="print-btns">
-        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()"><ion-icon name="close-outline"></ion-icon> No imprimir</button>
-        <button class="print-btn print-btn-connect" *ngIf="!printerService.dispositivoConectado" (click)="abrirConexionBT()"><ion-icon name="bluetooth-outline"></ion-icon> Conectar</button>
-        <button class="print-btn print-btn-print" *ngIf="printerService.dispositivoConectado" (click)="imprimirRecibo()" [disabled]="imprimiendo">
-          <ion-spinner name="crescent" *ngIf="imprimiendo" style="width:14px;height:14px"></ion-spinner>
+        <button
+          class="print-btn print-btn-skip"
+          (click)="cerrarModalImpresion()"
+        >
+          <ion-icon name="close-outline"></ion-icon> No imprimir
+        </button>
+        <button
+          class="print-btn print-btn-connect"
+          *ngIf="!printerService.dispositivoConectado"
+          (click)="abrirConexionBT()"
+        >
+          <ion-icon name="bluetooth-outline"></ion-icon> Conectar
+        </button>
+        <button
+          class="print-btn print-btn-print"
+          *ngIf="printerService.dispositivoConectado"
+          (click)="imprimirRecibo()"
+          [disabled]="imprimiendo"
+        >
+          <ion-spinner
+            name="crescent"
+            *ngIf="imprimiendo"
+            style="width: 14px; height: 14px"
+          ></ion-spinner>
           <ion-icon name="print-outline" *ngIf="!imprimiendo"></ion-icon>
           {{ imprimiendo ? 'Imprimiendo...' : 'Imprimir' }}
         </button>
       </div>
     </ng-container>
     <ng-container *ngIf="estadoImpresion === 'impreso'">
-      <div class="print-icono-wrap ok"><ion-icon name="print-outline"></ion-icon></div>
+      <div class="print-icono-wrap ok">
+        <ion-icon name="print-outline"></ion-icon>
+      </div>
       <h2 class="print-titulo">¡Impreso!</h2>
       <div class="print-btns">
-        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
-        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo"><ion-icon name="refresh-outline"></ion-icon> Reimprimir</button>
+        <button
+          class="print-btn print-btn-skip"
+          (click)="cerrarModalImpresion()"
+        >
+          Cerrar
+        </button>
+        <button
+          class="print-btn print-btn-print"
+          (click)="imprimirRecibo()"
+          [disabled]="imprimiendo"
+        >
+          <ion-icon name="refresh-outline"></ion-icon> Reimprimir
+        </button>
       </div>
     </ng-container>
     <ng-container *ngIf="estadoImpresion === 'error'">
-      <div class="print-icono-wrap error"><ion-icon name="alert-outline"></ion-icon></div>
+      <div class="print-icono-wrap error">
+        <ion-icon name="alert-outline"></ion-icon>
+      </div>
       <h2 class="print-titulo error">Error al imprimir</h2>
       <p class="print-sub">{{ errorImpresion }}</p>
       <div class="print-btns">
-        <button class="print-btn print-btn-skip" (click)="cerrarModalImpresion()">Cerrar</button>
-        <button class="print-btn print-btn-connect" (click)="abrirConexionBT()"><ion-icon name="bluetooth-outline"></ion-icon> Reconectar</button>
-        <button class="print-btn print-btn-print" (click)="imprimirRecibo()" [disabled]="imprimiendo"><ion-icon name="print-outline"></ion-icon> Reintentar</button>
+        <button
+          class="print-btn print-btn-skip"
+          (click)="cerrarModalImpresion()"
+        >
+          Cerrar
+        </button>
+        <button class="print-btn print-btn-connect" (click)="abrirConexionBT()">
+          <ion-icon name="bluetooth-outline"></ion-icon> Reconectar
+        </button>
+        <button
+          class="print-btn print-btn-print"
+          (click)="imprimirRecibo()"
+          [disabled]="imprimiendo"
+        >
+          <ion-icon name="print-outline"></ion-icon> Reintentar
+        </button>
       </div>
-      <button class="print-btn print-btn-skip" style="width:100%;margin-top:6px;font-size:10px" (click)="verServicios()">🔍 Ver servicios BLE</button>
-      <pre style="font-size:9px;color:#555;width:100%;overflow:auto;max-height:150px;background:#f5f5f5;padding:6px;border-radius:8px;margin:0" *ngIf="serviciosDebug">{{ serviciosDebug }}</pre>
+      <button
+        class="print-btn print-btn-skip"
+        style="width: 100%; margin-top: 6px; font-size: 10px"
+        (click)="verServicios()"
+      >
+        🔍 Ver servicios BLE
+      </button>
+      <pre
+        style="
+          font-size: 9px;
+          color: #555;
+          width: 100%;
+          overflow: auto;
+          max-height: 150px;
+          background: #f5f5f5;
+          padding: 6px;
+          border-radius: 8px;
+          margin: 0;
+        "
+        *ngIf="serviciosDebug"
+      >
+{{ serviciosDebug }}</pre
+      >
     </ng-container>
   </div>
 </div>
@@ -462,26 +782,52 @@
 <!-- ===== MODAL BLUETOOTH ===== -->
 <div class="print-overlay" *ngIf="mostrarModalBT">
   <div class="print-card" (click)="$event.stopPropagation()">
-    <div class="print-icono-wrap bt"><ion-icon name="bluetooth-outline"></ion-icon></div>
+    <div class="print-icono-wrap bt">
+      <ion-icon name="bluetooth-outline"></ion-icon>
+    </div>
     <h2 class="print-titulo">Conectar impresora</h2>
     <div class="bt-loading" *ngIf="escaneandoBT">
-      <ion-spinner name="crescent"></ion-spinner><p>Buscando dispositivos pareados...</p>
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Buscando dispositivos pareados...</p>
     </div>
     <div class="bt-lista" *ngIf="!escaneandoBT">
-      <div class="bt-item" *ngFor="let d of dispositivosBT" (click)="conectarImpresora(d)">
+      <div
+        class="bt-item"
+        *ngFor="let d of dispositivosBT"
+        (click)="conectarImpresora(d)"
+      >
         <ion-icon name="print-outline"></ion-icon>
         <div class="bt-info">
           <p class="bt-nombre">{{ d.name || 'Desconocido' }}</p>
           <p class="bt-mac">{{ d.address }}</p>
         </div>
-        <ion-spinner name="crescent" *ngIf="conectandoBT === d.address" style="width:18px;height:18px"></ion-spinner>
-        <ion-icon name="checkmark-circle" *ngIf="printerService.dispositivoConectado?.id === d.address" style="color:#2E7D32;font-size:20px"></ion-icon>
+        <ion-spinner
+          name="crescent"
+          *ngIf="conectandoBT === d.address"
+          style="width: 18px; height: 18px"
+        ></ion-spinner>
+        <ion-icon
+          name="checkmark-circle"
+          *ngIf="printerService.dispositivoConectado?.id === d.address"
+          style="color: #2e7d32; font-size: 20px"
+        ></ion-icon>
       </div>
-      <p class="bt-vacio" *ngIf="dispositivosBT.length === 0">No hay dispositivos pareados. Paréalos primero en Ajustes Bluetooth del celular.</p>
+      <p class="bt-vacio" *ngIf="dispositivosBT.length === 0">
+        No hay dispositivos pareados. Paréalos primero en Ajustes Bluetooth del
+        celular.
+      </p>
     </div>
     <div class="print-btns">
-      <button class="print-btn print-btn-skip" (click)="cerrarConexionBT()">Cerrar</button>
-      <button class="print-btn print-btn-connect" (click)="escanearBT()" [disabled]="escaneandoBT"><ion-icon name="search-outline"></ion-icon> Buscar</button>
+      <button class="print-btn print-btn-skip" (click)="cerrarConexionBT()">
+        Cerrar
+      </button>
+      <button
+        class="print-btn print-btn-connect"
+        (click)="escanearBT()"
+        [disabled]="escaneandoBT"
+      >
+        <ion-icon name="search-outline"></ion-icon> Buscar
+      </button>
     </div>
   </div>
-</div> 
+</div>
