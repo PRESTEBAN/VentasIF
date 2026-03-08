@@ -552,11 +552,17 @@ export class ClientesPage implements OnInit, OnDestroy {
   // ── CÉDULA / RUC (agregar) ────────────────────────────────────────────────
   onCedulaChange(valor: string) {
     this.nuevoCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
+    if (this.nuevoCliente.cedula_ruc.length < 10) {
+      this.errores.cedula_ruc = '';
+    }
   }
 
   toggleRuc() {
     this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
-    if (this.errores.cedula_ruc) this.errores.cedula_ruc = '';
+    this.errores.cedula_ruc = '';
+    if (this.nuevoCliente.cedula_ruc.length === 10) {
+      this.validarCedulaExistente();
+    }
   }
 
   private getCedulaParaGuardar(): string {
@@ -565,7 +571,11 @@ export class ClientesPage implements OnInit, OnDestroy {
   }
 
   guardarCliente() {
+    const errorCedulaPreexistente = this.errores.cedula_ruc;
     this.errores = {};
+    if (errorCedulaPreexistente) {
+      this.errores.cedula_ruc = errorCedulaPreexistente;
+    }
     let valido = true;
     const cedulaBase = this.nuevoCliente.cedula_ruc.trim();
 
@@ -636,7 +646,7 @@ export class ClientesPage implements OnInit, OnDestroy {
       limite_credito: 0,
       notas: null,
     };
-
+    if (this.errores.cedula_ruc) return;
     this.guardando = true;
     this.clienteService.create(payload).subscribe({
       next: () => {
@@ -651,22 +661,22 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
   validarCedulaExistente() {
-  const base = this.nuevoCliente.cedula_ruc.trim();
-  if (base.length !== 10 || /[^0-9]/.test(base)) return;
+    const base = this.nuevoCliente.cedula_ruc.trim();
+    if (base.length !== 10 || /[^0-9]/.test(base)) return;
 
-  const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
+    const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
 
-  this.clienteService.verificarCedula(cedula).subscribe({
-    next: (res: any) => {
-      if (res.existe) {
-        this.errores.cedula_ruc = 'Ya existe un cliente con esta cédula/RUC';
-      } else {
-        this.errores.cedula_ruc = '';
-      }
-    },
-    error: () => {}
-  });
-}
+    this.clienteService.verificarCedula(cedula).subscribe({
+      next: (res: any) => {
+        if (res.existe) {
+          this.errores.cedula_ruc = 'Ya existe un cliente con esta cédula/RUC';
+        } else {
+          this.errores.cedula_ruc = '';
+        }
+      },
+      error: () => {},
+    });
+  }
 
   abrirMenu() {
     this.menuAbierto = true;

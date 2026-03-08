@@ -422,35 +422,42 @@ export class Tab1Page implements OnInit, OnDestroy {
     };
     this.erroresCliente = {};
   }
-  validarCedulaExistente() {
-    const base = this.nuevoCliente.cedula_ruc.trim();
-    if (base.length !== 10 || /[^0-9]/.test(base)) return;
+validarCedulaExistente() {
+  const base = this.nuevoCliente.cedula_ruc.trim();
+  console.log('validando cedula:', base, 'longitud:', base.length);
+  if (base.length !== 10 || /[^0-9]/.test(base)) return;
 
-    const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
+  const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
 
-    this.clienteService.verificarCedula(cedula).subscribe({
-      next: (res: any) => {
-        if (res.existe) {
-          this.erroresCliente.cedula_ruc =
-            'Ya existe un cliente con esta cédula/RUC';
-        } else {
-          this.erroresCliente.cedula_ruc = '';
-        }
-      },
-      error: () => {},
-    });
-  }
+  this.clienteService.verificarCedula(cedula).subscribe({
+    next: (res: any) => {
+      if (res.existe) {
+        this.erroresCliente.cedula_ruc = 'Ya existe un cliente con esta cédula/RUC';
+      } else {
+        this.erroresCliente.cedula_ruc = '';
+      }
+    },
+    error: () => {}
+  });
+}
 
   // ── CÉDULA / RUC ──────────────────────────────────────────────────────────
   // Solo permite números, máximo 10 dígitos (el 001 se agrega automáticamente al guardar)
   onCedulaChange(valor: string) {
     this.nuevoCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
+    if (this.nuevoCliente.cedula_ruc.length < 10) {
+      this.erroresCliente.cedula_ruc = '';
+    }
   }
 
-  toggleRuc() {
-    this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
-    if (this.erroresCliente.cedula_ruc) this.erroresCliente.cedula_ruc = '';
+toggleRuc() {
+  this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
+  this.erroresCliente.cedula_ruc = '';
+  // Revalidar con el nuevo tipo (cédula o RUC)
+  if (this.nuevoCliente.cedula_ruc.length === 10) {
+    this.validarCedulaExistente();
   }
+}
 
   // Devuelve el valor final a guardar: cédula sola o cédula + "001" si es RUC
   private getCedulaParaGuardar(): string {
@@ -459,11 +466,15 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   guardarCliente() {
+    const errorCedulaPreexistente = this.erroresCliente.cedula_ruc;
     this.erroresCliente = {};
+    if (errorCedulaPreexistente) {
+      this.erroresCliente.cedula_ruc = errorCedulaPreexistente;
+    }
+
     let valido = true;
     const cedula = this.nuevoCliente.cedula_ruc.trim();
 
-    // La cédula base siempre debe ser exactamente 10 dígitos
     if (!cedula) {
       this.erroresCliente.cedula_ruc = 'La cédula es requerida';
       valido = false;
@@ -517,9 +528,10 @@ export class Tab1Page implements OnInit, OnDestroy {
       valido = false;
     }
     if (!valido) return;
+    if (this.erroresCliente.cedula_ruc) return;
 
     const clientePayload: Cliente = {
-      cedula_ruc: this.getCedulaParaGuardar(), // ← cédula o RUC (13 dígitos)
+      cedula_ruc: this.getCedulaParaGuardar(),
       nombre: this.nuevoCliente.nombre.trim(),
       apellido: this.nuevoCliente.apellido.trim(),
       nombre_negocio: this.nuevoCliente.negocio.trim() || null,
@@ -541,8 +553,7 @@ export class Tab1Page implements OnInit, OnDestroy {
       },
       error: (err: any) => {
         this.guardandoCliente = false;
-        this.erroresCliente.general =
-          err.status === 400 ? 'Datos inválidos' : 'Error al guardar';
+        this.erroresCliente.general = err.error?.error || 'Error al guardar';
       },
     });
   }

@@ -49,9 +49,9 @@
             <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
           </div>
           <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-</div>
-          
+            <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+          </div>
+
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
             <ion-icon name="log-out-outline"></ion-icon
@@ -95,11 +95,10 @@
                 <ion-icon name="search-outline" class="search-icon"></ion-icon>
                 <input
                   type="text"
-                  [(ngModel)]="nuevoCliente.cedula_ruc"
-                  placeholder="10 dígitos"
-                  maxlength="10"
-                  (ngModelChange)="onCedulaChange($event)"
-                  (blur)="validarCedulaExistente()"
+                  class="cliente-input"
+                  placeholder="Cédula, apellido o nombre negocio"
+                  [(ngModel)]="busquedaCliente"
+                  (keyup.enter)="buscarCliente()"
                 />
               </div>
               <div class="search-btn" (click)="buscarCliente()">
@@ -250,10 +249,11 @@
               >
                 <input
                   type="text"
-                  [(ngModel)]="nuevoCliente.cedula_ruc"
+                  [ngModel]="nuevoCliente.cedula_ruc"
+                  (ngModelChange)="onCedulaChange($event)"
                   placeholder="10 dígitos"
                   maxlength="10"
-                  (ngModelChange)="onCedulaChange($event)"
+                  (blur)="validarCedulaExistente()"
                 />
                 <span class="ruc-sufijo" *ngIf="nuevoCliente.esRuc">001</span>
               </div>
