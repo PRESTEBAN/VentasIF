@@ -201,41 +201,43 @@ export class HistorialPage implements OnInit, OnDestroy {
       });
   }
 
-  private mapearVenta(v: any): VentaHistorial {
-    const nombreCompleto: string = v.cliente || v.clienteNombre || '';
-    const partes = nombreCompleto.trim().split(' ');
-    const nombre = partes[0] || '';
-    const apellido = partes.slice(1).join(' ') || '';
+ private mapearVenta(v: any): VentaHistorial {
+  const nombreCompleto: string = v.cliente || v.clienteNombre || '';
+  const partes = nombreCompleto.trim().split(' ');
+  const nombre = partes[0] || '';
+  const apellido = partes.slice(1).join(' ') || '';
 
-    const estadoRaw = (v.estado || '').toLowerCase();
-    const estado: 'Entregado' | 'Pendiente' = estadoRaw === 'entregado' ? 'Entregado' : 'Pendiente';
+  const estadoRaw = (v.estado || '').toLowerCase();
+  const estado: 'Entregado' | 'Pendiente' = estadoRaw === 'entregado' ? 'Entregado' : 'Pendiente';
 
-    const rawItems = v.items || v.detalle || v.detalles || [];
-    const ventaId = v.venta_id || v.id;
+  const rawItems = v.items || v.detalle || v.detalles || [];
+  const ventaId = v.venta_id || v.id;
 
-    return {
-      id: ventaId,
-      ordenId: ventaId,
-      clienteNombre: nombre,
-      clienteApellido: apellido,
-      clienteNegocio: v.nombre_negocio || null,
-      clienteCedula: v.cedula || '',
-      tipoCliente: v.tipo_cliente || 'Negocio',
-      estado,
-      total: parseFloat(v.total) || 0,
-      subtotal: parseFloat(v.subtotal) || 0,
-      descuento: parseFloat(v.descuento) || 0,
-      iva: parseFloat(v.iva) || 0,
-      fecha: v.fecha || v.created_at || '',
-      formaPago: v.tipo_pago || v.forma_pago || '',
-      items: rawItems.map((item: any) => ({
-        nombre: item.nombre || item.producto || item.producto_nombre || '',
-        cantidad: item.cantidad || 0,
-        subtotal: parseFloat(item.subtotal) || 0,
-      }))
-    };
-  }
+  const tipoRaw = v.tipo_cliente || v.tipo || v.cliente_tipo || '';
+  const tipoCliente = tipoRaw === 'particular' ? 'Particular' : tipoRaw === 'negocio' ? 'Negocio' : tipoRaw || '—';
 
+  return {
+    id: ventaId,
+    ordenId: ventaId,
+    clienteNombre: nombre,
+    clienteApellido: apellido,
+    clienteNegocio: v.nombre_negocio || null,
+    clienteCedula: v.cedula || '',
+    tipoCliente,
+    estado,
+    total: parseFloat(v.total) || 0,
+    subtotal: parseFloat(v.subtotal) || 0,
+    descuento: parseFloat(v.descuento) || 0,
+    iva: parseFloat(v.iva) || 0,
+    fecha: v.fecha || v.created_at || '',
+    formaPago: v.tipo_pago || v.forma_pago || '',
+    items: rawItems.map((item: any) => ({
+      nombre: item.nombre || item.producto || item.producto_nombre || '',
+      cantidad: item.cantidad || 0,
+      subtotal: parseFloat(item.subtotal) || 0,
+    }))
+  };
+}
   formatearFecha(fecha: Date): string {
     const d = fecha.getDate().toString().padStart(2, '0');
     const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
