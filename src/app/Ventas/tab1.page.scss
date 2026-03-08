@@ -617,3 +617,49 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+/* ── LISTA COINCIDENTES ── */
+.coincidentes-lista {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #F0E6DA;
+}
+
+.coincidentes-titulo {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 700; color: #A07050;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 0; padding: 8px 12px;
+  background: #FDF6EE;
+  border-bottom: 1px solid #F0E6DA;
+  ion-icon { font-size: 13px; }
+}
+
+.coincidente-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; background: #fff; cursor: pointer;
+  border-bottom: 1px solid #F5EDE0;
+  &:last-child { border-bottom: none; }
+  &:active { background: #FDF0F3; }
+}
+
+.coinc-avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, #590F23, #8B2020);
+  display: flex; align-items: center; justify-content: center;
+  ion-icon { font-size: 18px; color: #fff; }
+}
+
+.coinc-datos { flex: 1; p { margin: 0; } }
+
+.coinc-nombre {
+  font-size: 13px; font-weight: 700; color: #2D1B0E;
+}
+
+.coinc-sub {
+  font-size: 11px; color: #AAA; margin-top: 2px !important;
+}
+
+.coinc-arrow {
+  font-size: 16px; color: #CCC; flex-shrink: 0;
+}
