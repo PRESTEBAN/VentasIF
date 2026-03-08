@@ -650,6 +650,23 @@ export class ClientesPage implements OnInit, OnDestroy {
       },
     });
   }
+  validarCedulaExistente() {
+  const base = this.nuevoCliente.cedula_ruc.trim();
+  if (base.length !== 10 || /[^0-9]/.test(base)) return;
+
+  const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
+
+  this.clienteService.verificarCedula(cedula).subscribe({
+    next: (res: any) => {
+      if (res.existe) {
+        this.errores.cedula_ruc = 'Ya existe un cliente con esta cédula/RUC';
+      } else {
+        this.errores.cedula_ruc = '';
+      }
+    },
+    error: () => {}
+  });
+}
 
   abrirMenu() {
     this.menuAbierto = true;

@@ -27,6 +27,7 @@ export interface Cliente {
   fecha_modificacion?: string;
 }
 
+
 export interface Movimiento {
   venta_id:        number;
   num_orden:       string;
@@ -110,4 +111,8 @@ export class ClienteService {
   registrarAbono(ventaId: number, clienteId: number, monto: number): Observable<any> {
     return this.http.post(`${this.abonosUrl}`, { venta_id: ventaId, cliente_id: clienteId, monto }, { headers: this.getHeaders() });
   }
+  verificarCedula(cedula_ruc: string) {
+  return this.http.get(`${this.apiUrl}/clientes/verificar-cedula/${cedula_ruc}`, 
+    { headers: this.getHeaders() });
+}
 }

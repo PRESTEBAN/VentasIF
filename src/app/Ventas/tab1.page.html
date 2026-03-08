@@ -95,10 +95,11 @@
                 <ion-icon name="search-outline" class="search-icon"></ion-icon>
                 <input
                   type="text"
-                  class="cliente-input"
-                  placeholder="Cédula, apellido o nombre negocio"
-                  [(ngModel)]="busquedaCliente"
-                  (keyup.enter)="buscarCliente()"
+                  [(ngModel)]="nuevoCliente.cedula_ruc"
+                  placeholder="10 dígitos"
+                  maxlength="10"
+                  (ngModelChange)="onCedulaChange($event)"
+                  (blur)="validarCedulaExistente()"
                 />
               </div>
               <div class="search-btn" (click)="buscarCliente()">

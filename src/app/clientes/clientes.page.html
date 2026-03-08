@@ -2,31 +2,61 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-
-      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+      <div
+        class="menu-overlay"
+        [class.open]="menuAbierto"
+        (click)="cerrarMenu()"
+      ></div>
 
       <!-- MENU LATERAL -->
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
           <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
           <p class="menu-titulo">Industrial Fátima</p>
-          <p class="menu-usuario"><ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}</p>
+          <p class="menu-usuario">
+            <ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual
+            }}
+          </p>
         </div>
         <div class="menu-items">
           <p class="menu-seccion">Navegación</p>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"><ion-icon name="cart-outline"></ion-icon><span>Ventas</span></div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"><ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span></div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"><ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span></div>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
+          >
+            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+          </div>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
+          >
+            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+          </div>
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
+          >
+            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+          </div>
           <div class="menu-divider"></div>
           <p class="menu-seccion">Gestión</p>
-          <div class="menu-item menu-item-active" (click)="cerrarMenu()"><ion-icon name="people-outline"></ion-icon><span>Clientes</span></div>
-          <div class="menu-item" (click)="irAHistorial()"><ion-icon name="time-outline"></ion-icon><span>Historial</span></div>
-          <div class="menu-item" (click)="irAInventario()"><ion-icon name="cube-outline"></ion-icon><span>Inventario</span></div>
+          <div class="menu-item menu-item-active" (click)="cerrarMenu()">
+            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+          </div>
+          <div class="menu-item" (click)="irAHistorial()">
+            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+          </div>
+          <div class="menu-item" (click)="irAInventario()">
+            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+          </div>
           <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-</div>
+            <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+          </div>
           <div class="menu-divider"></div>
-          <div class="menu-item menu-logout" (click)="cerrarSesion()"><ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span></div>
+          <div class="menu-item menu-logout" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon
+            ><span>Cerrar Sesión</span>
+          </div>
         </div>
       </div>
 
@@ -39,7 +69,11 @@
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
         <div class="header-right">
-          <div class="header-icon-btn" (click)="cargarClientes()" [class.spinning]="cargando">
+          <div
+            class="header-icon-btn"
+            (click)="cargarClientes()"
+            [class.spinning]="cargando"
+          >
             <ion-icon name="refresh-outline"></ion-icon>
           </div>
           <div class="header-icon-btn" (click)="abrirAgregarCliente()">
@@ -48,23 +82,32 @@
         </div>
       </div>
 
-
       <!-- MAIN -->
       <div class="main-content">
-
         <div class="clientes-header">
           <h1 class="page-title">Clientes</h1>
-          <p class="clientes-count" *ngIf="!cargando">{{ clientesFiltrados.length }} cliente{{ clientesFiltrados.length !== 1 ? 's' : '' }}</p>
+          <p class="clientes-count" *ngIf="!cargando">
+            {{ clientesFiltrados.length }} cliente{{ clientesFiltrados.length
+            !== 1 ? 's' : '' }}
+          </p>
         </div>
 
         <!-- BUSCADOR -->
         <div class="toolbar-row">
           <div class="search-bar">
             <ion-icon name="search-outline"></ion-icon>
-            <input type="text" placeholder="Nombre, cédula o negocio..."
-              [(ngModel)]="busqueda" (ngModelChange)="aplicarFiltroYOrden()" />
-            <ion-icon name="close-circle" class="clear-icon" *ngIf="busqueda"
-              (click)="busqueda = ''; aplicarFiltroYOrden()"></ion-icon>
+            <input
+              type="text"
+              placeholder="Nombre, cédula o negocio..."
+              [(ngModel)]="busqueda"
+              (ngModelChange)="aplicarFiltroYOrden()"
+            />
+            <ion-icon
+              name="close-circle"
+              class="clear-icon"
+              *ngIf="busqueda"
+              (click)="busqueda = ''; aplicarFiltroYOrden()"
+            ></ion-icon>
           </div>
           <div class="orden-btn" (click)="toggleOrdenMenu()">
             <ion-icon name="funnel-outline"></ion-icon>
@@ -75,11 +118,17 @@
         <div class="orden-menu" *ngIf="mostrarOrdenMenu">
           <p class="orden-titulo">Ordenar por</p>
           <div class="orden-opciones">
-            <div class="orden-opcion" *ngFor="let op of opcionesOrden"
-              [class.activo]="ordenActual === op.valor" (click)="seleccionarOrden(op.valor)">
+            <div
+              class="orden-opcion"
+              *ngFor="let op of opcionesOrden"
+              [class.activo]="ordenActual === op.valor"
+              (click)="seleccionarOrden(op.valor)"
+            >
               <span>{{ op.label }}</span>
-              <ion-icon *ngIf="ordenActual === op.valor"
-                [name]="direccionOrden === 'asc' ? 'arrow-up-outline' : 'arrow-down-outline'"></ion-icon>
+              <ion-icon
+                *ngIf="ordenActual === op.valor"
+                [name]="direccionOrden === 'asc' ? 'arrow-up-outline' : 'arrow-down-outline'"
+              ></ion-icon>
             </div>
           </div>
         </div>
@@ -97,91 +146,200 @@
             <p>No se encontraron clientes</p>
           </div>
 
-          <div class="cliente-card" *ngFor="let cliente of clientesFiltrados" (click)="verDetalle(cliente)">
+          <div
+            class="cliente-card"
+            *ngFor="let cliente of clientesFiltrados"
+            (click)="verDetalle(cliente)"
+          >
             <div class="cliente-avatar">
-              <span class="avatar-inicial">{{ cliente.nombre.charAt(0) }}{{ cliente.apellido.charAt(0) }}</span>
+              <span class="avatar-inicial"
+                >{{ cliente.nombre.charAt(0) }}{{ cliente.apellido.charAt(0)
+                }}</span
+              >
             </div>
             <div class="cliente-info">
-              <p class="cli-nombre">{{ cliente.nombre }} {{ cliente.apellido }}</p>
-              <p class="cli-negocio">{{ cliente.nombre_negocio || cliente.cedula_ruc }}</p>
-              <p class="cli-cedula" *ngIf="cliente.nombre_negocio">{{ cliente.cedula_ruc }}</p>
+              <p class="cli-nombre">
+                {{ cliente.nombre }} {{ cliente.apellido }}
+              </p>
+              <p class="cli-negocio">
+                {{ cliente.nombre_negocio || cliente.cedula_ruc }}
+              </p>
+              <p class="cli-cedula" *ngIf="cliente.nombre_negocio">
+                {{ cliente.cedula_ruc }}
+              </p>
             </div>
             <div class="cliente-saldo">
               <p class="saldo-label">Saldo</p>
-              <p class="saldo-valor"
+              <p
+                class="saldo-valor"
                 [class.saldo-rojo]="(cliente.saldo || 0) > 0"
-                [class.saldo-verde]="(cliente.saldo || 0) === 0">
+                [class.saldo-verde]="(cliente.saldo || 0) === 0"
+              >
                 ${{ (cliente.saldo || 0) | number:'1.2-2' }}
               </p>
             </div>
-            <ion-icon name="chevron-forward-outline" class="cli-arrow"></ion-icon>
+            <ion-icon
+              name="chevron-forward-outline"
+              class="cli-arrow"
+            ></ion-icon>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 
   <!-- ===== MODAL NUEVO CLIENTE ===== -->
-  <ion-modal [isOpen]="mostrarAgregarCliente" (didDismiss)="cerrarAgregarCliente()">
+  <ion-modal
+    [isOpen]="mostrarAgregarCliente"
+    (didDismiss)="cerrarAgregarCliente()"
+  >
     <ng-template>
       <ion-header>
         <ion-toolbar>
           <ion-title>Nuevo Cliente</ion-title>
           <ion-buttons slot="end">
-            <ion-button (click)="cerrarAgregarCliente()"><ion-icon name="close-outline"></ion-icon></ion-button>
+            <ion-button (click)="cerrarAgregarCliente()"
+              ><ion-icon name="close-outline"></ion-icon
+            ></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-
           <!-- ── CÉDULA / RUC ── -->
           <div class="form-group">
             <label>Cédula / RUC*</label>
             <div class="cedula-ruc-row">
-              <div class="cedula-input-wrap" [class.con-ruc]="nuevoCliente.esRuc">
+              <div
+                class="cedula-input-wrap"
+                [class.con-ruc]="nuevoCliente.esRuc"
+              >
                 <input
                   type="text"
                   [(ngModel)]="nuevoCliente.cedula_ruc"
                   placeholder="10 dígitos"
                   maxlength="10"
                   (ngModelChange)="onCedulaChange($event)"
+                  (blur)="validarCedulaExistente()"
                 />
                 <span class="ruc-sufijo" *ngIf="nuevoCliente.esRuc">001</span>
               </div>
               <div class="ruc-checkbox-wrap" (click)="toggleRuc()">
                 <div class="ruc-check" [class.activo]="nuevoCliente.esRuc">
-                  <ion-icon name="checkmark-outline" *ngIf="nuevoCliente.esRuc"></ion-icon>
+                  <ion-icon
+                    name="checkmark-outline"
+                    *ngIf="nuevoCliente.esRuc"
+                  ></ion-icon>
                 </div>
                 <span class="ruc-label">RUC</span>
               </div>
             </div>
-            <span class="field-error" *ngIf="errores.cedula_ruc">{{ errores.cedula_ruc }}</span>
+            <span class="field-error" *ngIf="errores.cedula_ruc"
+              >{{ errores.cedula_ruc }}</span
+            >
           </div>
 
           <div class="form-group">
             <label>Tipo Cliente*</label>
             <div class="switch-row">
-              <span [class.tipo-active]="!nuevoCliente.esParticular">Negocio</span>
-              <div class="switch-track" [class.on]="nuevoCliente.esParticular" (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular"><div class="switch-thumb"></div></div>
-              <span [class.tipo-active]="nuevoCliente.esParticular">Particular</span>
+              <span [class.tipo-active]="!nuevoCliente.esParticular"
+                >Negocio</span
+              >
+              <div
+                class="switch-track"
+                [class.on]="nuevoCliente.esParticular"
+                (click)="nuevoCliente.esParticular = !nuevoCliente.esParticular"
+              >
+                <div class="switch-thumb"></div>
+              </div>
+              <span [class.tipo-active]="nuevoCliente.esParticular"
+                >Particular</span
+              >
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group half"><label>Nombre*</label><input type="text" [(ngModel)]="nuevoCliente.nombre" placeholder="nombre" /><span class="field-error" *ngIf="errores.nombre">{{ errores.nombre }}</span></div>
-            <div class="form-group half"><label>Apellido*</label><input type="text" [(ngModel)]="nuevoCliente.apellido" placeholder="apellido" /><span class="field-error" *ngIf="errores.apellido">{{ errores.apellido }}</span></div>
+            <div class="form-group half">
+              <label>Nombre*</label
+              ><input
+                type="text"
+                [(ngModel)]="nuevoCliente.nombre"
+                placeholder="nombre"
+              /><span class="field-error" *ngIf="errores.nombre"
+                >{{ errores.nombre }}</span
+              >
+            </div>
+            <div class="form-group half">
+              <label>Apellido*</label
+              ><input
+                type="text"
+                [(ngModel)]="nuevoCliente.apellido"
+                placeholder="apellido"
+              /><span class="field-error" *ngIf="errores.apellido"
+                >{{ errores.apellido }}</span
+              >
+            </div>
           </div>
-          <div class="form-group"><label>Nombre de Negocio</label><input type="text" [(ngModel)]="nuevoCliente.negocio" placeholder="nombre del negocio" /></div>
-          <div class="form-group"><label>E-mail</label><input type="email" [(ngModel)]="nuevoCliente.email" placeholder="E-mail" /><span class="field-error" *ngIf="errores.email">{{ errores.email }}</span></div>
-          <div class="form-group"><label>Dirección*</label><input type="text" [(ngModel)]="nuevoCliente.direccion" placeholder="dirección" /><span class="field-error" *ngIf="errores.direccion">{{ errores.direccion }}</span></div>
+          <div class="form-group">
+            <label>Nombre de Negocio</label
+            ><input
+              type="text"
+              [(ngModel)]="nuevoCliente.negocio"
+              placeholder="nombre del negocio"
+            />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label
+            ><input
+              type="email"
+              [(ngModel)]="nuevoCliente.email"
+              placeholder="E-mail"
+            /><span class="field-error" *ngIf="errores.email"
+              >{{ errores.email }}</span
+            >
+          </div>
+          <div class="form-group">
+            <label>Dirección*</label
+            ><input
+              type="text"
+              [(ngModel)]="nuevoCliente.direccion"
+              placeholder="dirección"
+            /><span class="field-error" *ngIf="errores.direccion"
+              >{{ errores.direccion }}</span
+            >
+          </div>
           <div class="form-row">
-            <div class="form-group half"><label>Sector</label><input type="text" [(ngModel)]="nuevoCliente.sector" placeholder="sector" /></div>
-            <div class="form-group half"><label>Teléfono*</label><input type="tel" [(ngModel)]="nuevoCliente.telefono" placeholder="celular" /><span class="field-error" *ngIf="errores.telefono">{{ errores.telefono }}</span></div>
+            <div class="form-group half">
+              <label>Sector</label
+              ><input
+                type="text"
+                [(ngModel)]="nuevoCliente.sector"
+                placeholder="sector"
+              />
+            </div>
+            <div class="form-group half">
+              <label>Teléfono*</label
+              ><input
+                type="tel"
+                [(ngModel)]="nuevoCliente.telefono"
+                placeholder="celular"
+              /><span class="field-error" *ngIf="errores.telefono"
+                >{{ errores.telefono }}</span
+              >
+            </div>
           </div>
-          <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
-          <button class="btn-nativo" (click)="guardarCliente()" [disabled]="guardando">
-            <ion-spinner name="crescent" *ngIf="guardando" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+          <span class="field-error" *ngIf="errores.general"
+            >{{ errores.general }}</span
+          >
+          <button
+            class="btn-nativo"
+            (click)="guardarCliente()"
+            [disabled]="guardando"
+          >
+            <ion-spinner
+              name="crescent"
+              *ngIf="guardando"
+              style="margin-right: 8px; width: 18px; height: 18px"
+            ></ion-spinner>
             {{ guardando ? 'Guardando...' : 'Guardar Cliente' }}
           </button>
         </div>
@@ -190,18 +348,29 @@
   </ion-modal>
 
   <!-- ===== MODAL DETALLE CLIENTE ===== -->
-  <ion-modal [isOpen]="mostrarDetalle" (didDismiss)="cerrarDetalle()"
-    [breakpoints]="[0, 1]" [initialBreakpoint]="1"
-    [handle]="false" [canDismiss]="puedesCerrarDetalle">
+  <ion-modal
+    [isOpen]="mostrarDetalle"
+    (didDismiss)="cerrarDetalle()"
+    [breakpoints]="[0, 1]"
+    [initialBreakpoint]="1"
+    [handle]="false"
+    [canDismiss]="puedesCerrarDetalle"
+  >
     <ng-template>
       <ion-header>
-        <ion-toolbar style="--background: #590F23; --color: white;">
+        <ion-toolbar style="--background: #590f23; --color: white">
           <ion-buttons slot="start">
-            <ion-button (click)="cerrarDetalle()" style="--color: white;"><ion-icon name="close-outline"></ion-icon></ion-button>
+            <ion-button (click)="cerrarDetalle()" style="--color: white"
+              ><ion-icon name="close-outline"></ion-icon
+            ></ion-button>
           </ion-buttons>
           <ion-buttons slot="end">
-            <ion-button (click)="abrirEditar()" style="--color: white;"><ion-icon name="pencil-outline"></ion-icon></ion-button>
-            <ion-button (click)="abrirAbono()" style="--color: white;"><ion-icon name="cash-outline"></ion-icon></ion-button>
+            <ion-button (click)="abrirEditar()" style="--color: white"
+              ><ion-icon name="pencil-outline"></ion-icon
+            ></ion-button>
+            <ion-button (click)="abrirAbono()" style="--color: white"
+              ><ion-icon name="cash-outline"></ion-icon
+            ></ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -209,18 +378,29 @@
         <div class="detalle-body">
           <div class="detalle-hero">
             <div class="detalle-avatar">
-              <span class="avatar-inicial-hero">{{ clienteDetalle.nombre.charAt(0) }}{{ clienteDetalle.apellido.charAt(0) }}</span>
+              <span class="avatar-inicial-hero"
+                >{{ clienteDetalle.nombre.charAt(0) }}{{
+                clienteDetalle.apellido.charAt(0) }}</span
+              >
             </div>
-            <h2 class="detalle-nombre">{{ clienteDetalle.nombre }} {{ clienteDetalle.apellido }}</h2>
+            <h2 class="detalle-nombre">
+              {{ clienteDetalle.nombre }} {{ clienteDetalle.apellido }}
+            </h2>
             <div class="detalle-tags">
-              <span class="detalle-tag">{{ clienteDetalle.tipo_cliente | titlecase }}</span>
-              <span class="detalle-tag" *ngIf="clienteDetalle.nombre_negocio">{{ clienteDetalle.nombre_negocio }}</span>
+              <span class="detalle-tag"
+                >{{ clienteDetalle.tipo_cliente | titlecase }}</span
+              >
+              <span class="detalle-tag" *ngIf="clienteDetalle.nombre_negocio"
+                >{{ clienteDetalle.nombre_negocio }}</span
+              >
             </div>
             <div class="detalle-saldo-hero">
               <p class="saldo-hero-label">Saldo pendiente</p>
-              <p class="saldo-hero-valor"
+              <p
+                class="saldo-hero-valor"
                 [class.saldo-hero-rojo]="(clienteDetalle.saldo || 0) > 0"
-                [class.saldo-hero-verde]="(clienteDetalle.saldo || 0) === 0">
+                [class.saldo-hero-verde]="(clienteDetalle.saldo || 0) === 0"
+              >
                 ${{ (clienteDetalle.saldo || 0) | number:'1.2-2' }}
               </p>
             </div>
@@ -231,59 +411,128 @@
               <p class="detalle-card-titulo">Contacto</p>
               <div class="info-fila">
                 <ion-icon name="call-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Teléfono</p><p class="info-val">{{ clienteDetalle.telefono || '—' }}</p></div>
+                <div class="info-contenido">
+                  <p class="info-lbl">Teléfono</p>
+                  <p class="info-val">{{ clienteDetalle.telefono || '—' }}</p>
+                </div>
               </div>
               <div class="info-fila">
                 <ion-icon name="mail-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Email</p><p class="info-val">{{ clienteDetalle.email || '—' }}</p></div>
+                <div class="info-contenido">
+                  <p class="info-lbl">Email</p>
+                  <p class="info-val">{{ clienteDetalle.email || '—' }}</p>
+                </div>
               </div>
               <div class="info-fila">
                 <ion-icon name="location-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Dirección</p><p class="info-val">{{ clienteDetalle.direccion || '—' }}</p></div>
+                <div class="info-contenido">
+                  <p class="info-lbl">Dirección</p>
+                  <p class="info-val">{{ clienteDetalle.direccion || '—' }}</p>
+                </div>
               </div>
               <div class="info-fila">
                 <ion-icon name="map-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Sector</p><p class="info-val">{{ clienteDetalle.sector || '—' }}</p></div>
+                <div class="info-contenido">
+                  <p class="info-lbl">Sector</p>
+                  <p class="info-val">{{ clienteDetalle.sector || '—' }}</p>
+                </div>
               </div>
               <div class="info-fila" *ngIf="clienteDetalle.notas">
-                <ion-icon name="document-text-outline" class="info-icon"></ion-icon>
-                <div class="info-contenido"><p class="info-lbl">Notas</p><p class="info-val">{{ clienteDetalle.notas }}</p></div>
+                <ion-icon
+                  name="document-text-outline"
+                  class="info-icon"
+                ></ion-icon>
+                <div class="info-contenido">
+                  <p class="info-lbl">Notas</p>
+                  <p class="info-val">{{ clienteDetalle.notas }}</p>
+                </div>
               </div>
             </div>
 
-            <div class="detalle-card" *ngIf="(clienteDetalle.limite_credito || 0) > 0 || clienteDetalle.ultima_compra">
+            <div
+              class="detalle-card"
+              *ngIf="(clienteDetalle.limite_credito || 0) > 0 || clienteDetalle.ultima_compra"
+            >
               <p class="detalle-card-titulo">Financiero</p>
-              <div class="fin-item" *ngIf="(clienteDetalle.limite_credito || 0) > 0">
+              <div
+                class="fin-item"
+                *ngIf="(clienteDetalle.limite_credito || 0) > 0"
+              >
                 <span class="fin-lbl">Límite crédito</span>
-                <span class="fin-val">${{ (clienteDetalle.limite_credito || 0) | number:'1.2-2' }}</span>
+                <span class="fin-val"
+                  >${{ (clienteDetalle.limite_credito || 0) | number:'1.2-2'
+                  }}</span
+                >
               </div>
-              <div class="fin-item" *ngIf="(clienteDetalle.credito_disponible || 0) > 0">
+              <div
+                class="fin-item"
+                *ngIf="(clienteDetalle.credito_disponible || 0) > 0"
+              >
                 <span class="fin-lbl">Crédito disponible</span>
-                <span class="fin-val saldo-verde">${{ (clienteDetalle.credito_disponible || 0) | number:'1.2-2' }}</span>
+                <span class="fin-val saldo-verde"
+                  >${{ (clienteDetalle.credito_disponible || 0) | number:'1.2-2'
+                  }}</span
+                >
               </div>
               <div class="fin-item" *ngIf="clienteDetalle.ultima_compra">
                 <span class="fin-lbl">Última compra</span>
-                <span class="fin-val">{{ clienteDetalle.ultima_compra | date:'dd/MM/yyyy' }}</span>
+                <span class="fin-val"
+                  >{{ clienteDetalle.ultima_compra | date:'dd/MM/yyyy' }}</span
+                >
               </div>
             </div>
 
             <div class="detalle-card">
               <p class="detalle-card-titulo">Movimientos</p>
-              <div class="loading-mov" *ngIf="cargandoMovimientos"><ion-spinner name="crescent"></ion-spinner></div>
-              <div class="movimientos-tabla" *ngIf="!cargandoMovimientos && movimientos.length > 0">
-                <div class="mov-head"><span>Detalle</span><span class="col-center">Est.</span><span class="col-right">Valor</span><span class="col-right">Saldo</span><span class="col-right">Fecha</span></div>
-                <div class="mov-row" *ngFor="let mov of movimientos"
+              <div class="loading-mov" *ngIf="cargandoMovimientos">
+                <ion-spinner name="crescent"></ion-spinner>
+              </div>
+              <div
+                class="movimientos-tabla"
+                *ngIf="!cargandoMovimientos && movimientos.length > 0"
+              >
+                <div class="mov-head">
+                  <span>Detalle</span><span class="col-center">Est.</span
+                  ><span class="col-right">Valor</span
+                  ><span class="col-right">Saldo</span
+                  ><span class="col-right">Fecha</span>
+                </div>
+                <div
+                  class="mov-row"
+                  *ngFor="let mov of movimientos"
                   [class.fila-cancelado]="mov.estado === 'cancelado'"
                   [class.fila-abono]="mov.estado === 'abono'"
-                  [class.fila-pendiente]="mov.estado === 'pendiente'">
+                  [class.fila-pendiente]="mov.estado === 'pendiente'"
+                >
                   <span class="mov-detalle">{{ mov.num_orden }}</span>
-                  <span class="mov-estado col-center" [class.estado-c]="mov.estado === 'cancelado'" [class.estado-a]="mov.estado === 'abono'" [class.estado-p]="mov.estado === 'pendiente'">{{ estadoLabel(mov.estado) }}</span>
-                  <span class="col-right mov-valor" [class.valor-rojo]="mov.valor > 0" [class.valor-verde]="mov.valor < 0">${{ (mov.valor < 0 ? -mov.valor : mov.valor) | number:'1.2-2' }}</span>
-                  <span class="col-right mov-saldo">${{ mov.saldo_acumulado | number:'1.2-2' }}</span>
-                  <span class="col-right mov-fecha">{{ mov.fecha | date:'dd/MM/yy' }}</span>
+                  <span
+                    class="mov-estado col-center"
+                    [class.estado-c]="mov.estado === 'cancelado'"
+                    [class.estado-a]="mov.estado === 'abono'"
+                    [class.estado-p]="mov.estado === 'pendiente'"
+                    >{{ estadoLabel(mov.estado) }}</span
+                  >
+                  <span
+                    class="col-right mov-valor"
+                    [class.valor-rojo]="mov.valor > 0"
+                    [class.valor-verde]="mov.valor < 0"
+                    >${{ (mov.valor < 0 ? -mov.valor : mov.valor) |
+                    number:'1.2-2' }}</span
+                  >
+                  <span class="col-right mov-saldo"
+                    >${{ mov.saldo_acumulado | number:'1.2-2' }}</span
+                  >
+                  <span class="col-right mov-fecha"
+                    >{{ mov.fecha | date:'dd/MM/yy' }}</span
+                  >
                 </div>
               </div>
-              <div class="sin-movimientos" *ngIf="!cargandoMovimientos && movimientos.length === 0"><p>Sin movimientos registrados</p></div>
+              <div
+                class="sin-movimientos"
+                *ngIf="!cargandoMovimientos && movimientos.length === 0"
+              >
+                <p>Sin movimientos registrados</p>
+              </div>
             </div>
           </div>
         </div>
@@ -297,17 +546,22 @@
       <ion-header>
         <ion-toolbar>
           <ion-title>Editar Cliente</ion-title>
-          <ion-buttons slot="end"><ion-button (click)="cerrarEditar()"><ion-icon name="close-outline"></ion-icon></ion-button></ion-buttons>
+          <ion-buttons slot="end"
+            ><ion-button (click)="cerrarEditar()"
+              ><ion-icon name="close-outline"></ion-icon></ion-button
+          ></ion-buttons>
         </ion-toolbar>
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-
           <!-- ── CÉDULA / RUC (editar) ── -->
           <div class="form-group">
             <label>Cédula / RUC*</label>
             <div class="cedula-ruc-row">
-              <div class="cedula-input-wrap" [class.con-ruc]="editCliente.esRuc">
+              <div
+                class="cedula-input-wrap"
+                [class.con-ruc]="editCliente.esRuc"
+              >
                 <input
                   type="text"
                   [(ngModel)]="editCliente.cedula_ruc"
@@ -319,61 +573,179 @@
               </div>
               <div class="ruc-checkbox-wrap" (click)="toggleRucEditar()">
                 <div class="ruc-check" [class.activo]="editCliente.esRuc">
-                  <ion-icon name="checkmark-outline" *ngIf="editCliente.esRuc"></ion-icon>
+                  <ion-icon
+                    name="checkmark-outline"
+                    *ngIf="editCliente.esRuc"
+                  ></ion-icon>
                 </div>
                 <span class="ruc-label">RUC</span>
               </div>
             </div>
-            <span class="field-error" *ngIf="erroresEditar.cedula_ruc">{{ erroresEditar.cedula_ruc }}</span>
+            <span class="field-error" *ngIf="erroresEditar.cedula_ruc"
+              >{{ erroresEditar.cedula_ruc }}</span
+            >
           </div>
 
           <div class="form-group">
             <label>Tipo Cliente*</label>
             <div class="switch-row">
               <span [class.tipo-active]="!editCliente.esParticular">Neg.</span>
-              <div class="switch-track" [class.on]="editCliente.esParticular" (click)="editCliente.esParticular = !editCliente.esParticular"><div class="switch-thumb"></div></div>
+              <div
+                class="switch-track"
+                [class.on]="editCliente.esParticular"
+                (click)="editCliente.esParticular = !editCliente.esParticular"
+              >
+                <div class="switch-thumb"></div>
+              </div>
               <span [class.tipo-active]="editCliente.esParticular">Part.</span>
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group half"><label>Nombre*</label><input type="text" [(ngModel)]="editCliente.nombre" placeholder="nombre" /><span class="field-error" *ngIf="erroresEditar.nombre">{{ erroresEditar.nombre }}</span></div>
-            <div class="form-group half"><label>Apellido*</label><input type="text" [(ngModel)]="editCliente.apellido" placeholder="apellido" /><span class="field-error" *ngIf="erroresEditar.apellido">{{ erroresEditar.apellido }}</span></div>
+            <div class="form-group half">
+              <label>Nombre*</label
+              ><input
+                type="text"
+                [(ngModel)]="editCliente.nombre"
+                placeholder="nombre"
+              /><span class="field-error" *ngIf="erroresEditar.nombre"
+                >{{ erroresEditar.nombre }}</span
+              >
+            </div>
+            <div class="form-group half">
+              <label>Apellido*</label
+              ><input
+                type="text"
+                [(ngModel)]="editCliente.apellido"
+                placeholder="apellido"
+              /><span class="field-error" *ngIf="erroresEditar.apellido"
+                >{{ erroresEditar.apellido }}</span
+              >
+            </div>
           </div>
-          <div class="form-group"><label>Nombre de Negocio</label><input type="text" [(ngModel)]="editCliente.negocio" placeholder="nombre del negocio" /></div>
-          <div class="form-group"><label>E-mail</label><input type="email" [(ngModel)]="editCliente.email" placeholder="E-mail" /><span class="field-error" *ngIf="erroresEditar.email">{{ erroresEditar.email }}</span></div>
-          <div class="form-group"><label>Dirección*</label><input type="text" [(ngModel)]="editCliente.direccion" placeholder="dirección" /><span class="field-error" *ngIf="erroresEditar.direccion">{{ erroresEditar.direccion }}</span></div>
+          <div class="form-group">
+            <label>Nombre de Negocio</label
+            ><input
+              type="text"
+              [(ngModel)]="editCliente.negocio"
+              placeholder="nombre del negocio"
+            />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label
+            ><input
+              type="email"
+              [(ngModel)]="editCliente.email"
+              placeholder="E-mail"
+            /><span class="field-error" *ngIf="erroresEditar.email"
+              >{{ erroresEditar.email }}</span
+            >
+          </div>
+          <div class="form-group">
+            <label>Dirección*</label
+            ><input
+              type="text"
+              [(ngModel)]="editCliente.direccion"
+              placeholder="dirección"
+            /><span class="field-error" *ngIf="erroresEditar.direccion"
+              >{{ erroresEditar.direccion }}</span
+            >
+          </div>
           <div class="form-row">
-            <div class="form-group half"><label>Sector</label><input type="text" [(ngModel)]="editCliente.sector" placeholder="sector" /></div>
-            <div class="form-group half"><label>Teléfono*</label><input type="tel" [(ngModel)]="editCliente.telefono" placeholder="celular" /><span class="field-error" *ngIf="erroresEditar.telefono">{{ erroresEditar.telefono }}</span></div>
+            <div class="form-group half">
+              <label>Sector</label
+              ><input
+                type="text"
+                [(ngModel)]="editCliente.sector"
+                placeholder="sector"
+              />
+            </div>
+            <div class="form-group half">
+              <label>Teléfono*</label
+              ><input
+                type="tel"
+                [(ngModel)]="editCliente.telefono"
+                placeholder="celular"
+              /><span class="field-error" *ngIf="erroresEditar.telefono"
+                >{{ erroresEditar.telefono }}</span
+              >
+            </div>
           </div>
-          <span class="field-error" *ngIf="erroresEditar.general">{{ erroresEditar.general }}</span>
-          <button class="btn-nativo" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
-            <ion-spinner name="crescent" *ngIf="guardandoEdicion" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
+          <span class="field-error" *ngIf="erroresEditar.general"
+            >{{ erroresEditar.general }}</span
+          >
+          <button
+            class="btn-nativo"
+            (click)="guardarEdicion()"
+            [disabled]="guardandoEdicion"
+          >
+            <ion-spinner
+              name="crescent"
+              *ngIf="guardandoEdicion"
+              style="margin-right: 8px; width: 18px; height: 18px"
+            ></ion-spinner>
             {{ guardandoEdicion ? 'Guardando...' : 'Guardar Cambios' }}
           </button>
-          <button class="btn-eliminar" (click)="confirmarEliminar()">Eliminar cliente</button>
+          <button class="btn-eliminar" (click)="confirmarEliminar()">
+            Eliminar cliente
+          </button>
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
 
   <!-- ===== MODAL ABONO ===== -->
-  <ion-modal [isOpen]="mostrarAbono" (didDismiss)="cerrarAbono()" [breakpoints]="[0, 0.45]" [initialBreakpoint]="0.45">
+  <ion-modal
+    [isOpen]="mostrarAbono"
+    (didDismiss)="cerrarAbono()"
+    [breakpoints]="[0, 0.45]"
+    [initialBreakpoint]="0.45"
+  >
     <ng-template>
       <ion-content class="modal-form-content">
         <div class="modal-body abono-body">
           <h2 class="abono-titulo">Registrar Abono</h2>
-          <p class="abono-cliente">{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</p>
-          <div class="form-group"><label>N° Orden</label><input type="number" [(ngModel)]="abonoData.ventaId" placeholder="000000" /><span class="field-error" *ngIf="erroresAbono.ventaId">{{ erroresAbono.ventaId }}</span></div>
+          <p class="abono-cliente">
+            {{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}
+          </p>
+          <div class="form-group">
+            <label>N° Orden</label
+            ><input
+              type="number"
+              [(ngModel)]="abonoData.ventaId"
+              placeholder="000000"
+            /><span class="field-error" *ngIf="erroresAbono.ventaId"
+              >{{ erroresAbono.ventaId }}</span
+            >
+          </div>
           <div class="form-group">
             <label>Valor</label>
-            <div class="valor-wrap"><span class="valor-prefix">$</span><input type="number" [(ngModel)]="abonoData.monto" placeholder="0.00" step="0.01" /></div>
-            <span class="field-error" *ngIf="erroresAbono.monto">{{ erroresAbono.monto }}</span>
+            <div class="valor-wrap">
+              <span class="valor-prefix">$</span
+              ><input
+                type="number"
+                [(ngModel)]="abonoData.monto"
+                placeholder="0.00"
+                step="0.01"
+              />
+            </div>
+            <span class="field-error" *ngIf="erroresAbono.monto"
+              >{{ erroresAbono.monto }}</span
+            >
           </div>
-          <span class="field-error" *ngIf="erroresAbono.general">{{ erroresAbono.general }}</span>
+          <span class="field-error" *ngIf="erroresAbono.general"
+            >{{ erroresAbono.general }}</span
+          >
           <p class="abono-exito" *ngIf="mensajeAbono">{{ mensajeAbono }}</p>
-          <button class="btn-nativo" (click)="guardarAbono()" [disabled]="guardandoAbono">
-            <ion-spinner name="crescent" *ngIf="guardandoAbono" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+          <button
+            class="btn-nativo"
+            (click)="guardarAbono()"
+            [disabled]="guardandoAbono"
+          >
+            <ion-spinner
+              name="crescent"
+              *ngIf="guardandoAbono"
+              style="width: 18px; height: 18px; margin-right: 6px"
+            ></ion-spinner>
             {{ guardandoAbono ? 'Registrando...' : 'Guardar Abono' }}
           </button>
         </div>
@@ -381,8 +753,12 @@
     </ng-template>
   </ion-modal>
 
-  <ion-modal [isOpen]="mostrarConfirmarEliminar" (didDismiss)="cancelarEliminar()"
-    [breakpoints]="[0, 0.35]" [initialBreakpoint]="0.35">
+  <ion-modal
+    [isOpen]="mostrarConfirmarEliminar"
+    (didDismiss)="cancelarEliminar()"
+    [breakpoints]="[0, 0.35]"
+    [initialBreakpoint]="0.35"
+  >
     <ng-template>
       <ion-content class="modal-form-content">
         <div class="modal-body confirmar-body">
@@ -392,13 +768,29 @@
           <h2 class="confirmar-titulo">Eliminar cliente</h2>
           <p class="confirmar-texto">
             ¿Estás seguro de eliminar a
-            <strong>{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</strong>?
-            Esta acción no se puede deshacer.
+            <strong
+              >{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido
+              }}</strong
+            >? Esta acción no se puede deshacer.
           </p>
           <div class="confirmar-acciones">
-            <button class="btn-cancelar" (click)="cancelarEliminar()" [disabled]="eliminando">Cancelar</button>
-            <button class="btn-eliminar-confirm" (click)="ejecutarEliminar()" [disabled]="eliminando">
-              <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+            <button
+              class="btn-cancelar"
+              (click)="cancelarEliminar()"
+              [disabled]="eliminando"
+            >
+              Cancelar
+            </button>
+            <button
+              class="btn-eliminar-confirm"
+              (click)="ejecutarEliminar()"
+              [disabled]="eliminando"
+            >
+              <ion-spinner
+                name="crescent"
+                *ngIf="eliminando"
+                style="width: 16px; height: 16px; margin-right: 6px"
+              ></ion-spinner>
               {{ eliminando ? 'Eliminando...' : 'Sí, eliminar' }}
             </button>
           </div>
@@ -406,5 +798,4 @@
       </ion-content>
     </ng-template>
   </ion-modal>
-
 </ion-content>
