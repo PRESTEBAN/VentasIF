@@ -418,8 +418,8 @@ export class ClientesPage implements OnInit, OnDestroy {
         this.clienteDetalle = { ...this.clienteDetalle!, ...payload };
       },
       error: (err) => {
-        this.guardandoEdicion = false;
-        this.erroresEditar.general = err.error?.error || 'Error al guardar';
+        this.guardando = false;
+        this.errores.general = err.error?.error || 'Error al guardar';
       },
     });
   }
@@ -646,8 +646,7 @@ export class ClientesPage implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.guardando = false;
-        this.errores.general =
-          err.status === 400 ? 'Datos inválidos' : 'Error al guardar';
+        this.errores.general = err.error?.error || 'Error al guardar';
       },
     });
   }
