@@ -32,8 +32,8 @@
       <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
     </div>
     <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-</div>
+      <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+    </div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-logout" (click)="cerrarSesion()">
       <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
@@ -57,10 +57,8 @@
         <div style="width: 26px;"></div>
       </div>
 
-
       <div class="main-content">
 
-        <!-- TÍTULO -->
         <div class="page-header">
           <h1 class="page-title">Órdenes</h1>
           <div class="ordenes-counter" *ngIf="!cargando && ordenes.length > 0">
@@ -69,13 +67,11 @@
           </div>
         </div>
 
-        <!-- LOADING -->
         <div class="loading-ordenes" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando órdenes...</p>
         </div>
 
-        <!-- SIN ÓRDENES -->
         <div class="sin-ordenes" *ngIf="!cargando && ordenes.length === 0">
           <div class="sin-ordenes-icono">
             <ion-icon name="checkmark-done-outline"></ion-icon>
@@ -84,11 +80,9 @@
           <p class="sin-ordenes-sub">Sin órdenes pendientes</p>
         </div>
 
-        <!-- LISTA DE ÓRDENES -->
         <div class="ordenes-lista" *ngIf="!cargando && ordenes.length > 0">
           <div class="orden-card" *ngFor="let orden of ordenes">
 
-            <!-- HEADER: cliente + número + fecha + estado -->
             <div class="orden-header">
               <div class="orden-avatar">
                 <ion-icon name="person-outline"></ion-icon>
@@ -104,6 +98,10 @@
                   <span class="orden-fecha">
                     <ion-icon name="time-outline"></ion-icon>
                     {{ orden.fecha | date:'dd/MM/yy HH:mm' }}
+                  </span>
+                  <span class="orden-vendedor" *ngIf="orden.usuario || orden.vendedor || orden.nombre_usuario">
+                    <ion-icon name="person-circle-outline"></ion-icon>
+                    Realizado por: {{ orden.usuario || orden.vendedor || orden.nombre_usuario }}
                   </span>
                 </div>
               </div>
@@ -123,7 +121,6 @@
               </div>
             </div>
 
-            <!-- PRODUCTOS -->
             <div class="orden-productos">
               <div class="productos-head">
                 <span>Producto</span>
@@ -135,7 +132,6 @@
               </div>
             </div>
 
-            <!-- PROGRESS BAR -->
             <div class="orden-progress">
               <div class="progress-track">
                 <div class="progress-fill"
@@ -152,22 +148,39 @@
               </div>
             </div>
 
-            <!-- ACCIONES -->
+            <!-- ACCIONES con toggle -->
             <div class="orden-acciones">
+
+              <!-- LISTO: se puede deshacer solo si entregado NO está marcado todavía -->
               <button class="accion-btn"
-                [class.accion-done]="orden.listo_conductor"
-                [disabled]="orden.listo_conductor || actualizando[orden.venta_id]"
-                (click)="marcarListo(orden)">
-                <ion-icon [name]="orden.listo_conductor ? 'checkmark-circle' : 'cube-outline'"></ion-icon>
-                <span>{{ orden.listo_conductor ? 'Preparado ✓' : 'Marcar Listo' }}</span>
+                [class.accion-done]="orden.listo_conductor && !orden.entregado_vendedor"
+                [class.accion-locked]="orden.listo_conductor && orden.entregado_vendedor"
+                [disabled]="actualizando[orden.venta_id] || (orden.listo_conductor && orden.entregado_vendedor)"
+                (click)="toggleListo(orden)">
+                <ion-icon [name]="orden.listo_conductor
+                  ? (orden.entregado_vendedor ? 'checkmark-circle' : 'arrow-undo-outline')
+                  : 'cube-outline'">
+                </ion-icon>
+                <span>{{ orden.listo_conductor
+                  ? (orden.entregado_vendedor ? 'Preparado ✓' : 'Deshacer listo')
+                  : 'Marcar Listo' }}</span>
               </button>
+
+              <!-- ENTREGADO: se puede deshacer siempre que esté marcado -->
               <button class="accion-btn"
                 [class.accion-done]="orden.entregado_vendedor"
-                [disabled]="orden.entregado_vendedor || actualizando[orden.venta_id]"
-                (click)="marcarEntregado(orden)">
-                <ion-icon [name]="orden.entregado_vendedor ? 'checkmark-circle' : 'bicycle-outline'"></ion-icon>
-                <span>{{ orden.entregado_vendedor ? 'Entregado ✓' : 'Marcar Entregado' }}</span>
+                [class.accion-bloqueado]="!orden.listo_conductor && !orden.entregado_vendedor"
+                [disabled]="actualizando[orden.venta_id] || (!orden.listo_conductor && !orden.entregado_vendedor)"
+                (click)="toggleEntregado(orden)">
+                <ion-icon [name]="orden.entregado_vendedor
+                  ? 'arrow-undo-outline'
+                  : (!orden.listo_conductor ? 'lock-closed-outline' : 'bicycle-outline')">
+                </ion-icon>
+                <span>{{ orden.entregado_vendedor
+                  ? 'Deshacer entrega'
+                  : (!orden.listo_conductor ? 'Primero: Marcar Listo' : 'Marcar Entregado') }}</span>
               </button>
+
             </div>
 
           </div>

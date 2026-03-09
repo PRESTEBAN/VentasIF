@@ -206,7 +206,6 @@
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-          <!-- ── CÉDULA / RUC ── -->
           <div class="form-group">
             <label>Cédula / RUC*</label>
             <div class="cedula-ruc-row">
@@ -386,12 +385,16 @@
             <h2 class="detalle-nombre">
               {{ clienteDetalle.nombre }} {{ clienteDetalle.apellido }}
             </h2>
+
+            <!-- CÉDULA Y NEGOCIO -->
+            <p class="detalle-cedula-hero">{{ clienteDetalle.cedula_ruc }}</p>
+            <p class="detalle-negocio-hero" *ngIf="clienteDetalle.nombre_negocio">
+              {{ clienteDetalle.nombre_negocio }}
+            </p>
+
             <div class="detalle-tags">
               <span class="detalle-tag"
                 >{{ clienteDetalle.tipo_cliente | titlecase }}</span
-              >
-              <span class="detalle-tag" *ngIf="clienteDetalle.nombre_negocio"
-                >{{ clienteDetalle.nombre_negocio }}</span
               >
             </div>
             <div class="detalle-saldo-hero">
@@ -554,7 +557,6 @@
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-          <!-- ── CÉDULA / RUC (editar) ── -->
           <div class="form-group">
             <label>Cédula / RUC*</label>
             <div class="cedula-ruc-row">

@@ -31,12 +31,6 @@
   img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
 }
 
-.carrito-btn {
-  position: relative; cursor: pointer;
-  ion-icon { font-size: 26px; color: #590F23; }
-}
-
-
 /* MAIN */
 .main-content {
   padding: 0 14px 40px 14px;
@@ -202,10 +196,56 @@
   &:active { transform: scale(0.96); }
   &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
+  // Marcado y se puede deshacer — naranja suave
   &.accion-done {
+    background: #FFF3E0; color: #E65100;
+    border: 1px solid #FFCC80;
+    ion-icon { color: #E65100; }
+  }
+
+  // Completo y bloqueado (ambos marcados) — verde, no se puede deshacer listo
+  &.accion-locked {
     background: #E8F5E9; color: #2E7D32;
     ion-icon { color: #2E7D32; }
   }
+
+  // Bloqueado por no haber marcado listo primero
+  &.accion-bloqueado {
+    background: #F5F5F5; color: #BBBBBB;
+    border: 1px dashed #DDDDDD;
+    ion-icon { color: #CCCCCC; }
+  }
+}
+
+/* META: número + fecha + vendedor */
+.orden-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  align-items: center;
+}
+
+.orden-numero {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 700; color: #590F23;
+  background: rgba(89, 15, 35, 0.08);
+  padding: 2px 7px; border-radius: 20px;
+  ion-icon { font-size: 0.7rem; }
+}
+
+.orden-fecha {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; color: #888;
+  ion-icon { font-size: 0.7rem; }
+}
+
+.orden-vendedor {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 0.72rem; font-weight: 600; color: #5C5C8A;
+  background: rgba(92, 92, 138, 0.08);
+  padding: 2px 7px; border-radius: 20px;
+  ion-icon { font-size: 0.7rem; color: #5C5C8A; }
 }
 
 /* MENU LATERAL */
@@ -265,33 +305,4 @@
 .menu-logout {
   ion-icon { color: #e53935; }
   span { color: #e53935; font-weight: 600; }
-}
-
-.orden-meta {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 3px;
-}
-
-.orden-numero {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #590F23;
-  background: rgba(89, 15, 35, 0.08);
-  padding: 2px 7px;
-  border-radius: 20px;
-  ion-icon { font-size: 0.7rem; }
-}
-
-.orden-fecha {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
-  color: #888;
-  ion-icon { font-size: 0.7rem; }
 }

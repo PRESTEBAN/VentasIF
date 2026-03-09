@@ -104,6 +104,9 @@ ion-modal {
 
   .alert-button-group {
     padding: 0 16px 16px 16px;
+    gap: 10px; 
+    display: flex; 
+    flex-direction: column; 
   }
 
   .alert-button {

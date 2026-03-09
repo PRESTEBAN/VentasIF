@@ -50,7 +50,7 @@ export class LoginModalComponent implements OnInit {
     if (this.usuario.trim() === '') {
       this.errorUsuario = 'Ingresa tu usuario';
       valido = false;
-    } else if (!/^[A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$/.test(this.usuario.trim())) {
+    } else if (!/^[A-ZÁÉÍÓÚÑ][A-Za-záéíóúñ0-9]+$/.test(this.usuario.trim())) {
       this.errorUsuario = 'Formato incorrecto. Ej: EGarcia';
       valido = false;
     }
@@ -86,16 +86,16 @@ export class LoginModalComponent implements OnInit {
             cssClass: 'alert-personalizado'
           });
           await alert.present();
-      } else if(err.status === 0) {
-      this.errorGeneral = 'No se pudo conectar con el servidor';
-    } else {
-      this.errorGeneral = 'Error inesperado. Intenta de nuevo';
-    }
-  }
-});
+        } else if (err.status === 0) {
+          this.errorGeneral = 'No se pudo conectar con el servidor';
+        } else {
+          this.errorGeneral = 'Error inesperado. Intenta de nuevo';
+        }
+      }
+    });
   }
 
-cerrar() {
-  this.modalCtrl.dismiss();
-}
+  cerrar() {
+    this.modalCtrl.dismiss();
+  }
 }

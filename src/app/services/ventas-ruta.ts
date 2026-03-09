@@ -9,7 +9,7 @@ export class VentasRutaService {
 
   private apiUrl = `${environment.apiUrl}/api/v1/ventas-ruta`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
   private getHeaders(): HttpHeaders {
     return new HttpHeaders({ 'Authorization': `Bearer ${this.authService.getToken()}` });
@@ -29,5 +29,13 @@ export class VentasRutaService {
 
   marcarEntregado(id: number): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}/entregado`, {}, { headers: this.getHeaders() });
+  }
+
+  desmarcarListo(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/desmarcar-listo`, {}, { headers: this.getHeaders() });
+  }
+
+  desmarcarEntregado(id: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}/desmarcar-entregado`, {}, { headers: this.getHeaders() });
   }
 }
