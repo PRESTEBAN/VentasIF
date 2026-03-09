@@ -862,4 +862,4 @@ export class Tab1Page implements OnInit, OnDestroy {
         }).then((t) => t.present());
       });
   }
-}
+} 
