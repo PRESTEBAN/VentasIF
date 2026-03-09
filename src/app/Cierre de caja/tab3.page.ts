@@ -41,26 +41,34 @@ export class Tab3Page implements OnInit, OnDestroy {
 
   // ── Total general — NUNCA negativo ──
   get totalGeneral(): number {
-    return Math.max(
-      0,
-      this.totalIngresosVentas +
-        this.totalAbonos +
-        this.ingresosAdicionales -
-        this.totalEgresos
-    );
-  }
+  return Math.max(
+    0,
+    this.fondoInicial +
+    this.totalIngresosVentas +
+    this.totalAbonos +
+    this.ingresosAdicionales -
+    this.totalEgresos
+  );
+}
 
-  get egresosExceden(): boolean {
-    return (
-      this.totalEgresos >
-      this.totalIngresosVentas + this.totalAbonos + this.ingresosAdicionales
-    );
-  }
+get egresosExceden(): boolean {
+  return (
+    this.totalEgresos >
+    this.fondoInicial + this.totalIngresosVentas + this.totalAbonos + this.ingresosAdicionales
+  );
+}
 
-  // Total sin fondo (para mostrar en grande)
-  get totalSinFondo(): number {
-    return Math.max(0, this.totalGeneral - this.fondoInicial);
-  }
+// totalSinFondo ya no es necesario — elimínalo o muéstralo como el total sin incluir el fondo
+// si lo quieres para mostrar "solo lo generado hoy sin contar el fondo":
+get totalSinFondo(): number {
+  return Math.max(
+    0,
+    this.totalIngresosVentas +
+    this.totalAbonos +
+    this.ingresosAdicionales -
+    this.totalEgresos
+  );
+}
 
   // ── Conteo físico ──
   billetes: number | null = null;

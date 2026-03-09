@@ -185,7 +185,7 @@
                 <span class="item-valor ingreso-valor">${{ ingreso.monto | number:'1.2-2' }}</span>
 
                 <!-- Acciones: editar y borrar — solo si es hoy -->
-                <div class="egreso-acciones" *ngIf="esDiaDeHoy">
+                <div class="egreso-acciones" *ngIf="esIngresoEditable(ingreso)">
                   <button class="btn-editar-item" (click)="abrirEditarIngreso(ingreso)">
                     <ion-icon name="pencil-outline"></ion-icon>
                   </button>

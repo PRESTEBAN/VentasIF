@@ -190,8 +190,14 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   get esDiaDeHoy(): boolean {
-    return this.formatearFecha(this.fechaSeleccionada) === this.formatearFecha(new Date());
-  }
+  const hoy = new Date();
+  const sel = this.fechaSeleccionada;
+  return (
+    sel.getFullYear() === hoy.getFullYear() &&
+    sel.getMonth()    === hoy.getMonth() &&
+    sel.getDate()     === hoy.getDate()
+  );
+}
 
   // ---- CARGA -------------------------------------------------------
   cargarDatos() {
@@ -229,6 +235,10 @@ export class CajaPage implements OnInit, OnDestroy {
       });
     }
   }
+  esIngresoEditable(ingreso: Ingreso): boolean {
+  if (!this.esDiaDeHoy) return false;
+  return ingreso.cierre_id === this.cierreActivoId;
+}
 
   cargarDatosSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
