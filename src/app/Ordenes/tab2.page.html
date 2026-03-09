@@ -159,7 +159,9 @@
                 <span>{{ orden.listo_conductor ? 'Preparado ✓' : 'Marcar Listo' }}</span>
               </button>
               <button class="accion-btn" [class.accion-done]="orden.entregado_vendedor"
-                [disabled]="orden.entregado_vendedor || actualizando[orden.venta_id]" (click)="marcarEntregado(orden)">
+                [class.accion-bloqueado]="!orden.listo_conductor && !orden.entregado_vendedor"
+                [disabled]="orden.entregado_vendedor || !orden.listo_conductor || actualizando[orden.venta_id]"
+                (click)="marcarEntregado(orden)">
                 <ion-icon [name]="orden.entregado_vendedor ? 'checkmark-circle' : 'bicycle-outline'"></ion-icon>
                 <span>{{ orden.entregado_vendedor ? 'Entregado ✓' : 'Marcar Entregado' }}</span>
               </button>

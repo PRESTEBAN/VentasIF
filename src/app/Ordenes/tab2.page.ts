@@ -108,13 +108,13 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.ventasRutaService.getPendientes().subscribe({
       next: (data: any[]) => {
         const idsActuales = new Set(this.ordenes.map(o => o.venta_id));
-        const idsNuevos   = new Set(data.map((o: any) => o.venta_id));
+        const idsNuevos = new Set(data.map((o: any) => o.venta_id));
         data.forEach((orden: any) => {
           if (!idsActuales.has(orden.venta_id)) this.ordenes.unshift(orden);
         });
         this.ordenes = this.ordenes.filter(o => idsNuevos.has(o.venta_id) || this.actualizando[o.venta_id]);
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -130,6 +130,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   marcarEntregado(orden: any) {
     if (orden.entregado_vendedor) return;
+    if (!orden.listo_conductor) return;
     this.actualizando[orden.venta_id] = true;
     this.ventasRutaService.marcarEntregado(orden.venta_id).subscribe({
       next: () => { orden.entregado_vendedor = 1; this.actualizando[orden.venta_id] = false; this.verificarCompleta(orden); },
@@ -146,30 +147,30 @@ export class Tab2Page implements OnInit, OnDestroy {
   }
 
   toggleListo(orden: any) {
-  if (orden.listo_conductor) {
-    this.desmarcarListo(orden);
-  } else {
-    this.marcarListo(orden);
+    if (orden.listo_conductor) {
+      this.desmarcarListo(orden);
+    } else {
+      this.marcarListo(orden);
+    }
   }
-}
 
-desmarcarListo(orden: any) {
-  this.actualizando[orden.venta_id] = true;
-  this.ventasRutaService.desmarcarListo(orden.venta_id).subscribe({
-    next: () => { 
-      orden.listo_conductor = 0; 
-      this.actualizando[orden.venta_id] = false; 
-    },
-    error: () => { this.actualizando[orden.venta_id] = false; }
-  });
-}
+  desmarcarListo(orden: any) {
+    this.actualizando[orden.venta_id] = true;
+    this.ventasRutaService.desmarcarListo(orden.venta_id).subscribe({
+      next: () => {
+        orden.listo_conductor = 0;
+        this.actualizando[orden.venta_id] = false;
+      },
+      error: () => { this.actualizando[orden.venta_id] = false; }
+    });
+  }
 
   // ── MENU ──────────────────────────────────────────────────────────────────
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irAlCarrito() { this.carritoEstado.solicitarAbrirCarrito(); this.router.navigate(['/tabs/tab1']); }
   irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
