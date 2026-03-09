@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
 import { CarritoEstadoService } from '../services/carrito-estado';
 import { SocketService } from '../services/socket';
-import { AlertController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -31,8 +30,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     public router: Router,
     private authService: AuthService,
     private carritoEstado: CarritoEstadoService,
-    private socketService: SocketService,
-    private alertCtrl: AlertController
+    private socketService: SocketService
   ) { }
 
   ngOnInit() {
@@ -56,7 +54,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING ───────────────────────────────────────────────────────────────
+  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -67,16 +65,18 @@ export class Tab2Page implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET ────────────────────────────────────────────────────────────────
+  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
 
+    // Nueva venta creada → agregar a la lista
     const ventaSub = this.socketService.on('nueva_venta').subscribe(() => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       this.cargarOrdenesSilencioso();
     });
 
+    // Orden actualizada (listo/entregado/eliminado) → refrescar
     const ordenSub = this.socketService.on('orden_actualizada').subscribe((data: any) => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
       if (data?.estado === 'eliminado') {
@@ -118,72 +118,21 @@ export class Tab2Page implements OnInit, OnDestroy {
     });
   }
 
-  // ── ACCIONES TOGGLE ───────────────────────────────────────────────────────
-
-  toggleListo(orden: any) {
-    if (orden.listo_conductor && orden.entregado_vendedor) return;
-    if (this.actualizando[orden.venta_id]) return;
-
+  // ── ACCIONES ──────────────────────────────────────────────────────────────
+  marcarListo(orden: any) {
+    if (orden.listo_conductor) return;
     this.actualizando[orden.venta_id] = true;
-
-    if (!orden.listo_conductor) {
-      this.ventasRutaService.marcarListo(orden.venta_id).subscribe({
-        next: () => { orden.listo_conductor = 1; this.actualizando[orden.venta_id] = false; },
-        error: () => { this.actualizando[orden.venta_id] = false; }
-      });
-    } else {
-      this.ventasRutaService.desmarcarListo(orden.venta_id).subscribe({
-        next: () => { orden.listo_conductor = 0; this.actualizando[orden.venta_id] = false; },
-        error: () => { this.actualizando[orden.venta_id] = false; }
-      });
-    }
+    this.ventasRutaService.marcarListo(orden.venta_id).subscribe({
+      next: () => { orden.listo_conductor = 1; this.actualizando[orden.venta_id] = false; this.verificarCompleta(orden); },
+      error: () => { this.actualizando[orden.venta_id] = false; }
+    });
   }
 
-  // Antes de marcar como entregado muestra confirmación para evitar accidentes
-  async toggleEntregado(orden: any) {
-    if (!orden.listo_conductor && !orden.entregado_vendedor) return;
-    if (this.actualizando[orden.venta_id]) return;
-
-    if (!orden.entregado_vendedor) {
-      // Pedir confirmación antes de finalizar
-      const alert = await this.alertCtrl.create({
-        header: '¿Finalizar orden?',
-        message: `La orden #${orden.venta_id?.toString().padStart(6, '0')} de ${orden.cliente} se marcará como entregada y desaparecerá de la lista.`,
-        cssClass: 'alert-personalizado',
-        buttons: [
-           {
-            text: 'Sí, entregar',
-            role: 'destructive',
-            handler: () => {
-              this.ejecutarEntregado(orden);
-            }
-          },
-          {
-            text: 'Cancelar',
-            role: 'cancel'
-          }
-        ]
-      });
-      await alert.present();
-
-    } else {
-      // Deshacer entregado — sin confirmación
-      this.actualizando[orden.venta_id] = true;
-      this.ventasRutaService.desmarcarEntregado(orden.venta_id).subscribe({
-        next: () => { orden.entregado_vendedor = 0; this.actualizando[orden.venta_id] = false; },
-        error: () => { this.actualizando[orden.venta_id] = false; }
-      });
-    }
-  }
-
-  private ejecutarEntregado(orden: any) {
+  marcarEntregado(orden: any) {
+    if (orden.entregado_vendedor) return;
     this.actualizando[orden.venta_id] = true;
     this.ventasRutaService.marcarEntregado(orden.venta_id).subscribe({
-      next: () => {
-        orden.entregado_vendedor = 1;
-        this.actualizando[orden.venta_id] = false;
-        this.verificarCompleta(orden);
-      },
+      next: () => { orden.entregado_vendedor = 1; this.actualizando[orden.venta_id] = false; this.verificarCompleta(orden); },
       error: () => { this.actualizando[orden.venta_id] = false; }
     });
   }
