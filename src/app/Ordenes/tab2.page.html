@@ -105,6 +105,10 @@
                     <ion-icon name="time-outline"></ion-icon>
                     {{ orden.fecha | date:'dd/MM/yy HH:mm' }}
                   </span>
+                  <span class="orden-vendedor" *ngIf="orden.usuario || orden.vendedor || orden.nombre_usuario">
+                    <ion-icon name="person-circle-outline"></ion-icon>
+                    Hecho por: <strong>{{ orden.usuario || orden.vendedor || orden.nombre_usuario }}</strong>
+                  </span>
                 </div>
               </div>
               <div class="orden-estado-pill"
