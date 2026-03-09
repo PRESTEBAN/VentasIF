@@ -58,7 +58,7 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- INGRESOS ----
   ingresos: Ingreso[]   = [];
-  fondoInicial          = 30;
+  fondoInicial          = 40;
   fondoModificado       = false;
   cierreActivoId        = 0;
   cargando              = false;
@@ -70,7 +70,7 @@ export class CajaPage implements OnInit, OnDestroy {
   // Modal fondo
   mostrarModalFondo = false;
   guardandoFondo    = false;
-  nuevoFondo        = 30;
+  nuevoFondo        = 40;
   claveAdmin        = '';
   erroresFondo: any = {};
 
@@ -79,6 +79,12 @@ export class CajaPage implements OnInit, OnDestroy {
   guardandoIngreso     = false;
   nuevoIngreso: Ingreso = { monto: 0, motivo: '' };
   erroresIngreso: any  = {};
+
+  // Modal editar ingreso
+  mostrarEditarIngreso   = false;
+  guardandoEditarIngreso = false;
+  ingresoEditando: Ingreso = { monto: 0, motivo: '' };
+  erroresEditarIngreso: any = {};
 
   // ---- EGRESOS ----
   egresos: Egreso[] = [];
@@ -172,10 +178,10 @@ export class CajaPage implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-private getHeaders(): HttpHeaders {
-  const token = this.authService.getToken();
-  return new HttpHeaders({ Authorization: `Bearer ${token}` });
-}
+  private getHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+  }
 
   formatearFecha(fecha: Date): string {
     const d = fecha.getDate().toString().padStart(2, '0');
@@ -189,34 +195,40 @@ private getHeaders(): HttpHeaders {
 
   // ---- CARGA -------------------------------------------------------
   cargarDatos() {
-  this.cargando = true;
-  this.egresos  = [];
-  this.ingresos = [];
-  const selecStr = this.formatearFecha(this.fechaSeleccionada);
+    this.cargando = true;
+    this.egresos  = [];
+    this.ingresos = [];
+    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
 
-  // Siempre cargar egresos por fecha
-  this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${selecStr}`, { headers: this.getHeaders() }).subscribe({
-    next: (data) => { this.egresos = data; this.cargando = false; },
-    error: () => { this.egresos = []; this.cargando = false; }
-  });
-
-  // Ingresos y fondo solo si es hoy
-  if (this.esDiaDeHoy) {
-    this.http.get<any>(`${this.API}/ingresos`, { headers: this.getHeaders() }).subscribe({
-      next: (data) => {
-        this.fondoInicial    = parseFloat(data.fondo_inicial) || 30;
-        this.fondoModificado = data.fondo_modificado || false;
-        this.cierreActivoId  = data.cierre_id || 0;
-        this.ingresos        = data.ingresos || [];
-      },
-      error: () => { this.ingresos = []; }
+    // Egresos siempre por fecha
+    this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${fechaStr}`, { headers: this.getHeaders() }).subscribe({
+      next: (data) => { this.egresos = data; this.cargando = false; },
+      error: () => { this.egresos = []; this.cargando = false; }
     });
-  } else {
-    this.ingresos    = [];
-    this.fondoInicial = 30;
-    this.cierreActivoId = 0;
+
+    // Ingresos — hoy: cierre activo, histórico: por fecha
+    if (this.esDiaDeHoy) {
+      this.http.get<any>(`${this.API}/ingresos`, { headers: this.getHeaders() }).subscribe({
+        next: (data) => {
+          this.fondoInicial    = parseFloat(data.fondo_inicial) || 40;
+          this.fondoModificado = data.fondo_modificado || false;
+          this.cierreActivoId  = data.cierre_id || 0;
+          this.ingresos        = data.ingresos || [];
+        },
+        error: () => { this.ingresos = []; }
+      });
+    } else {
+      this.http.get<any>(`${this.API}/ingresos/fecha/${fechaStr}`, { headers: this.getHeaders() }).subscribe({
+        next: (data) => {
+          this.fondoInicial    = parseFloat(data.fondo_inicial) || 40;
+          this.fondoModificado = data.fondo_modificado || false;
+          this.cierreActivoId  = data.cierre_id || 0;
+          this.ingresos        = data.ingresos || [];
+        },
+        error: () => { this.ingresos = []; this.fondoInicial = 40; this.cierreActivoId = 0; }
+      });
+    }
   }
-}
 
   cargarDatosSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
@@ -247,7 +259,7 @@ private getHeaders(): HttpHeaders {
     return !egreso.cierre_id || egreso.cierre_id === this.cierreActivoId;
   }
 
-  // ---- CALENDARIO -------------------------------------------------------
+  // ---- CALENDARIO --------------------------------------------------
   generarSemana(base: Date) {
     const dias: Date[] = [];
     for (let i = 0; i < 7; i++) {
@@ -303,13 +315,13 @@ private getHeaders(): HttpHeaders {
     this.cerrarDatePicker();
   }
 
-  // ---- BOTÓN + HEADER -----------------------------------------------
+  // ---- BOTÓN + HEADER ----------------------------------------------
   abrirModalSegunTab() {
     if (this.tabActivo === 'ingresos') this.abrirModalIngreso();
     else this.abrirModalEgreso();
   }
 
-  // ---- FONDO INICIAL ------------------------------------------------
+  // ---- FONDO INICIAL -----------------------------------------------
   abrirEditarFondo() {
     this.nuevoFondo   = this.fondoInicial;
     this.claveAdmin   = '';
@@ -343,7 +355,7 @@ private getHeaders(): HttpHeaders {
     });
   }
 
-  // ---- MODAL INGRESO ------------------------------------------------
+  // ---- MODAL INGRESO -----------------------------------------------
   abrirModalIngreso() {
     this.nuevoIngreso   = { monto: 0, motivo: '' };
     this.erroresIngreso = {};
@@ -369,7 +381,40 @@ private getHeaders(): HttpHeaders {
     });
   }
 
-  // ---- MODAL EGRESO -------------------------------------------------
+  // ---- EDITAR INGRESO ----------------------------------------------
+  abrirEditarIngreso(ingreso: Ingreso) {
+    this.ingresoEditando      = { ...ingreso };
+    this.erroresEditarIngreso = {};
+    this.mostrarEditarIngreso = true;
+  }
+
+  cerrarEditarIngreso() {
+    this.mostrarEditarIngreso = false;
+    this.erroresEditarIngreso = {};
+  }
+
+  guardarEdicionIngreso() {
+    this.erroresEditarIngreso = {};
+    let valido = true;
+    if (!this.ingresoEditando.motivo?.trim()) { this.erroresEditarIngreso.motivo = 'El motivo es requerido'; valido = false; }
+    if (!this.ingresoEditando.monto || this.ingresoEditando.monto <= 0) { this.erroresEditarIngreso.monto = 'Ingresa un valor válido'; valido = false; }
+    if (!valido) return;
+
+    this.guardandoEditarIngreso = true;
+    this.http.put<any>(`${this.API}/ingresos/${this.ingresoEditando.id}`,
+      { monto: this.ingresoEditando.monto, motivo: this.ingresoEditando.motivo!.trim() },
+      { headers: this.getHeaders() }
+    ).subscribe({
+      next: () => {
+        this.guardandoEditarIngreso = false;
+        this.cerrarEditarIngreso();
+        this.cargarDatos();
+      },
+      error: () => { this.guardandoEditarIngreso = false; this.erroresEditarIngreso.general = 'Error al guardar'; }
+    });
+  }
+
+  // ---- MODAL EGRESO ------------------------------------------------
   abrirModalEgreso() {
     this.nuevoEgreso   = { detalle: '', responsable: this.getResponsablePorDefecto(), beneficiario: '', valor: 0 };
     this.erroresEgreso = {};
@@ -413,7 +458,7 @@ private getHeaders(): HttpHeaders {
     });
   }
 
-  // ---- EDITAR EGRESO ------------------------------------------------
+  // ---- EDITAR EGRESO -----------------------------------------------
   abrirEditar(egreso: Egreso) {
     this.egresoEditando = { ...egreso };
     this.erroresEditar  = {};
@@ -457,7 +502,7 @@ private getHeaders(): HttpHeaders {
     });
   }
 
-  // ---- BORRAR -------------------------------------------------------
+  // ---- BORRAR ------------------------------------------------------
   confirmarBorrarIngreso(ingreso: Ingreso) {
     this.itemABorrar = { tipo: 'ingreso', id: ingreso.id! };
     this.mostrarConfirmarBorrar = true;
@@ -489,14 +534,14 @@ private getHeaders(): HttpHeaders {
       },
       error: () => { this.borrando = false; this.cancelarBorrar(); }
     });
-  } 
+  }
 
-  // ---- MENU ---------------------------------------------------------
+  // ---- MENU --------------------------------------------------------
   abrirMenu()     { this.menuAbierto = true; }
   cerrarMenu()    { this.menuAbierto = false; }
   cerrarSesion()  { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
   irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-  irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
+  irACaja()       { this.cerrarMenu(); this.router.navigate(['/caja']); }
 }

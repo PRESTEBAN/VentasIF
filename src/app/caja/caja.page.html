@@ -116,8 +116,15 @@
                   <p class="item-fecha">{{ ingreso.fecha | date:'dd/MM/yyyy HH:mm':'':'es' }}</p>
                 </div>
                 <span class="item-valor ingreso-valor">${{ ingreso.monto | number:'1.2-2' }}</span>
-                <button class="btn-borrar-item" (click)="confirmarBorrarIngreso(ingreso)" *ngIf="esDiaDeHoy">
-                  <ion-icon name="trash-outline"></ion-icon>
+                <div class="egreso-acciones" *ngIf="esDiaDeHoy">
+                  <button class="btn-editar-item" (click)="abrirEditarIngreso(ingreso)">
+                    <ion-icon name="pencil-outline"></ion-icon>
+                  </button>
+                  <button class="btn-borrar-item" (click)="confirmarBorrarIngreso(ingreso)">
+                    <ion-icon name="trash-outline"></ion-icon>
+                  </button>
+                </div>
+                <ion-icon name="trash-outline"></ion-icon>
                 </button>
               </div>
 
@@ -367,6 +374,39 @@
     </div>
   </div>
 
+  <!-- ===== MODAL EDITAR INGRESO ===== -->
+<div class="modal-overlay" *ngIf="mostrarEditarIngreso" (click)="cerrarEditarIngreso()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-icono" style="background: linear-gradient(135deg, #1565C0, #0D47A1)">
+        <ion-icon name="pencil-outline"></ion-icon>
+      </div>
+      <h2 class="modal-titulo">Editar Ingreso</h2>
+    </div>
+    <div class="form-group">
+      <label>Motivo</label>
+      <input type="text" [(ngModel)]="ingresoEditando.motivo" placeholder="¿De dónde viene este dinero?" />
+      <span class="field-error" *ngIf="erroresEditarIngreso.motivo">{{ erroresEditarIngreso.motivo }}</span>
+    </div>
+    <div class="form-group">
+      <label>Valor</label>
+      <div class="valor-input-wrap">
+        <span class="valor-prefix">$</span>
+        <input type="number" [(ngModel)]="ingresoEditando.monto" placeholder="0.00" min="0" />
+      </div>
+      <span class="field-error" *ngIf="erroresEditarIngreso.monto">{{ erroresEditarIngreso.monto }}</span>
+    </div>
+    <span class="field-error" *ngIf="erroresEditarIngreso.general">{{ erroresEditarIngreso.general }}</span>
+    <div class="modal-btns">
+      <button class="btn-cancelar" (click)="cerrarEditarIngreso()">Cancelar</button>
+      <button class="btn-anadir" style="background: linear-gradient(135deg, #1565C0, #0D47A1); box-shadow: 0 4px 12px rgba(21,101,192,0.3)"
+        (click)="guardarEdicionIngreso()" [disabled]="guardandoEditarIngreso">
+        <ion-spinner name="crescent" *ngIf="guardandoEditarIngreso" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+        {{ guardandoEditarIngreso ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>
   <!-- ===== MODAL EDITAR EGRESO ===== -->
   <div class="modal-overlay" *ngIf="mostrarEditarModal" (click)="cerrarEditar()">
     <div class="modal-card" (click)="$event.stopPropagation()">
