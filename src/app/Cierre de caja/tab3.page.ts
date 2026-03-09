@@ -43,7 +43,6 @@ export class Tab3Page implements OnInit, OnDestroy {
   get totalGeneral(): number {
   return Math.max(
     0,
-    this.fondoInicial +
     this.totalIngresosVentas +
     this.totalAbonos +
     this.ingresosAdicionales -
