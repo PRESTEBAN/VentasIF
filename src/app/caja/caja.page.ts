@@ -489,7 +489,7 @@ private getHeaders(): HttpHeaders {
       },
       error: () => { this.borrando = false; this.cancelarBorrar(); }
     });
-  }
+  } 
 
   // ---- MENU ---------------------------------------------------------
   abrirMenu()     { this.menuAbierto = true; }
