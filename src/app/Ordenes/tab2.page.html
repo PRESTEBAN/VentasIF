@@ -32,8 +32,8 @@
       <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
     </div>
     <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-</div>
+      <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+    </div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-logout" (click)="cerrarSesion()">
       <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
@@ -111,14 +111,13 @@
                 [class.pill-pendiente]="!orden.listo_conductor && !orden.entregado_vendedor"
                 [class.pill-proceso]="orden.listo_conductor && !orden.entregado_vendedor"
                 [class.pill-listo]="orden.listo_conductor && orden.entregado_vendedor">
-                <ion-icon
-                  [name]="(!orden.listo_conductor && !orden.entregado_vendedor) ? 'hourglass-outline' :
+                <ion-icon [name]="(!orden.listo_conductor && !orden.entregado_vendedor) ? 'hourglass-outline' :
                            (orden.listo_conductor && !orden.entregado_vendedor) ? 'cube-outline' :
                            'checkmark-circle-outline'">
                 </ion-icon>
                 <span>
                   {{ (!orden.listo_conductor && !orden.entregado_vendedor) ? 'Pendiente' :
-                     (orden.listo_conductor && !orden.entregado_vendedor) ? 'Listo' : 'Entregado' }}
+                  (orden.listo_conductor && !orden.entregado_vendedor) ? 'Listo' : 'Entregado' }}
                 </span>
               </div>
             </div>
@@ -154,17 +153,13 @@
 
             <!-- ACCIONES -->
             <div class="orden-acciones">
-              <button class="accion-btn"
-                [class.accion-done]="orden.listo_conductor"
-                [disabled]="orden.listo_conductor || actualizando[orden.venta_id]"
-                (click)="marcarListo(orden)">
+              <button class="accion-btn" [class.accion-done]="orden.listo_conductor"
+                [disabled]="actualizando[orden.venta_id]" (click)="toggleListo(orden)">
                 <ion-icon [name]="orden.listo_conductor ? 'checkmark-circle' : 'cube-outline'"></ion-icon>
                 <span>{{ orden.listo_conductor ? 'Preparado ✓' : 'Marcar Listo' }}</span>
               </button>
-              <button class="accion-btn"
-                [class.accion-done]="orden.entregado_vendedor"
-                [disabled]="orden.entregado_vendedor || actualizando[orden.venta_id]"
-                (click)="marcarEntregado(orden)">
+              <button class="accion-btn" [class.accion-done]="orden.entregado_vendedor"
+                [disabled]="orden.entregado_vendedor || actualizando[orden.venta_id]" (click)="marcarEntregado(orden)">
                 <ion-icon [name]="orden.entregado_vendedor ? 'checkmark-circle' : 'bicycle-outline'"></ion-icon>
                 <span>{{ orden.entregado_vendedor ? 'Entregado ✓' : 'Marcar Entregado' }}</span>
               </button>

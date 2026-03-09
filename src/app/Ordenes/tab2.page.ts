@@ -145,6 +145,25 @@ export class Tab2Page implements OnInit, OnDestroy {
     }
   }
 
+  toggleListo(orden: any) {
+  if (orden.listo_conductor) {
+    this.desmarcarListo(orden);
+  } else {
+    this.marcarListo(orden);
+  }
+}
+
+desmarcarListo(orden: any) {
+  this.actualizando[orden.venta_id] = true;
+  this.ventasRutaService.desmarcarListo(orden.venta_id).subscribe({
+    next: () => { 
+      orden.listo_conductor = 0; 
+      this.actualizando[orden.venta_id] = false; 
+    },
+    error: () => { this.actualizando[orden.venta_id] = false; }
+  });
+}
+
   // ── MENU ──────────────────────────────────────────────────────────────────
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
