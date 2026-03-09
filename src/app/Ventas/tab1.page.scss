@@ -159,13 +159,29 @@
 .producto-card {
   background: #FDF6EE; border-radius: 14px; padding: 10px 8px 8px 8px;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
-  cursor: pointer; position: relative; transition: transform 0.1s, box-shadow 0.1s;
+  cursor: pointer; position: relative; transition: transform 0.1s, box-shadow 0.1s, border-color 0.15s;
   border: 1.5px solid #F0E6DA;
 
   &:active:not(.bloqueado) {
     transform: scale(0.95);
     box-shadow: 0 2px 8px rgba(89,15,35,0.2);
   }
+
+  /* NUEVO: estado seleccionado */
+  &.producto-seleccionado {
+    border-color: #43A047;
+    background: #F1F8E9;
+    box-shadow: 0 0 0 2px rgba(67, 160, 71, 0.18);
+  }
+}
+
+/* NUEVO: punto rojo indicador */
+.seleccionado-dot {
+  position: absolute; top: 6px; left: 6px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #E53935;
+  box-shadow: 0 0 0 2px white;
+  z-index: 2;
 }
 
 .stock-badge {
@@ -361,7 +377,7 @@
   .carrito-cli-cedula { font-size: 12px; color: #999; margin: 2px 0 0 0; }
 }
 
-.carrito-tabla { border-radius: 10px; overflow: hidden; border: 1px solid #f0f0f0; margin-bottom: 16px; }
+.carrito-tabla { border-radius: 10px; overflow: hidden; border: 1px solid #f0f0f0; margin-bottom: 8px; }
 
 .tabla-head {
   display: grid; grid-template-columns: 2fr 1fr 1fr 32px;
@@ -374,6 +390,20 @@
   padding: 8px 12px; border-bottom: 1px solid #f5f5f5;
   &:last-child { border-bottom: none; }
   span { font-size: 12px; color: #444; }
+}
+
+/* NUEVO: filas del carrito son clicables */
+.tabla-row-editable {
+  cursor: pointer;
+  transition: background 0.15s;
+  &:active { background: #FDF0F3; }
+}
+
+/* NUEVO: hint debajo de la tabla del carrito */
+.carrito-hint {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: #AAA; margin: 0 0 14px 2px;
+  ion-icon { font-size: 13px; }
 }
 
 .carrito-vacio { text-align: center; color: #bbb; font-size: 14px; padding: 20px 0; }

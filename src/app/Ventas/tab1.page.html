@@ -98,6 +98,7 @@
                   class="cliente-input"
                   placeholder="Cédula, apellido o nombre negocio"
                   [(ngModel)]="busquedaCliente"
+                  (ngModelChange)="buscarClienteEnVivo($event)"
                   (keyup.enter)="buscarCliente()"
                 />
               </div>
@@ -175,8 +176,12 @@
             class="producto-card"
             *ngFor="let producto of productos"
             [class.bloqueado]="!clienteSeleccionado || (producto.stock ?? 0) <= 0"
+            [class.producto-seleccionado]="estaEnCarrito(producto.id!)"
             (click)="abrirProducto(producto)"
           >
+            <!-- NUEVO: punto rojo cuando el producto está en el carrito -->
+            <div class="seleccionado-dot" *ngIf="estaEnCarrito(producto.id!)"></div>
+
             <div
               class="stock-badge"
               *ngIf="(producto.stock ?? 0) <= 5 && (producto.stock ?? 0) > 0"
@@ -387,6 +392,7 @@
   </ion-modal>
 
   <!-- ===== MODAL PRODUCTO ===== -->
+  <!-- CAMBIO: título y botón cambian cuando estamos en modo edición (editandoCarritoIndex >= 0) -->
   <ion-modal
     [isOpen]="mostrarProducto"
     (didDismiss)="cerrarProducto()"
@@ -398,7 +404,7 @@
     <ng-template>
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ productoSeleccionado?.nombre }}</ion-title>
+          <ion-title>{{ editandoCarritoIndex >= 0 ? 'Editar producto' : productoSeleccionado?.nombre }}</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="cerrarProducto()"
               ><ion-icon name="close-outline"></ion-icon
@@ -476,7 +482,7 @@
             >
           </div>
           <button class="btn-nativo" (click)="agregarAlCarrito()">
-            Agregar
+            {{ editandoCarritoIndex >= 0 ? 'Guardar cambios' : 'Agregar' }}
           </button>
         </div>
       </ion-content>
@@ -520,15 +526,28 @@
               <span>Producto</span><span>Cant.</span><span>Total</span
               ><span></span>
             </div>
-            <div class="tabla-row" *ngFor="let item of carrito; let i = index">
+            <!-- CAMBIO: tap en fila → abre edición; basura con stopPropagation -->
+            <div
+              class="tabla-row tabla-row-editable"
+              *ngFor="let item of carrito; let i = index"
+              (click)="editarItemCarrito(item, i)"
+            >
               <span>{{ item.nombre }}</span>
               <span>{{ item.cantidad }}</span>
               <span>${{ item.subtotal.toFixed(2) }}</span>
-              <button class="btn-eliminar" (click)="eliminarDelCarrito(i)">
+              <button
+                class="btn-eliminar"
+                (click)="$event.stopPropagation(); eliminarDelCarrito(i)"
+              >
                 <ion-icon name="trash-outline"></ion-icon>
               </button>
             </div>
           </div>
+          <!-- NUEVO: hint de edición -->
+          <p class="carrito-hint" *ngIf="carrito.length > 0">
+            <ion-icon name="create-outline"></ion-icon>
+            Toca un producto para editar cantidad o precio
+          </p>
           <p class="carrito-vacio" *ngIf="carrito.length === 0">
             Sin productos aún
           </p>

@@ -40,13 +40,14 @@ export class Tab1Page implements OnInit, OnDestroy {
     sector: '',
     telefono: '',
     esParticular: false,
-    esRuc: false, // ← nuevo flag RUC
+    esRuc: false,
   };
   erroresCliente: any = {};
   guardandoCliente = false;
 
   mostrarProducto = false;
   productoSeleccionado: Producto | null = null;
+  editandoCarritoIndex = -1;
   itemProducto = {
     cantidad: 0,
     precio: 0,
@@ -152,25 +153,15 @@ export class Tab1Page implements OnInit, OnDestroy {
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
-    const invSub = this.socketService
-      .on('inventario_actualizado')
-      .subscribe(() => {
-        if (!this.authService.estaLogueado()) {
-          this.detenerSocket();
-          return;
-        }
-        if (this.mostrarProducto) return;
-        this.actualizarStockSilencioso();
-      });
-    const cliSub = this.socketService
-      .on('clientes_actualizado')
-      .subscribe(() => {
-        if (!this.authService.estaLogueado()) {
-          this.detenerSocket();
-          return;
-        }
-        this.cargarClientes();
-      });
+    const invSub = this.socketService.on('inventario_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      if (this.mostrarProducto) return;
+      this.actualizarStockSilencioso();
+    });
+    const cliSub = this.socketService.on('clientes_actualizado').subscribe(() => {
+      if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
+      this.cargarClientes();
+    });
     this.socketSubs = [invSub, cliSub];
   }
 
@@ -181,10 +172,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // ── STOCK SILENCIOSO ──────────────────────────────────────────────────────
   actualizarStockSilencioso() {
-    if (!this.authService.estaLogueado()) {
-      this.detenerPolling();
-      return;
-    }
+    if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.mostrarProducto) return;
     this.inventarioService.getBodega().subscribe({
       next: (inventario) => {
@@ -241,43 +229,19 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   cargarClientes() {
     this.clienteService.getAll().subscribe({
-      next: (data: Cliente[]) => {
-        this.clientes = data;
-      },
-      error: (err: any) => {
-        console.error('Error cargando clientes:', err);
-      },
+      next: (data: Cliente[]) => { this.clientes = data; },
+      error: (err: any) => { console.error('Error cargando clientes:', err); },
     });
   }
 
   // ── MENU ──────────────────────────────────────────────────────────────────
-  abrirMenu() {
-    this.menuAbierto = true;
-  }
-  cerrarMenu() {
-    this.menuAbierto = false;
-  }
-  cerrarSesion() {
-    this.authService.logout();
-    this.menuAbierto = false;
-    this.router.navigate(['/login']);
-  }
-  irAClientes() {
-    this.cerrarMenu();
-    this.router.navigate(['/clientes']);
-  }
-  irAHistorial() {
-    this.cerrarMenu();
-    this.router.navigate(['/historial']);
-  }
-  irAInventario() {
-    this.cerrarMenu();
-    this.router.navigate(['/inventario']);
-  }
-  irACaja() {
-    this.cerrarMenu();
-    this.router.navigate(['/caja']);
-  }
+  abrirMenu()     { this.menuAbierto = true; }
+  cerrarMenu()    { this.menuAbierto = false; }
+  cerrarSesion()  { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
+  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
+  irACaja()       { this.cerrarMenu(); this.router.navigate(['/caja']); }
 
   // ── BUSCAR CLIENTE ────────────────────────────────────────────────────────
   buscarCliente() {
@@ -288,32 +252,59 @@ export class Tab1Page implements OnInit, OnDestroy {
       this.errorCliente = 'Ingresa una cédula (10 dígitos) o apellido válido';
       return;
     }
-
     const esCedula = /^\d{10}$/.test(valor);
     const esRuc = /^\d{13}$/.test(valor);
     let coincidencias: Cliente[];
-
     if (esCedula || esRuc) {
       coincidencias = this.clientes.filter((c) => c.cedula_ruc === valor);
     } else {
       const q = valor.toLowerCase();
+      const iniciaPalabra = (texto: string) =>
+        texto.toLowerCase().split(/\s+/).some(palabra => palabra.startsWith(q));
       coincidencias = this.clientes.filter(
         (c) =>
-          c.apellido.toLowerCase().includes(q) ||
-          c.nombre.toLowerCase().includes(q) ||
-          (c.nombre_negocio && c.nombre_negocio.toLowerCase().includes(q))
+          iniciaPalabra(c.apellido) ||
+          iniciaPalabra(c.nombre) ||
+          (c.nombre_negocio && iniciaPalabra(c.nombre_negocio))
       );
     }
-
     if (coincidencias.length === 0) {
       this.clienteSeleccionado = null;
-      this.errorCliente =
-        'Cliente no encontrado. Usa el botón + para registrarlo.';
+      this.errorCliente = 'Cliente no encontrado. Usa el botón + para registrarlo.';
     } else if (coincidencias.length === 1) {
       this.seleccionarCliente(coincidencias[0]);
     } else {
       this.clientesCoincidentes = coincidencias;
     }
+  }
+
+  // Búsqueda en vivo mientras el usuario escribe
+  buscarClienteEnVivo(valor: string) {
+    this.clientesCoincidentes = [];
+    this.errorCliente = '';
+    const v = (valor || '').trim();
+    if (v.length < 1) return;
+
+    const esCedula = /^\d{10}$/.test(v);
+    const esRuc    = /^\d{13}$/.test(v);
+
+    if (esCedula || esRuc) {
+      const found = this.clientes.filter(c => c.cedula_ruc === v);
+      if (found.length === 1) { this.seleccionarCliente(found[0]); return; }
+      this.clientesCoincidentes = found;
+      return;
+    }
+
+    const q = v.toLowerCase();
+    const iniciaPalabra = (texto: string) =>
+      texto.toLowerCase().split(/\s+/).some(palabra => palabra.startsWith(q));
+
+    this.clientesCoincidentes = this.clientes.filter(
+      c =>
+        iniciaPalabra(c.apellido) ||
+        iniciaPalabra(c.nombre) ||
+        (c.nombre_negocio && iniciaPalabra(c.nombre_negocio))
+    );
   }
 
   seleccionarCliente(cliente: Cliente) {
@@ -341,27 +332,18 @@ export class Tab1Page implements OnInit, OnDestroy {
     this._ejecutarLimpiarCliente();
   }
 
-  cancelarLimpiarCliente() {
-    this.mostrarConfirmarLimpiar = false;
-  }
+  cancelarLimpiarCliente() { this.mostrarConfirmarLimpiar = false; }
 
   private _ejecutarLimpiarCliente() {
-    if (
-      this.carritoGuardadoEnBD &&
-      this.carrito.length > 0 &&
-      this.clienteSeleccionado
-    ) {
-      this.carritoPendiente
-        .guardar({
-          cliente_id: this.clienteSeleccionado.id!,
-          items: this.carrito,
-          iva_percent: this.ivaPercent,
-          forma_pago: this.formaPago,
-          monto_recibido:
-            this.formaPago === 'Efectivo' ? this.montoRecibido : null,
-          vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
-        })
-        .subscribe();
+    if (this.carritoGuardadoEnBD && this.carrito.length > 0 && this.clienteSeleccionado) {
+      this.carritoPendiente.guardar({
+        cliente_id: this.clienteSeleccionado.id!,
+        items: this.carrito,
+        iva_percent: this.ivaPercent,
+        forma_pago: this.formaPago,
+        monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+        vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
+      }).subscribe();
     }
     this.clienteSeleccionado = null;
     this.clientesCoincidentes = [];
@@ -402,64 +384,42 @@ export class Tab1Page implements OnInit, OnDestroy {
   }
 
   // ── AGREGAR CLIENTE ───────────────────────────────────────────────────────
-  abrirAgregarCliente() {
-    this.mostrarAgregarCliente = true;
-  }
+  abrirAgregarCliente() { this.mostrarAgregarCliente = true; }
 
   cerrarAgregarCliente() {
     this.mostrarAgregarCliente = false;
     this.nuevoCliente = {
-      cedula_ruc: '',
-      nombre: '',
-      apellido: '',
-      negocio: '',
-      email: '',
-      direccion: '',
-      sector: '',
-      telefono: '',
-      esParticular: false,
-      esRuc: false,
+      cedula_ruc: '', nombre: '', apellido: '', negocio: '',
+      email: '', direccion: '', sector: '', telefono: '',
+      esParticular: false, esRuc: false,
     };
     this.erroresCliente = {};
   }
-validarCedulaExistente() {
-  const base = this.nuevoCliente.cedula_ruc.trim();
-  console.log('validando cedula:', base, 'longitud:', base.length);
-  if (base.length !== 10 || /[^0-9]/.test(base)) return;
 
-  const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
+  validarCedulaExistente() {
+    const base = this.nuevoCliente.cedula_ruc.trim();
+    if (base.length !== 10 || /[^0-9]/.test(base)) return;
+    const cedula = this.nuevoCliente.esRuc ? `${base}001` : base;
+    this.clienteService.verificarCedula(cedula).subscribe({
+      next: (res: any) => {
+        this.erroresCliente.cedula_ruc = res.existe
+          ? 'Ya existe un cliente con esta cédula/RUC' : '';
+      },
+      error: () => {},
+    });
+  }
 
-  this.clienteService.verificarCedula(cedula).subscribe({
-    next: (res: any) => {
-      if (res.existe) {
-        this.erroresCliente.cedula_ruc = 'Ya existe un cliente con esta cédula/RUC';
-      } else {
-        this.erroresCliente.cedula_ruc = '';
-      }
-    },
-    error: () => {}
-  });
-}
-
-  // ── CÉDULA / RUC ──────────────────────────────────────────────────────────
-  // Solo permite números, máximo 10 dígitos (el 001 se agrega automáticamente al guardar)
   onCedulaChange(valor: string) {
     this.nuevoCliente.cedula_ruc = valor.replace(/\D/g, '').slice(0, 10);
-    if (this.nuevoCliente.cedula_ruc.length < 10) {
-      this.erroresCliente.cedula_ruc = '';
-    }
+    if (this.nuevoCliente.cedula_ruc.length < 10) this.erroresCliente.cedula_ruc = '';
   }
 
-toggleRuc() {
-  this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
-  this.erroresCliente.cedula_ruc = '';
-  // Revalidar con el nuevo tipo (cédula o RUC)
-  if (this.nuevoCliente.cedula_ruc.length === 10) {
-    this.validarCedulaExistente();
+  toggleRuc() {
+    this.nuevoCliente.esRuc = !this.nuevoCliente.esRuc;
+    this.erroresCliente.cedula_ruc = '';
+    if (this.nuevoCliente.cedula_ruc.length === 10) this.validarCedulaExistente();
   }
-}
 
-  // Devuelve el valor final a guardar: cédula sola o cédula + "001" si es RUC
   private getCedulaParaGuardar(): string {
     const cedula = this.nuevoCliente.cedula_ruc.trim();
     return this.nuevoCliente.esRuc ? `${cedula}001` : cedula;
@@ -468,64 +428,30 @@ toggleRuc() {
   guardarCliente() {
     const errorCedulaPreexistente = this.erroresCliente.cedula_ruc;
     this.erroresCliente = {};
-    if (errorCedulaPreexistente) {
-      this.erroresCliente.cedula_ruc = errorCedulaPreexistente;
-    }
+    if (errorCedulaPreexistente) this.erroresCliente.cedula_ruc = errorCedulaPreexistente;
 
     let valido = true;
     const cedula = this.nuevoCliente.cedula_ruc.trim();
 
-    if (!cedula) {
-      this.erroresCliente.cedula_ruc = 'La cédula es requerida';
-      valido = false;
-    } else if (/[^0-9]/.test(cedula)) {
-      this.erroresCliente.cedula_ruc = 'Solo números';
-      valido = false;
-    } else if (cedula.length !== 10) {
-      this.erroresCliente.cedula_ruc = 'Debe tener 10 dígitos';
-      valido = false;
-    }
+    if (!cedula) { this.erroresCliente.cedula_ruc = 'La cédula es requerida'; valido = false; }
+    else if (/[^0-9]/.test(cedula)) { this.erroresCliente.cedula_ruc = 'Solo números'; valido = false; }
+    else if (cedula.length !== 10) { this.erroresCliente.cedula_ruc = 'Debe tener 10 dígitos'; valido = false; }
 
-    if (
-      !this.nuevoCliente.nombre.trim() ||
-      !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre)
-    ) {
-      this.erroresCliente.nombre = 'Nombre inválido';
-      valido = false;
+    if (!this.nuevoCliente.nombre.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.nombre)) {
+      this.erroresCliente.nombre = 'Nombre inválido'; valido = false;
     }
-    if (
-      !this.nuevoCliente.apellido.trim() ||
-      !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido)
-    ) {
-      this.erroresCliente.apellido = 'Apellido inválido';
-      valido = false;
+    if (!this.nuevoCliente.apellido.trim() || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,}$/.test(this.nuevoCliente.apellido)) {
+      this.erroresCliente.apellido = 'Apellido inválido'; valido = false;
     }
-    if (
-      !this.nuevoCliente.direccion.trim() ||
-      this.nuevoCliente.direccion.trim().length < 5
-    ) {
-      this.erroresCliente.direccion = 'Dirección requerida (mín. 5 chars)';
-      valido = false;
+    if (!this.nuevoCliente.direccion.trim() || this.nuevoCliente.direccion.trim().length < 5) {
+      this.erroresCliente.direccion = 'Dirección requerida (mín. 5 chars)'; valido = false;
     }
     const tel = this.nuevoCliente.telefono.trim();
-    if (!tel) {
-      this.erroresCliente.telefono = 'Requerido';
-      valido = false;
-    } else if (/[^0-9]/.test(tel)) {
-      this.erroresCliente.telefono = 'Solo números';
-      valido = false;
-    } else if (tel.length !== 10 && tel.length !== 7) {
-      this.erroresCliente.telefono = 'Celular (10) o fijo (7)';
-      valido = false;
-    }
-    if (
-      this.nuevoCliente.email &&
-      !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(
-        this.nuevoCliente.email
-      )
-    ) {
-      this.erroresCliente.email = 'Email inválido';
-      valido = false;
+    if (!tel) { this.erroresCliente.telefono = 'Requerido'; valido = false; }
+    else if (/[^0-9]/.test(tel)) { this.erroresCliente.telefono = 'Solo números'; valido = false; }
+    else if (tel.length !== 10 && tel.length !== 7) { this.erroresCliente.telefono = 'Celular (10) o fijo (7)'; valido = false; }
+    if (this.nuevoCliente.email && !/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(this.nuevoCliente.email)) {
+      this.erroresCliente.email = 'Email inválido'; valido = false;
     }
     if (!valido) return;
     if (this.erroresCliente.cedula_ruc) return;
@@ -558,28 +484,72 @@ toggleRuc() {
     });
   }
 
-  // ── PRODUCTO ──────────────────────────────────────────────────────────────
+  // ── PRODUCTO — tap en grid agrega directo al carrito ──────────────────────
   async abrirProducto(producto: Producto) {
     if (!this.clienteSeleccionado) return;
     if ((producto.stock ?? 0) <= 0) {
       const toast = await this.toastCtrl.create({
-        message: 'Sin stock disponible',
-        duration: 2000,
-        position: 'bottom',
-        color: 'danger',
+        message: 'Sin stock disponible', duration: 2000,
+        position: 'bottom', color: 'danger',
       });
       await toast.present();
       return;
     }
-    this.productoSeleccionado = producto;
-    this.itemProducto = {
-      cantidad: 0,
-      precio: +producto.precio_x_mayor,
-      descuento: 0,
-      subtotal: 0,
+
+    // Si ya está en el carrito → deseleccionar (eliminar)
+    const idx = this.carrito.findIndex(i => i.producto_id === producto.id);
+    if (idx !== -1) {
+      this.eliminarDelCarrito(idx);
+      return;
+    }
+
+    // Agregar con 1 unidad y precio mayor por defecto
+    const precio = +producto.precio_x_mayor;
+    this.carrito.push({
+      producto_id: producto.id,
+      nombre: producto.nombre,
+      cantidad: 1,
+      precio_unitario: precio,
       tipoPrecio: 'mayor',
+      descuento: 0,
+      subtotal: precio,
+    });
+    const gridIdx = this.productos.findIndex(p => p.id === producto.id);
+    if (gridIdx !== -1)
+      this.productos[gridIdx] = {
+        ...this.productos[gridIdx],
+        stock: (this.productos[gridIdx].stock ?? 0) - 1,
+      };
+    this.carritoGuardadoEnBD = false;
+  }
+
+  // ── EDITAR item desde carrito ─────────────────────────────────────────────
+  editarItemCarrito(item: any, index: number) {
+    const producto = this.productos.find(p => p.id === item.producto_id);
+    // Stock disponible = stock actual en grid + lo que ya tiene este item
+    this.productoSeleccionado = producto
+      ? { ...producto, stock: (producto.stock ?? 0) + item.cantidad }
+      : {
+          id: item.producto_id, nombre: item.nombre,
+          precio_x_mayor: item.precio_unitario,
+          precio_x_menor: item.precio_unitario,
+          stock: item.cantidad, descripcion: '', categoria: '', activo: true,
+        } as any;
+
+    this.itemProducto = {
+      cantidad: item.cantidad,
+      precio: item.precio_unitario,
+      descuento: item.descuento,
+      subtotal: item.subtotal,
+      tipoPrecio: item.tipoPrecio || 'mayor',
     };
+    this.editandoCarritoIndex = index;
     this.mostrarProducto = true;
+  }
+
+  // ── Helper ────────────────────────────────────────────────────────────────
+  estaEnCarrito(productoId: number): boolean {
+    return this.carrito.some(i => i.producto_id === productoId);
   }
 
   seleccionarTipoPrecio(tipo: 'mayor' | 'menor') {
@@ -593,8 +563,7 @@ toggleRuc() {
 
   onCantidadChange(valor: number) {
     const maxStock = this.productoSeleccionado?.stock ?? 0;
-    this.itemProducto.cantidad =
-      valor > maxStock ? maxStock : valor < 0 ? 0 : valor;
+    this.itemProducto.cantidad = valor > maxStock ? maxStock : valor < 0 ? 0 : valor;
     this.calcularSubtotal();
   }
 
@@ -610,35 +579,56 @@ toggleRuc() {
       this.calcularSubtotal();
     }
   }
+
   cerrarProducto() {
     this.mostrarProducto = false;
+    this.editandoCarritoIndex = -1;
   }
+
   calcularSubtotal() {
     const base = this.itemProducto.cantidad * this.itemProducto.precio;
-    this.itemProducto.subtotal =
-      base - (base * this.itemProducto.descuento) / 100;
+    this.itemProducto.subtotal = base - (base * this.itemProducto.descuento) / 100;
   }
 
   agregarAlCarrito() {
-    if (this.itemProducto.cantidad <= 0 || this.itemProducto.precio <= 0)
-      return;
-    this.carrito.push({
-      producto_id: this.productoSeleccionado!.id,
-      nombre: this.productoSeleccionado!.nombre,
-      cantidad: this.itemProducto.cantidad,
-      precio_unitario: this.itemProducto.precio,
-      tipoPrecio: this.itemProducto.tipoPrecio,
-      descuento: this.itemProducto.descuento,
-      subtotal: this.itemProducto.subtotal,
-    });
-    const idx = this.productos.findIndex(
-      (p) => p.id === this.productoSeleccionado!.id
-    );
-    if (idx !== -1)
-      this.productos[idx] = {
-        ...this.productos[idx],
-        stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad,
+    if (this.itemProducto.cantidad <= 0 || this.itemProducto.precio <= 0) return;
+
+    if (this.editandoCarritoIndex >= 0) {
+      // Modo edición — ajustar stock
+      const itemAnterior = this.carrito[this.editandoCarritoIndex];
+      const gridIdx = this.productos.findIndex(p => p.id === itemAnterior.producto_id);
+      if (gridIdx !== -1)
+        this.productos[gridIdx] = {
+          ...this.productos[gridIdx],
+          stock: (this.productos[gridIdx].stock ?? 0) + itemAnterior.cantidad - this.itemProducto.cantidad,
+        };
+
+      this.carrito[this.editandoCarritoIndex] = {
+        ...itemAnterior,
+        cantidad: this.itemProducto.cantidad,
+        precio_unitario: this.itemProducto.precio,
+        tipoPrecio: this.itemProducto.tipoPrecio,
+        descuento: this.itemProducto.descuento,
+        subtotal: this.itemProducto.subtotal,
       };
+      this.editandoCarritoIndex = -1;
+    } else {
+      this.carrito.push({
+        producto_id: this.productoSeleccionado!.id,
+        nombre: this.productoSeleccionado!.nombre,
+        cantidad: this.itemProducto.cantidad,
+        precio_unitario: this.itemProducto.precio,
+        tipoPrecio: this.itemProducto.tipoPrecio,
+        descuento: this.itemProducto.descuento,
+        subtotal: this.itemProducto.subtotal,
+      });
+      const idx = this.productos.findIndex(p => p.id === this.productoSeleccionado!.id);
+      if (idx !== -1)
+        this.productos[idx] = {
+          ...this.productos[idx],
+          stock: (this.productos[idx].stock ?? 0) - this.itemProducto.cantidad,
+        };
+    }
     this.carritoGuardadoEnBD = false;
     this.cerrarProducto();
   }
@@ -648,37 +638,22 @@ toggleRuc() {
     this.puedesCerrarCarrito = () =>
       new Promise((resolve) => {
         const modalContent = document.querySelector('ion-modal .modal-content');
-        if (!modalContent) {
-          resolve(true);
-          return;
-        }
-        (modalContent as any)
-          .getScrollElement()
-          .then((el: HTMLElement) => {
-            resolve(el.scrollTop < 10);
-          })
+        if (!modalContent) { resolve(true); return; }
+        (modalContent as any).getScrollElement()
+          .then((el: HTMLElement) => { resolve(el.scrollTop < 10); })
           .catch(() => resolve(true));
       });
     this.mostrarCarrito = true;
   }
-  cerrarCarrito() {
-    this.mostrarCarrito = false;
-    this.montoRecibido = 0;
-  }
+
+  cerrarCarrito() { this.mostrarCarrito = false; this.montoRecibido = 0; }
 
   forzarCerrarCarrito() {
     this.puedesCerrarCarrito = true;
     if (this.modalCarritoRef) {
-      this.modalCarritoRef
-        .dismiss()
-        .then(() => {
-          this.mostrarCarrito = false;
-          this.montoRecibido = 0;
-        })
-        .catch(() => {
-          this.mostrarCarrito = false;
-          this.montoRecibido = 0;
-        });
+      this.modalCarritoRef.dismiss()
+        .then(() => { this.mostrarCarrito = false; this.montoRecibido = 0; })
+        .catch(() => { this.mostrarCarrito = false; this.montoRecibido = 0; });
     } else {
       this.mostrarCarrito = false;
       this.montoRecibido = 0;
@@ -688,8 +663,7 @@ toggleRuc() {
   calcularTotal() {
     const subtotal = this.carrito.reduce((acc, i) => acc + i.subtotal, 0);
     const descuento = this.carrito.reduce(
-      (acc, i) => acc + (i.cantidad * i.precio_unitario * i.descuento) / 100,
-      0
+      (acc, i) => acc + (i.cantidad * i.precio_unitario * i.descuento) / 100, 0
     );
     const iva = subtotal * (this.ivaPercent / 100);
     return { subtotal, descuento, iva, total: subtotal + iva };
@@ -703,48 +677,39 @@ toggleRuc() {
     if (this.carrito.length === 0) return;
     if (!this.clienteSeleccionado) {
       const toast = await this.toastCtrl.create({
-        message: 'Selecciona un cliente primero',
-        duration: 2000,
-        position: 'bottom',
-        color: 'warning',
+        message: 'Selecciona un cliente primero', duration: 2000,
+        position: 'bottom', color: 'warning',
       });
       await toast.present();
       return;
     }
     this.guardandoCarrito = true;
-    this.carritoPendiente
-      .guardar({
-        cliente_id: this.clienteSeleccionado.id!,
-        items: this.carrito,
-        iva_percent: this.ivaPercent,
-        forma_pago: this.formaPago,
-        monto_recibido:
-          this.formaPago === 'Efectivo' ? this.montoRecibido : null,
-        vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
-      })
-      .subscribe({
-        next: async () => {
-          this.guardandoCarrito = false;
-          this.carritoGuardadoEnBD = true;
-          const toast = await this.toastCtrl.create({
-            message: 'Carrito guardado ✓',
-            duration: 2000,
-            position: 'bottom',
-            color: 'success',
-          });
-          await toast.present();
-        },
-        error: async () => {
-          this.guardandoCarrito = false;
-          const toast = await this.toastCtrl.create({
-            message: 'Error al guardar el carrito',
-            duration: 2000,
-            position: 'bottom',
-            color: 'danger',
-          });
-          await toast.present();
-        },
-      });
+    this.carritoPendiente.guardar({
+      cliente_id: this.clienteSeleccionado.id!,
+      items: this.carrito,
+      iva_percent: this.ivaPercent,
+      forma_pago: this.formaPago,
+      monto_recibido: this.formaPago === 'Efectivo' ? this.montoRecibido : null,
+      vuelto: this.formaPago === 'Efectivo' ? this.calcularVuelto() : null,
+    }).subscribe({
+      next: async () => {
+        this.guardandoCarrito = false;
+        this.carritoGuardadoEnBD = true;
+        const toast = await this.toastCtrl.create({
+          message: 'Carrito guardado ✓', duration: 2000,
+          position: 'bottom', color: 'success',
+        });
+        await toast.present();
+      },
+      error: async () => {
+        this.guardandoCarrito = false;
+        const toast = await this.toastCtrl.create({
+          message: 'Error al guardar el carrito', duration: 2000,
+          position: 'bottom', color: 'danger',
+        });
+        await toast.present();
+      },
+    });
   }
 
   eliminarDelCarrito(index: number) {
@@ -762,22 +727,16 @@ toggleRuc() {
   finalizarPedido() {
     if (this.carrito.length === 0) return;
     if (!this.clienteSeleccionado) {
-      this.toastCtrl
-        .create({
-          message: 'Selecciona un cliente primero',
-          duration: 2000,
-          position: 'bottom',
-          color: 'warning',
-        })
-        .then((t) => t.present());
+      this.toastCtrl.create({
+        message: 'Selecciona un cliente primero', duration: 2000,
+        position: 'bottom', color: 'warning',
+      }).then((t) => t.present());
       return;
     }
     const totales = this.calcularTotal();
     const tipoPagoMap: any = {
-      Efectivo: 'efectivo',
-      Transferencia: 'transferencia',
-      Pendiente: 'credito',
-      Cheques: 'cheques',
+      Efectivo: 'efectivo', Transferencia: 'transferencia',
+      Pendiente: 'credito', Cheques: 'cheques',
     };
     const payload = {
       cliente_id: this.clienteSeleccionado.id,
@@ -802,19 +761,14 @@ toggleRuc() {
       next: (res: any) => {
         this.ultimoRecibo = {
           ventaId: res?.id,
-          clienteNombre: `${this.clienteSeleccionado!.nombre} ${
-            this.clienteSeleccionado!.apellido
-          }`,
+          clienteNombre: `${this.clienteSeleccionado!.nombre} ${this.clienteSeleccionado!.apellido}`,
           clienteCedula: this.clienteSeleccionado!.cedula_ruc,
           clienteTelefono: this.clienteSeleccionado!.telefono || '-',
           clienteDireccion: this.clienteSeleccionado!.direccion || '-',
           vendedor: this.vendedorNombreCompleto,
           items: this.carrito.map((i) => ({
-            nombre: i.nombre,
-            cantidad: i.cantidad,
-            precio_unitario: i.precio_unitario,
-            descuento: i.descuento,
-            subtotal: i.subtotal,
+            nombre: i.nombre, cantidad: i.cantidad,
+            precio_unitario: i.precio_unitario, descuento: i.descuento, subtotal: i.subtotal,
           })),
           subtotal: totales.subtotal,
           descuento: totales.descuento,
@@ -825,9 +779,7 @@ toggleRuc() {
           montoRecibido: this.montoRecibido || 0,
           vuelto: this.calcularVuelto(),
         };
-        this.carritoPendiente
-          .eliminar(this.clienteSeleccionado!.id!)
-          .subscribe();
+        this.carritoPendiente.eliminar(this.clienteSeleccionado!.id!).subscribe();
         this.carrito = [];
         this.clienteSeleccionado = null;
         this.busquedaCliente = '';
@@ -841,19 +793,28 @@ toggleRuc() {
       },
       error: (err) => {
         console.error('Error guardando pedido:', err);
+        const msg = err?.error?.error || err?.message || 'Error al guardar el pedido';
+        const esCierre = msg.toLowerCase().includes('cierre');
+        this.toastCtrl.create({
+          message: esCierre
+            ? '⚠️ No hay caja abierta. Abre un cierre en la pestaña Caja antes de vender.'
+            : `Error: ${msg}`,
+          duration: 4000,
+          position: 'bottom',
+          color: 'danger',
+        }).then((t) => t.present());
       },
     });
   }
 
   // ── IMPRESIÓN ─────────────────────────────────────────────────────────────
-  cerrarModalImpresion() {
-    this.mostrarModalImpresion = false;
-    this.serviciosDebug = '';
-  }
+  cerrarModalImpresion() { this.mostrarModalImpresion = false; this.serviciosDebug = ''; }
+
   async verServicios() {
     this.serviciosDebug = 'Cargando...';
     this.serviciosDebug = await this.printerService.descubrirServicios();
   }
+
   async imprimirRecibo() {
     if (!this.ultimoRecibo) return;
     this.imprimiendo = true;
@@ -862,64 +823,43 @@ toggleRuc() {
       this.estadoImpresion = 'impreso';
     } catch (err: any) {
       this.estadoImpresion = 'error';
-      this.errorImpresion =
-        err?.message || 'Error de conexión con la impresora';
+      this.errorImpresion = err?.message || 'Error de conexión con la impresora';
     } finally {
       this.imprimiendo = false;
     }
   }
 
   // ── BLUETOOTH ─────────────────────────────────────────────────────────────
-  abrirConexionBT() {
-    this.mostrarModalBT = true;
-    this.escanearBT();
-  }
-  cerrarConexionBT() {
-    this.mostrarModalBT = false;
-  }
+  abrirConexionBT() { this.mostrarModalBT = true; this.escanearBT(); }
+  cerrarConexionBT() { this.mostrarModalBT = false; }
+
   escanearBT() {
     this.escaneandoBT = true;
     this.dispositivosBT = [];
-    this.printerService
-      .escanearDispositivos()
-      .then((devices: any[]) => {
-        this.dispositivosBT = devices;
-      })
-      .catch(() => {
-        this.dispositivosBT = [];
-      })
-      .finally(() => {
-        this.escaneandoBT = false;
-      });
+    this.printerService.escanearDispositivos()
+      .then((devices: any[]) => { this.dispositivosBT = devices; })
+      .catch(() => { this.dispositivosBT = []; })
+      .finally(() => { this.escaneandoBT = false; });
   }
+
   conectarImpresora(dispositivo: any) {
     if (this.conectandoBT === dispositivo.address) return;
     this.conectandoBT = dispositivo.address;
-    this.printerService
-      .conectar(dispositivo.address, dispositivo.name)
+    this.printerService.conectar(dispositivo.address, dispositivo.name)
       .then(() => {
         this.conectandoBT = '';
         this.cerrarConexionBT();
-        this.toastCtrl
-          .create({
-            message: `✓ Conectado a ${dispositivo.name || dispositivo.address}`,
-            duration: 2000,
-            position: 'bottom',
-            color: 'success',
-          })
-          .then((t) => t.present());
+        this.toastCtrl.create({
+          message: `✓ Conectado a ${dispositivo.name || dispositivo.address}`,
+          duration: 2000, position: 'bottom', color: 'success',
+        }).then((t) => t.present());
       })
       .catch(() => {
         this.conectandoBT = '';
-        this.toastCtrl
-          .create({
-            message:
-              'Error al conectar. Verifica que la impresora esté encendida.',
-            duration: 3000,
-            position: 'bottom',
-            color: 'danger',
-          })
-          .then((t) => t.present());
+        this.toastCtrl.create({
+          message: 'Error al conectar. Verifica que la impresora esté encendida.',
+          duration: 3000, position: 'bottom', color: 'danger',
+        }).then((t) => t.present());
       });
   }
 }
