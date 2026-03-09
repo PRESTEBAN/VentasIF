@@ -3,10 +3,8 @@
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
 
-      <!-- OVERLAY MENU -->
       <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
 
-      <!-- MENU LATERAL -->
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
           <img src="assets/LOGO_IF.png" alt="Logo" class="menu-logo" />
@@ -23,15 +21,12 @@
           <div class="menu-item" (click)="irAClientes()"><ion-icon name="people-outline"></ion-icon><span>Clientes</span></div>
           <div class="menu-item" (click)="irAHistorial()"><ion-icon name="time-outline"></ion-icon><span>Historial</span></div>
           <div class="menu-item menu-item-active" (click)="cerrarMenu()"><ion-icon name="cube-outline"></ion-icon><span>Inventario</span></div>
-          <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-</div>
+          <div class="menu-item" (click)="irACaja()"><ion-icon name="wallet-outline"></ion-icon><span>Caja</span></div>
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()"><ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span></div>
         </div>
       </div>
 
-      <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -39,15 +34,15 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.png" alt="Logo" />
         </div>
-        <!-- Botones según tab activo -->
         <div class="header-actions">
-          <!-- Tab inventario: botón + para agregar ingreso -->
           <ng-container *ngIf="tabActivo === 'inventario'">
+            <div class="header-icon-btn header-icon-btn-danger" (click)="confirmarVaciar()" title="Vaciar inventario">
+              <ion-icon name="trash-outline"></ion-icon>
+            </div>
             <div class="header-icon-btn" (click)="activarIngreso()" *ngIf="!modoIngreso">
               <ion-icon name="add-outline"></ion-icon>
             </div>
           </ng-container>
-          <!-- Tab productos: botón lápiz + botón agregar -->
           <ng-container *ngIf="tabActivo === 'productos'">
             <div class="header-icon-btn" (click)="activarEditarPrecios()" *ngIf="!modoEditarPrecios">
               <ion-icon name="pencil-outline"></ion-icon>
@@ -59,26 +54,18 @@
         </div>
       </div>
 
-      <!-- MAIN -->
       <div class="main-content">
 
-        <!-- TABS -->
         <div class="tabs-row">
-          <div class="tab-btn" [class.activo]="tabActivo === 'inventario'" (click)="cambiarTab('inventario')">
-            Inventario
-          </div>
-          <div class="tab-btn" [class.activo]="tabActivo === 'productos'" (click)="cambiarTab('productos')">
-            Productos
-          </div>
+          <div class="tab-btn" [class.activo]="tabActivo === 'inventario'" (click)="cambiarTab('inventario')">Inventario</div>
+          <div class="tab-btn" [class.activo]="tabActivo === 'productos'" (click)="cambiarTab('productos')">Productos</div>
         </div>
 
-        <!-- LOADING -->
         <div class="loading-inv" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando...</p>
         </div>
 
-        <!-- ══ TAB INVENTARIO ══ -->
         <div *ngIf="!cargando && tabActivo === 'inventario'">
 
           <div class="accion-bar" *ngIf="modoIngreso">
@@ -96,33 +83,23 @@
           <div class="items-lista">
             <div class="item-card" *ngFor="let item of items"
               [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
-
               <span class="item-nombre">{{ item.nombre }}</span>
-
               <span class="stock-badge"
                 [class.badge-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
                 {{ item.stock_actual }}
               </span>
-
-              <!-- Stepper solo en modo ingreso -->
               <div class="stepper-wrap" *ngIf="modoIngreso">
                 <button class="step-btn" (click)="decrementar(item)">−</button>
-                <input
-                  type="number"
-                  class="step-input"
+                <input type="number" class="step-input"
                   [class.negativo]="(item.ingreso || 0) < 0"
                   [class.positivo]="(item.ingreso || 0) > 0"
-                  [(ngModel)]="item.ingreso"
-                  placeholder="0"
-                />
+                  [(ngModel)]="item.ingreso" placeholder="0" />
                 <button class="step-btn" (click)="incrementar(item)">+</button>
               </div>
-
             </div>
           </div>
         </div>
 
-        <!-- ══ TAB PRODUCTOS (precios) ══ -->
         <div *ngIf="!cargando && tabActivo === 'productos'">
 
           <div class="accion-bar" *ngIf="modoEditarPrecios">
@@ -138,38 +115,27 @@
 
           <div class="items-lista-precios">
             <div class="precio-card" *ngFor="let item of items">
-
               <div class="precio-card-header">
                 <span class="precio-nombre">{{ item.nombre }}</span>
               </div>
-
               <div class="precio-row">
                 <div class="precio-campo">
                   <label>Precio x menor</label>
-                  <span class="precio-tag" *ngIf="!modoEditarPrecios">
-                    ${{ item.precio_x_menor | number:'1.2-2' }}
-                  </span>
+                  <span class="precio-tag" *ngIf="!modoEditarPrecios">${{ item.precio_x_menor | number:'1.2-2' }}</span>
                   <div class="precio-input-wrap" *ngIf="modoEditarPrecios">
                     <span class="precio-prefix">$</span>
-                    <input type="number" class="precio-input"
-                      [(ngModel)]="editPrecios[item.producto_id].menor"
-                      step="0.01" min="0" />
+                    <input type="number" class="precio-input" [(ngModel)]="editPrecios[item.producto_id].menor" step="0.01" min="0" />
                   </div>
                 </div>
                 <div class="precio-campo">
                   <label>Precio x mayor</label>
-                  <span class="precio-tag" *ngIf="!modoEditarPrecios">
-                    ${{ item.precio_x_mayor | number:'1.2-2' }}
-                  </span>
+                  <span class="precio-tag" *ngIf="!modoEditarPrecios">${{ item.precio_x_mayor | number:'1.2-2' }}</span>
                   <div class="precio-input-wrap" *ngIf="modoEditarPrecios">
                     <span class="precio-prefix">$</span>
-                    <input type="number" class="precio-input"
-                      [(ngModel)]="editPrecios[item.producto_id].mayor"
-                      step="0.01" min="0" />
+                    <input type="number" class="precio-input" [(ngModel)]="editPrecios[item.producto_id].mayor" step="0.01" min="0" />
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -191,7 +157,6 @@
       </ion-header>
       <ion-content class="modal-form-content">
         <div class="modal-body">
-
           <div class="form-row">
             <div class="form-group half">
               <label>Código*</label>
@@ -203,18 +168,15 @@
               <input type="text" [(ngModel)]="nuevoProducto.unidad_medida" placeholder="unidad" />
             </div>
           </div>
-
           <div class="form-group">
             <label>Nombre*</label>
             <input type="text" [(ngModel)]="nuevoProducto.nombre" placeholder="nombre del producto" />
             <span class="field-error" *ngIf="erroresNuevo.nombre">{{ erroresNuevo.nombre }}</span>
           </div>
-
           <div class="form-group">
             <label>Categoría</label>
             <input type="text" [(ngModel)]="nuevoProducto.categoria" placeholder="categoría" />
           </div>
-
           <div class="form-row">
             <div class="form-group half">
               <label>Precio x menor*</label>
@@ -233,7 +195,6 @@
               <span class="field-error" *ngIf="erroresNuevo.precio_x_mayor">{{ erroresNuevo.precio_x_mayor }}</span>
             </div>
           </div>
-
           <div class="form-row">
             <div class="form-group half">
               <label>Peso (gramos)</label>
@@ -244,22 +205,45 @@
               <input type="number" [(ngModel)]="nuevoProducto.stock_inicial" placeholder="0" />
             </div>
           </div>
-
           <div class="form-group">
             <label>Descripción</label>
             <input type="text" [(ngModel)]="nuevoProducto.descripcion" placeholder="descripción opcional" />
           </div>
-
           <span class="field-error" *ngIf="erroresNuevo.general">{{ erroresNuevo.general }}</span>
-
           <button class="btn-nativo" (click)="guardarNuevoProducto()" [disabled]="guardandoNuevo">
             <ion-spinner name="crescent" *ngIf="guardandoNuevo" style="margin-right:8px;width:18px;height:18px;"></ion-spinner>
             {{ guardandoNuevo ? 'Guardando...' : 'Guardar Producto' }}
           </button>
-
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
 
 </ion-content>
+
+<!-- ===== MODAL CONFIRMAR VACIAR INVENTARIO ===== -->
+<div class="print-overlay" *ngIf="mostrarConfirmarVaciar">
+  <div class="print-card" (click)="$event.stopPropagation()">
+    <div class="print-icono-wrap" style="background: #FFEBEE;">
+      <ion-icon name="trash-outline" style="color: #C62828; font-size: 32px;"></ion-icon>
+    </div>
+    <h2 class="print-titulo" style="color: #2D1B0E">¿Vaciar inventario?</h2>
+    <p style="text-align:center; color:#888; font-size:13px; margin: 0 0 4px 0; line-height: 1.5">
+      Se registrará una <strong>salida</strong> de todo el stock actual.<br/>
+      Todos los productos quedarán en <strong>0</strong>.
+    </p>
+    <p style="text-align:center; color:#E53935; font-size:12px; font-weight:700; margin: 0 0 16px 0;">
+      Esta acción no se puede deshacer.
+    </p>
+    <div class="print-btns">
+      <button class="print-btn print-btn-skip" (click)="cancelarVaciar()" [disabled]="vaciandoInventario">
+        <ion-icon name="arrow-back-outline"></ion-icon> Cancelar
+      </button>
+      <button class="print-btn print-btn-danger" (click)="vaciarInventario()" [disabled]="vaciandoInventario">
+        <ion-spinner name="crescent" *ngIf="vaciandoInventario" style="width:14px;height:14px;margin-right:4px;"></ion-spinner>
+        <ion-icon name="trash-outline" *ngIf="!vaciandoInventario"></ion-icon>
+        {{ vaciandoInventario ? 'Vaciando...' : 'Vaciar todo' }}
+      </button>
+    </div>
+  </div>
+</div>

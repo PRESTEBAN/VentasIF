@@ -41,6 +41,9 @@ export class InventarioPage implements OnInit, OnDestroy {
   erroresNuevo: any = {};
   guardandoNuevo = false;
 
+  mostrarConfirmarVaciar = false;
+  vaciandoInventario = false;
+
   private pollingInterval: any = null;
   private readonly POLLING_MS = 20000;
   private socketSubs: Subscription[] = [];
@@ -74,7 +77,6 @@ export class InventarioPage implements OnInit, OnDestroy {
     this.detenerSocket();
   }
 
-  // ── POLLING (respaldo) ────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -85,29 +87,18 @@ export class InventarioPage implements OnInit, OnDestroy {
     if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
-  // ── SOCKET (tiempo real) ──────────────────────────────────────────────────
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
-
-    // Stock cambió (movimiento bodega/meson, venta, nuevo producto, precios)
     const invSub = this.socketService.on<{ accion?: string; producto_id?: number; stock_actual?: number }>('inventario_actualizado').subscribe((data) => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
-      // No actualizar si el usuario está editando
       if (this.modoIngreso || this.modoEditarPrecios) return;
-
-      // Si viene producto_id y stock_actual, actualizar solo ese item (más eficiente)
       if (data?.producto_id && data?.stock_actual !== undefined) {
         const idx = this.items.findIndex(i => i.producto_id === data.producto_id);
-        if (idx >= 0) {
-          this.items[idx] = { ...this.items[idx], stock_actual: data.stock_actual };
-          return;
-        }
+        if (idx >= 0) { this.items[idx] = { ...this.items[idx], stock_actual: data.stock_actual }; return; }
       }
-      // Si no hay datos específicos o el producto es nuevo, recargar todo
       this.actualizarSilencioso();
     });
-
     this.socketSubs = [invSub];
   }
 
@@ -116,20 +107,15 @@ export class InventarioPage implements OnInit, OnDestroy {
     this.socketSubs = [];
   }
 
-  // ── ACTUALIZACIÓN SILENCIOSA ──────────────────────────────────────────────
   actualizarSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (this.modoIngreso || this.modoEditarPrecios) return;
     this.inventarioService.getBodega().subscribe({
-      next: (data: ItemInventario[]) => {
-        this.items = data.map(i => ({ ...i, ingreso: null }));
-        this.inicializarPrecios();
-      },
+      next: (data: ItemInventario[]) => { this.items = data.map(i => ({ ...i, ingreso: null })); this.inicializarPrecios(); },
       error: () => {}
     });
   }
 
-  // ── CARGA ─────────────────────────────────────────────────────────────────
   cargarInventario() {
     this.cargando = true;
     this.inventarioService.getBodega().subscribe({
@@ -165,12 +151,10 @@ export class InventarioPage implements OnInit, OnDestroy {
   guardarIngresos() {
     const conCambio = this.items.filter(i => i.ingreso !== null && i.ingreso !== 0);
     if (conCambio.length === 0) { this.mensajeIngreso = 'No hay cambios para guardar'; return; }
-
     this.guardandoIngreso = true;
     this.mensajeIngreso = '';
     let pendientes = conCambio.length;
     let errores = 0;
-
     conCambio.forEach(item => {
       const cantidad = Math.abs(item.ingreso!);
       const tipo = item.ingreso! > 0 ? 'entrada' : 'salida';
@@ -198,7 +182,6 @@ export class InventarioPage implements OnInit, OnDestroy {
       return e && (e.mayor !== i.precio_x_mayor || e.menor !== i.precio_x_menor);
     });
     if (cambios.length === 0) { this.modoEditarPrecios = false; return; }
-
     this.guardandoPrecios = true;
     let pendientes = cambios.length;
     cambios.forEach(item => {
@@ -233,11 +216,44 @@ export class InventarioPage implements OnInit, OnDestroy {
     if (!this.nuevoProducto.precio_x_menor || this.nuevoProducto.precio_x_menor <= 0)
       { this.erroresNuevo.precio_x_menor = 'Precio menor requerido'; valido = false; }
     if (!valido) return;
-
     this.guardandoNuevo = true;
     this.inventarioService.crearProducto({ ...this.nuevoProducto, stock_inicial: this.nuevoProducto.stock_inicial || 0 }).subscribe({
       next: () => { this.guardandoNuevo = false; this.cerrarNuevoProducto(); this.cargarInventario(); },
       error: (err: any) => { this.guardandoNuevo = false; this.erroresNuevo.general = err.error?.error || 'Error al guardar'; }
+    });
+  }
+
+  // ── VACIAR INVENTARIO ─────────────────────────────────────────────────────
+  confirmarVaciar() { this.mostrarConfirmarVaciar = true; }
+  cancelarVaciar()  { this.mostrarConfirmarVaciar = false; }
+
+  vaciarInventario() {
+    const conStock = this.items.filter(i => i.stock_actual > 0);
+    if (conStock.length === 0) { this.mostrarConfirmarVaciar = false; return; }
+    this.vaciandoInventario = true;
+    let pendientes = conStock.length;
+    let errores = 0;
+    conStock.forEach(item => {
+      this.inventarioService.registrarMovimiento(item.producto_id, item.stock_actual, 'salida').subscribe({
+        next: (res: any) => {
+          const idx = this.items.findIndex(i => i.producto_id === item.producto_id);
+          if (idx >= 0) { this.items[idx].stock_actual = res.stock_actual ?? 0; }
+          pendientes--;
+          if (pendientes === 0) {
+            this.vaciandoInventario = false;
+            this.mostrarConfirmarVaciar = false;
+            if (errores > 0) this.mensajeIngreso = `${errores} producto(s) no pudieron vaciarse`;
+          }
+        },
+        error: () => {
+          errores++; pendientes--;
+          if (pendientes === 0) {
+            this.vaciandoInventario = false;
+            this.mostrarConfirmarVaciar = false;
+            this.mensajeIngreso = `${errores} error(es) al vaciar inventario`;
+          }
+        }
+      });
     });
   }
 

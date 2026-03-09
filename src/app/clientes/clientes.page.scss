@@ -37,6 +37,7 @@
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .spinning ion-icon { animation: spin 0.8s linear infinite; }
 
+.glaceado { display: block; width: 100%; height: auto; margin-top: -55px; position: relative; z-index: 3; }
 
 /* ── MAIN CONTENT ── */
 .main-content {
@@ -44,7 +45,6 @@
   min-height: calc(100vh - 11vh);
   padding: 0 0 60px 0;
   position: relative; z-index: 4;
-  border-radius: 0 0 20px 20px ;
 }
 
 /* ── TÍTULO + STATS ── */
@@ -120,19 +120,20 @@
 
 /* ── LISTA CLIENTES ── */
 .clientes-lista {
-  display: flex; flex-direction: column; gap: 8px;
-  padding: 0 16px;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0;
 }
 
 .cliente-card {
   background: #fff;
-  border-radius: 16px;
+  border-radius: 0;
   padding: 13px 14px;
   display: flex; align-items: center; gap: 12px;
-  box-shadow: 0 2px 10px rgba(89,15,35,0.08);
-  border: 1.5px solid #F0E4D4;
+  box-shadow: none;
+  border: none;
+  border-bottom: 1px solid #F0E4D4;
   cursor: pointer; transition: all 0.18s;
-  &:active { transform: scale(0.98); box-shadow: 0 1px 4px rgba(89,15,35,0.08); }
+  &:active { transform: scale(0.98); }
 }
 
 .cliente-avatar {
@@ -275,6 +276,14 @@
   font-size: 20px; font-weight: 800; color: white;
   margin: 4px 0 0 0; text-align: center; letter-spacing: -0.3px;
 }
+.detalle-cedula {
+  font-size: 12px; color: rgba(255,255,255,0.7); margin: 2px 0 0 0;
+  font-weight: 500; text-align: center; letter-spacing: 0.5px;
+}
+.detalle-negocio {
+  font-size: 13px; color: rgba(255,255,255,0.9); margin: 2px 0 0 0;
+  font-weight: 600; text-align: center;
+}
 .detalle-tags { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
 .detalle-tag {
   background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
@@ -354,12 +363,57 @@
 .btn-cancelar { flex: 1; padding: 12px; border-radius: 10px; border: 1.5px solid #ccc; background: white; color: #555; font-size: 0.9rem; font-weight: 600; }
 .btn-eliminar-confirm { flex: 1; padding: 12px; border-radius: 10px; border: none; background: #e53935; color: white; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 
-.detalle-cedula-hero {
-  font-size: 12px; color: rgba(255,255,255,0.6);
-  font-weight: 500; margin: 0; letter-spacing: 0.5px;
+/* ── ABONO REDISEÑO ── */
+.abono-cliente-hero {
+  display: flex; align-items: center; gap: 14px;
+  background: linear-gradient(135deg, #FDF0F3, #F5E6EE);
+  border: 1.5px solid #E8C8D0; border-radius: 16px;
+  padding: 14px 16px; margin-bottom: 20px;
 }
 
-.detalle-negocio-hero {
-  font-size: 13px; color: rgba(255,255,255,0.85);
-  font-weight: 600; margin: 0;
+.abono-avatar {
+  width: 48px; height: 48px; border-radius: 14px; flex-shrink: 0;
+  background: linear-gradient(135deg, #590F23, #7A2020);
+  display: flex; align-items: center; justify-content: center;
+  span { font-size: 18px; font-weight: 900; color: white; }
+}
+
+.abono-cli-nombre {
+  font-size: 15px; font-weight: 800; color: #2D1B0E; margin: 0 0 3px 0;
+}
+
+.abono-cli-saldo {
+  font-size: 13px; font-weight: 700; color: #2E7D32; margin: 0;
+  &.saldo-rojo { color: #D32F2F; }
+}
+
+/* Botones forma de pago */
+.abono-pago-btns {
+  display: flex; gap: 8px; margin-top: 4px;
+  button {
+    flex: 1; padding: 10px 6px;
+    border: 1.5px solid #E8D5BF; border-radius: 12px;
+    background: #FDFAF6; color: #8B6040;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    -webkit-appearance: none; transition: all 0.18s;
+    ion-icon { font-size: 18px; }
+    &:active { transform: scale(0.96); }
+    &.pago-active {
+      background: linear-gradient(135deg, #590F23, #7A2020);
+      border-color: #590F23; color: white;
+      box-shadow: 0 4px 12px rgba(89,15,35,0.25);
+      ion-icon { color: white; }
+    }
+  }
+}
+
+/* Textarea notas */
+.abono-notas {
+  width: 100%; border: 1.5px solid #E8D5BF; border-radius: 12px;
+  padding: 11px 14px; font-size: 14px; color: #2D1B0E;
+  outline: none; background: #FDFAF6; font-family: inherit;
+  resize: none; box-sizing: border-box; font-weight: 500;
+  &::placeholder { color: #C4A882; font-weight: 400; }
+  &:focus { border-color: #590F23; background: #fff; }
 }

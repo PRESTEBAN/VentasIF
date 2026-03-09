@@ -7,7 +7,7 @@ import { AuthService } from './auth';
 
 export interface Cliente {
   id?: number;
-  cedula_ruc: string;
+  cedula_ruc: string;        // ← renombrado de cedula
   nombre: string;
   apellido: string;
   nombre_negocio?: string | null;
@@ -32,14 +32,13 @@ export interface Movimiento {
   num_orden: string;
   fecha: string;
   valor: number;
-  saldo_orden: number;
   estado: string;
   saldo_acumulado: number;
 }
 
 export interface SaldoCliente {
   id: number;
-  cedula: string;
+  cedula_ruc: string;        // ← renombrado de cedula
   cliente: string;
   nombre_negocio: string | null;
   tipo_cliente: string;
@@ -52,34 +51,29 @@ export interface SaldoCliente {
 
 @Injectable({ providedIn: 'root' })
 export class ClienteService {
+
   private apiUrl = `${environment.apiUrl}/api/v1/clientes`;
   private abonosUrl = `${environment.apiUrl}/api/v1/abonos`;
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
   private getHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      Authorization: `Bearer ${this.authService.getToken()}`,
-    });
+    return new HttpHeaders({ 'Authorization': `Bearer ${this.authService.getToken()}` });
   }
 
   getAll(): Observable<Cliente[]> {
-    return this.http.get<Cliente[]>(this.apiUrl, {
-      headers: this.getHeaders(),
-    });
+    return this.http.get<Cliente[]>(this.apiUrl, { headers: this.getHeaders() });
   }
 
   getSaldos(): Observable<SaldoCliente[]> {
-    return this.http.get<SaldoCliente[]>(`${this.apiUrl}/saldos`, {
-      headers: this.getHeaders(),
-    });
+    return this.http.get<SaldoCliente[]>(`${this.apiUrl}/saldos`, { headers: this.getHeaders() });
   }
 
   getAllConSaldos(): Observable<Cliente[]> {
     return forkJoin({ clientes: this.getAll(), saldos: this.getSaldos() }).pipe(
       map(({ clientes, saldos }) =>
-        clientes.map((c) => {
-          const s = saldos.find((x) => x.id === c.id);
+        clientes.map(c => {
+          const s = saldos.find(x => x.id === c.id);
           return {
             ...c,
             saldo: s ? +s.saldo_pendiente : 0,
@@ -93,56 +87,34 @@ export class ClienteService {
   }
 
   getById(id: number): Observable<Cliente> {
-    return this.http.get<Cliente>(`${this.apiUrl}/${id}`, {
-      headers: this.getHeaders(),
-    });
+    return this.http.get<Cliente>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
   create(cliente: Cliente): Observable<{ mensaje: string; id: number }> {
-    return this.http.post<{ mensaje: string; id: number }>(
-      this.apiUrl,
-      cliente,
-      { headers: this.getHeaders() }
-    );
+    return this.http.post<{ mensaje: string; id: number }>(this.apiUrl, cliente, { headers: this.getHeaders() });
   }
 
-  update(
-    id: number,
-    cliente: Partial<Cliente>
-  ): Observable<{ mensaje: string }> {
-    return this.http.put<{ mensaje: string }>(`${this.apiUrl}/${id}`, cliente, {
-      headers: this.getHeaders(),
-    });
+  update(id: number, cliente: Partial<Cliente>): Observable<{ mensaje: string }> {
+    return this.http.put<{ mensaje: string }>(`${this.apiUrl}/${id}`, cliente, { headers: this.getHeaders() });
   }
 
   remove(id: number): Observable<{ mensaje: string }> {
-    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}`, {
-      headers: this.getHeaders(),
-    });
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
   getMovimientos(clienteId: number): Observable<Movimiento[]> {
-    return this.http.get<Movimiento[]>(
-      `${this.abonosUrl}/cliente/${clienteId}`,
-      { headers: this.getHeaders() }
-    );
+    return this.http.get<Movimiento[]>(`${this.abonosUrl}/cliente/${clienteId}`, { headers: this.getHeaders() });
   }
 
-  registrarAbono(
-    ventaId: number,
-    clienteId: number,
-    monto: number
-  ): Observable<any> {
-    return this.http.post(
-      `${this.abonosUrl}`,
-      { venta_id: ventaId, cliente_id: clienteId, monto },
-      { headers: this.getHeaders() }
-    );
+  verificarCedula(cedula: string): Observable<{ existe: boolean }> {
+    return this.http.get<{ existe: boolean }>(`${this.apiUrl}/verificar-cedula/${cedula}`, { headers: this.getHeaders() });
   }
-  verificarCedula(cedula_ruc: string) {
-    return this.http.get(
-      `${environment.apiUrl}/api/v1/clientes/verificar-cedula/${cedula_ruc}`,
-      { headers: this.getHeaders() }
-    );
+
+  registrarAbono(ventaId: number, clienteId: number, monto: number, formaPago?: string, notas?: string): Observable<any> {
+    return this.http.post(`${this.abonosUrl}`, {
+      venta_id: ventaId, cliente_id: clienteId, monto,
+      forma_pago: formaPago || 'Efectivo',
+      notas: notas || null
+    }, { headers: this.getHeaders() });
   }
 }

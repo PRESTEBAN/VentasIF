@@ -8,7 +8,6 @@
 .cacao-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; z-index: 1; pointer-events: none; }
 .content-wrapper { position: relative; z-index: 2; width: 100%; }
 
-/* HEADER */
 .header-card {
   background: rgb(246,246,246); width: 100%; height: 11vh;
   display: flex; align-items: center; justify-content: space-between;
@@ -18,17 +17,16 @@
 .header-logo { flex: 1; display: flex; justify-content: center; img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; box-shadow: 0 2px 6px rgba(0,0,0,0.12); } }
 .header-actions { display: flex; gap: 10px; align-items: center; }
 .header-icon-btn { cursor: pointer; ion-icon { font-size: 26px; color: #590F23; } }
+.header-icon-btn-danger { ion-icon { color: #C62828 !important; } }
 
 .glaceado { display: block; width: 100%; height: auto; margin-top: -55px; position: relative; z-index: 3; }
 
-/* MAIN */
 .main-content {
   background: #FDF6EE; min-height: calc(100vh - 11vh);
   padding: 0 0 40px 0; position: relative; z-index: 4;
   border-radius: 16px 16px 0 0;
 }
 
-/* TABS */
 .tabs-row {
   display: flex; margin: 0 14px 16px 14px;
   background: #F0E6DA; border-radius: 12px; padding: 4px;
@@ -41,10 +39,8 @@
   &.activo { background: #590F23; color: white; box-shadow: 0 2px 8px rgba(89,15,35,0.3); }
 }
 
-/* LOADING */
 .loading-inv { display: flex; flex-direction: column; align-items: center; padding: 40px 0; gap: 12px; p { color: #999; font-size: 14px; margin: 0; } }
 
-/* BARRA ACCIÓN */
 .accion-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 14px 10px 14px; background: #FFF3E0;
@@ -65,7 +61,6 @@
 }
 .msg-error { font-size: 12px; color: #E53935; text-align: center; padding: 6px; margin: 0; }
 
-/* LISTA DE ITEMS */
 .items-lista { display: flex; flex-direction: column; gap: 8px; padding: 0 14px; }
 
 .item-card {
@@ -90,7 +85,6 @@
   &.badge-bajo { background: #FFEBEE; color: #C62828; }
 }
 
-/* Stepper +/- para ingreso */
 .stepper-wrap {
   display: flex; align-items: center; gap: 0;
   border: 1.5px solid #590F23; border-radius: 10px; overflow: hidden;
@@ -110,7 +104,6 @@
   &.positivo { color: #2E7D32; }
 }
 
-/* TABLA PRECIOS */
 .items-lista-precios { display: flex; flex-direction: column; gap: 8px; padding: 0 14px; }
 
 .precio-card {
@@ -127,18 +120,14 @@
 
 .precio-nombre { font-size: 14px; font-weight: 700; color: #2D1B0E; }
 
-.precio-row {
-  display: flex; gap: 10px;
-}
+.precio-row { display: flex; gap: 10px; }
 
 .precio-campo {
   flex: 1; display: flex; flex-direction: column; gap: 4px;
   label { font-size: 10px; font-weight: 700; color: #AAA; text-transform: uppercase; letter-spacing: 0.5px; }
 }
 
-.precio-tag {
-  font-size: 15px; font-weight: 800; color: #590F23;
-}
+.precio-tag { font-size: 15px; font-weight: 800; color: #590F23; }
 
 .precio-input-wrap {
   display: flex; align-items: center;
@@ -148,22 +137,70 @@
 .precio-prefix { padding: 6px 6px; font-size: 12px; font-weight: 700; color: #590F23; }
 .precio-input { flex: 1; border: none; background: transparent; padding: 6px 6px 6px 0; font-size: 14px; font-weight: 700; color: #333; outline: none; width: 100%; }
 
-/* MENÚ LATERAL */
 .menu-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; &.open { opacity: 1; pointer-events: all; } }
 .menu-lateral { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: #fff; z-index: 1000; transition: left 0.3s ease; display: flex; flex-direction: column; box-shadow: 4px 0 20px rgba(0,0,0,0.2); &.open { left: 0; } }
 .menu-header { background: linear-gradient(to bottom, #590F23, #7A2020); padding: 50px 20px 24px 20px; display: flex; flex-direction: column; align-items: center; gap: 6px; .menu-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3); } .menu-titulo { color: #fff; font-size: 16px; font-weight: 700; margin: 0; } }
-.menu-items { padding: 12px 0 100px 0; overflow-y: auto; flex: 1; }.menu-usuario { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.85); font-size: 13px; margin: 2px 0 0 0; font-weight: 500; ion-icon { font-size: 16px; } }
-
+.menu-items { padding: 12px 0 100px 0; overflow-y: auto; flex: 1; }
+.menu-usuario { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.85); font-size: 13px; margin: 2px 0 0 0; font-weight: 500; ion-icon { font-size: 16px; } }
 .menu-seccion { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 1px; margin: 8px 24px 4px 24px; padding: 0; }
 .menu-item { display: flex; align-items: center; gap: 16px; padding: 12px 24px; cursor: pointer; ion-icon { font-size: 20px; color: #590F23; } span { font-size: 15px; color: #333; font-weight: 500; } &:active { background: #f5f5f5; } }
 .menu-item-active { background: #FDF0F3; ion-icon { color: #590F23; } span { color: #590F23; font-weight: 700; } }
 .menu-divider { height: 1px; background: #eee; margin: 8px 24px; }
 .menu-logout { ion-icon { color: #e53935; } span { color: #e53935; font-weight: 600; } }
 
-/* MODAL FORM */
 .modal-form-content { --background: #fff; }
 .modal-body { padding: 20px; }
 .form-row { display: flex; gap: 12px; }
 .form-group { display: flex; flex-direction: column; margin-bottom: 14px; &.half { flex: 1; } label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 6px; } input { border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px 12px; font-size: 14px; color: #333; outline: none; background: #f9f9f9; &::placeholder { color: #bbb; } &:focus { border-color: #590F23; } } }
 .field-error { font-size: 10px; color: #e53935; margin-top: 3px; }
 .btn-nativo { width: 100%; padding: 14px; background: #590F23; color: white; border: none; border-radius: 30px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; -webkit-appearance: none; display: flex; align-items: center; justify-content: center; &:disabled { opacity: 0.6; } }
+
+/* ── MODAL VACIAR INVENTARIO ── */
+.print-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.65); z-index: 3000;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.print-card {
+  background: #fff; border-radius: 24px; width: 88%; max-width: 320px;
+  padding: 28px 22px 22px 22px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.print-icono-wrap {
+  width: 68px; height: 68px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.print-titulo {
+  font-size: 20px; font-weight: 900; margin: 0; text-align: center;
+}
+
+.print-btns {
+  display: flex; gap: 8px; width: 100%;
+}
+
+.print-btn {
+  flex: 1; padding: 11px 8px; border: none; border-radius: 12px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  -webkit-appearance: none; transition: transform 0.15s;
+  ion-icon { font-size: 15px; }
+  &:active { transform: scale(0.96); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.print-btn-skip   { background: #F0E6DA; color: #590F23; }
+.print-btn-danger {
+  background: linear-gradient(135deg, #C62828, #B71C1C);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(198,40,40,0.35);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn  { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
