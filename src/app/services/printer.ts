@@ -327,6 +327,7 @@ const LOGO_BYTES = new Uint8Array([
 
 const STORAGE_KEY_ADDRESS = 'bt_printer_address';
 const STORAGE_KEY_NAME    = 'bt_printer_name';
+declare const cordova: any;
 
 @Injectable({ providedIn: 'root' })
 export class PrinterService {
@@ -351,12 +352,50 @@ export class PrinterService {
     }
   }
 
-  async escanearDispositivos(): Promise<any[]> {
-    return new Promise((resolve) => {
-      if (!this.bt) { resolve([]); return; }
-      this.bt.list((devices: any[]) => resolve(devices || []), () => resolve([]));
+
+// Reemplaza escanearDispositivos() con esto:
+async escanearDispositivos(): Promise<any[]> {
+  await this.pedirPermisosBluetooth();
+  return new Promise((resolve) => {
+    if (!this.bt) { resolve([]); return; }
+    this.bt.list((devices: any[]) => resolve(devices || []), () => resolve([]));
+  });
+}
+
+private async pedirPermisosBluetooth(): Promise<void> {
+  // Solo aplica en Android nativo con Cordova
+  if (typeof cordova === 'undefined' || !cordova.plugins?.permissions) return;
+
+  const permissions = cordova.plugins.permissions;
+  const apiLevel = parseInt((window as any).device?.version?.split('.')[0] || '0', 10);
+
+  const permisos: string[] = apiLevel >= 12
+    ? [
+        'android.permission.BLUETOOTH_CONNECT',
+        'android.permission.BLUETOOTH_SCAN',
+      ]
+    : [
+        'android.permission.BLUETOOTH',
+        'android.permission.ACCESS_FINE_LOCATION',
+      ];
+
+  for (const permiso of permisos) {
+    await new Promise<void>((resolve) => {
+      permissions.checkPermission(
+        permiso,
+        (status: any) => {
+          if (status.hasPermission) { resolve(); return; }
+          permissions.requestPermission(
+            permiso,
+            () => resolve(),
+            () => resolve() // continúa aunque se deniegue
+          );
+        },
+        () => resolve()
+      );
     });
   }
+}
 
   async conectar(address: string, name: string): Promise<void> {
     return new Promise((resolve, reject) => {
