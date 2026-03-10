@@ -381,7 +381,7 @@ export class PrinterService {
       const device = (window as any).device;
       const sdkVersion = parseInt(device?.sdkVersion || '0', 10);
       const androidVersion = parseInt((device?.version || '0').split('.')[0], 10);
-      const esAndroid12Plus = sdkVersion >= 31 || (sdkVersion === 0 && androidVersion >= 12);
+     const esAndroid12Plus = sdkVersion >= 31 || (sdkVersion === 0 && androidVersion >= 12) || (sdkVersion === 0 && androidVersion === 0);
 
       const permisos: string[] = esAndroid12Plus
         ? [
@@ -653,7 +653,7 @@ export class PrinterService {
     // ── PIE ───────────────────────────────────────────────────────────────
     t += CENTER;
     t += '*Este documento no tiene validez legal*' + LF;
-    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + LF;
+    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + BOLD_OFF + LF;
     t += LF + LF + LF + CUT;
 
     await this.escribirTexto(t);
