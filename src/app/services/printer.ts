@@ -572,8 +572,7 @@ export class PrinterService {
     // ── 7. PIE ────────────────────────────────────────────────────────────
     t += CENTER;
     t += '*Este documento no tiene validez legal*' + LF;
-    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + LF;
-    t += 'VUELVA PRONTO!!' + BOLD_OFF + LF;
+    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + BOLD_OFF + LF;
     t += LF + LF + LF + CUT;
 
     await this.escribirTexto(t);

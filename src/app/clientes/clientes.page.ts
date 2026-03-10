@@ -76,6 +76,10 @@ export class ClientesPage implements OnInit, OnDestroy {
   mostrarConfirmarEliminar = false;
   eliminando = false;
 
+  // ── POST-ABONO ────────────────────────────────────────────────────────────
+  mostrarPostAbono = false;
+  datosAbonoParaReimp: DatosReciboAbono | null = null;
+
   constructor(
     public router: Router,
     private clienteService: ClienteService,
@@ -360,14 +364,13 @@ export class ClientesPage implements OnInit, OnDestroy {
         this.cargarMovimientos(this.clienteDetalle!.id!);
         this.cargarClientes();
 
-        // Imprimir recibo de abono
         const c = this.clienteDetalle!;
         const montoAbono  = +this.abonoData.monto!;
         const saldoResta  = +(res.saldo_restante ?? 0);
-        // saldo de la orden antes del abono = saldo restante + lo que se abonó ahora
         const saldoAntes  = saldoResta + montoAbono;
         const user = this.authService.getUsuario();
-        this.printerService.imprimirReciboAbono({
+
+        const datosAbono: DatosReciboAbono = {
           ventaId:          this.abonoData.ventaId!,
           clienteNombre:    `${c.nombre} ${c.apellido}`,
           clienteCedula:    c.cedula_ruc || '',
@@ -379,12 +382,34 @@ export class ClientesPage implements OnInit, OnDestroy {
           saldoPendiente:   saldoAntes,
           valorAbono:       montoAbono,
           saldoRestante:    saldoResta,
-        }).catch(err => console.warn('[Printer] Error al imprimir abono:', err));
+        };
 
-        setTimeout(() => this.cerrarAbono(), 1500);
+        // Imprimir y luego mostrar modal de confirmación
+        this.printerService.imprimirReciboAbono(datosAbono)
+          .catch(err => console.warn('[Printer] Error al imprimir abono:', err))
+          .finally(() => {
+            this.datosAbonoParaReimp = datosAbono;
+            this.mostrarPostAbono = true;
+          });
       },
       error: (err) => { this.guardandoAbono = false; this.erroresAbono.general = err.error?.error || 'Error al registrar abono'; }
     });
+  }
+
+  // ── POST-ABONO ────────────────────────────────────────────────────────────
+  cerrarPostAbono() {
+    this.mostrarPostAbono = false;
+    this.datosAbonoParaReimp = null;
+    this.cerrarAbono();
+  }
+
+  async reimprimirAbono() {
+    if (!this.datosAbonoParaReimp) return;
+    try {
+      await this.printerService.imprimirReciboAbono(this.datosAbonoParaReimp);
+    } catch (err) {
+      console.warn('[Printer] Error al reimprimir:', err);
+    }
   }
 
   // ── AGREGAR CLIENTE ───────────────────────────────────────────────────────

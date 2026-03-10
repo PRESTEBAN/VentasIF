@@ -466,4 +466,33 @@
     </ng-template>
   </ion-modal>
 
+  <!-- ===== MODAL POST-ABONO ===== -->
+  <ion-modal [isOpen]="mostrarPostAbono" (didDismiss)="cerrarPostAbono()"
+    [breakpoints]="[0, 0.38]" [initialBreakpoint]="0.38">
+    <ng-template>
+      <ion-content class="modal-form-content">
+        <div class="modal-body confirmar-body">
+          <div class="confirmar-icono" style="color: #2E7D32;">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+          </div>
+          <h2 class="confirmar-titulo">Abono registrado</h2>
+          <p class="confirmar-texto">
+            El abono fue guardado exitosamente.<br>
+            ¿Deseas reimprimir el recibo?
+          </p>
+          <div class="confirmar-acciones">
+            <button class="btn-cancelar" (click)="cerrarPostAbono()">
+              <ion-icon name="exit-outline" style="margin-right:6px;"></ion-icon>
+              Salir
+            </button>
+            <button class="btn-nativo" style="flex:1; margin-top:0;" (click)="reimprimirAbono()">
+              <ion-icon name="print-outline" style="margin-right:6px;"></ion-icon>
+              Reimprimir
+            </button>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
 </ion-content>
