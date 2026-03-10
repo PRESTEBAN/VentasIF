@@ -4,6 +4,7 @@ import { AuthService } from './services/auth';
 import { Router, NavigationEnd } from '@angular/router';
 import { App } from '@capacitor/app';
 import { filter } from 'rxjs/operators';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-root',
@@ -30,20 +31,20 @@ export class AppComponent implements OnInit {
       this.printerService.intentarReconectar();
     }
 
-    // Guardar la última ruta visitada
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.ultimaRuta = event.urlAfterRedirects;
     });
 
-    // Al volver del background, recargar la misma ruta
-    App.addListener('appStateChange', ({ isActive }) => {
-      if (isActive && this.authService.estaLogueado()) {
-        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-          this.router.navigate([this.ultimaRuta]);
-        });
-      }
-    });
+    if (Capacitor.isNativePlatform()) {
+      App.addListener('appStateChange', ({ isActive }) => {
+        if (isActive && this.authService.estaLogueado()) {
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate([this.ultimaRuta]);
+          });
+        }
+      });
+    }
   }
 }

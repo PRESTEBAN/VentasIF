@@ -17,7 +17,6 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private authService: AuthService, private router: Router) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // No interceptar las llamadas de login/refresh
     if (req.url.includes('/auth/login') || req.url.includes('/auth/refresh')) {
       return next.handle(req);
     }
@@ -27,7 +26,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401) {
+        if (error.status === 401 || error.status === 403) {
           return this.manejarToken401(req, next);
         }
         return throwError(() => error);

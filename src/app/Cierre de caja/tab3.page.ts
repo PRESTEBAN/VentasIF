@@ -41,33 +41,33 @@ export class Tab3Page implements OnInit, OnDestroy {
 
   // ── Total general — NUNCA negativo ──
   get totalGeneral(): number {
-  return Math.max(
-    0,
-    this.totalIngresosVentas +
-    this.totalAbonos +
-    this.ingresosAdicionales -
-    this.totalEgresos
-  );
-}
+    return Math.max(
+      0,
+      this.totalIngresosVentas +
+      this.totalAbonos +
+      this.ingresosAdicionales -
+      this.totalEgresos
+    );
+  }
 
-get egresosExceden(): boolean {
-  return (
-    this.totalEgresos >
-    this.fondoInicial + this.totalIngresosVentas + this.totalAbonos + this.ingresosAdicionales
-  );
-}
+  get egresosExceden(): boolean {
+    return (
+      this.totalEgresos >
+      this.fondoInicial + this.totalIngresosVentas + this.totalAbonos + this.ingresosAdicionales
+    );
+  }
 
-// totalSinFondo ya no es necesario — elimínalo o muéstralo como el total sin incluir el fondo
-// si lo quieres para mostrar "solo lo generado hoy sin contar el fondo":
-get totalSinFondo(): number {
-  return Math.max(
-    0,
-    this.totalIngresosVentas +
-    this.totalAbonos +
-    this.ingresosAdicionales -
-    this.totalEgresos
-  );
-}
+  // totalSinFondo ya no es necesario — elimínalo o muéstralo como el total sin incluir el fondo
+  // si lo quieres para mostrar "solo lo generado hoy sin contar el fondo":
+  get totalSinFondo(): number {
+    return Math.max(
+      0,
+      this.totalIngresosVentas +
+      this.totalAbonos +
+      this.ingresosAdicionales -
+      this.totalEgresos
+    );
+  }
 
   // ── Conteo físico ──
   billetes: number | null = null;
@@ -88,7 +88,7 @@ get totalSinFondo(): number {
     private authService: AuthService,
     private http: HttpClient,
     private socketService: SocketService
-  ) {}
+  ) { }
 
   ngOnInit() {
     const user = this.authService.getUsuario();
@@ -209,7 +209,7 @@ get totalSinFondo(): number {
       .get<any>(`${this.API}/cierres/activo`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => this.procesarCierreActivo(data),
-        error: () => {},
+        error: () => { },
       });
   }
 
@@ -310,9 +310,8 @@ get totalSinFondo(): number {
           );
           if (pendientes.length > 0) {
             this.guardandoCierre = false;
-            this.errorGuardar = `⚠️ Hay ${pendientes.length} orden${
-              pendientes.length > 1 ? 'es' : ''
-            } sin entregar. Finalízalas en Órdenes antes de cerrar.`;
+            this.errorGuardar = `⚠️ Hay ${pendientes.length} orden${pendientes.length > 1 ? 'es' : ''
+              } sin entregar. Finalízalas en Órdenes antes de cerrar.`;
             return;
           }
           this.guardarCierre();
