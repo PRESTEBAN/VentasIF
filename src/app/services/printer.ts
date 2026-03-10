@@ -321,12 +321,11 @@ const LOGO_BYTES = new Uint8Array([
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
 const STORAGE_KEY_ADDRESS = 'bt_printer_address';
-const STORAGE_KEY_NAME = 'bt_printer_name';
+const STORAGE_KEY_NAME    = 'bt_printer_name';
 declare const cordova: any;
 
 @Injectable({ providedIn: 'root' })
@@ -338,9 +337,100 @@ export class PrinterService {
 
   private get bt(): any { return (window as any).bluetoothSerial; }
 
+  // ─────────────────────────────────────────────────────────────────────
+  // FIX PRINCIPAL: pedirPermisosBluetooth
+  //
+  // PROBLEMA ANTERIOR:
+  //   Usaba device.sdkVersion para decidir qué permisos pedir.
+  //   En el Tecno Spark 20C (Android 13, SDK 33), sdkVersion devolvía '0'
+  //   o no estaba disponible → calculaba esAndroid12Plus = false →
+  //   pedía BLUETOOTH + ACCESS_FINE_LOCATION (permisos de Android ≤11)
+  //   en vez de BLUETOOTH_CONNECT + BLUETOOTH_SCAN (requeridos en ≥12).
+  //   Sin BLUETOOTH_CONNECT, bt.list() devuelve [] silenciosamente.
+  //
+  // SOLUCIÓN:
+  //   Para Android 12+ (SDK 31+) siempre pedir los permisos nuevos.
+  //   Como el dispositivo objetivo es Android 13, se piden directamente
+  //   los permisos correctos sin depender de device.sdkVersion.
+  //   Se mantiene fallback para Android ≤11 por si hay otros dispositivos.
+  // ─────────────────────────────────────────────────────────────────────
+  private async pedirPermisosBluetooth(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      const permissions = (window as any).cordova?.plugins?.permissions;
+
+      // Sin plugin de permisos → continuar igual (puede funcionar en algunos devices)
+      if (!permissions) { resolve(); return; }
+
+      // ── Detectar versión de Android de forma robusta ──────────────────
+      // Intentamos navigator.userAgentData, luego device plugin, luego userAgent
+      let androidVersion = 0;
+
+      // Opción 1: cordova-plugin-device (más confiable)
+      const device = (window as any).device;
+      if (device?.version) {
+        androidVersion = parseInt(device.version.split('.')[0], 10);
+      }
+
+      // Opción 2: userAgent como fallback
+      if (androidVersion === 0) {
+        const match = navigator.userAgent.match(/Android\s(\d+)/i);
+        if (match) androidVersion = parseInt(match[1], 10);
+      }
+
+      // Opción 3: si aún no sabemos la versión, asumir Android 12+
+      // para estar seguros (pedir los permisos nuevos nunca hace daño en ≥12)
+      const esAndroid12Plus = androidVersion === 0 || androidVersion >= 12;
+
+      console.log(`[BT Permisos] Android version detectada: ${androidVersion}, esAndroid12Plus: ${esAndroid12Plus}`);
+
+      const permisos: string[] = esAndroid12Plus
+        ? [
+            // Android 12+ (SDK 31+): permisos obligatorios para BT clásico
+            'android.permission.BLUETOOTH_CONNECT',
+            'android.permission.BLUETOOTH_SCAN',
+          ]
+        : [
+            // Android ≤11 (SDK ≤30)
+            'android.permission.BLUETOOTH',
+            'android.permission.ACCESS_FINE_LOCATION',
+          ];
+
+      console.log('[BT Permisos] Pidiendo:', permisos);
+
+      const pedirSiguiente = (index: number) => {
+        if (index >= permisos.length) { resolve(); return; }
+
+        permissions.checkPermission(
+          permisos[index],
+          (status: any) => {
+            if (status.hasPermission) {
+              console.log(`[BT Permisos] Ya tiene: ${permisos[index]}`);
+              pedirSiguiente(index + 1);
+              return;
+            }
+            permissions.requestPermission(
+              permisos[index],
+              (result: any) => {
+                console.log(`[BT Permisos] Resultado ${permisos[index]}:`, result);
+                pedirSiguiente(index + 1);
+              },
+              () => {
+                console.warn(`[BT Permisos] Denegado: ${permisos[index]}`);
+                pedirSiguiente(index + 1);
+              }
+            );
+          },
+          () => pedirSiguiente(index + 1)
+        );
+      };
+
+      pedirSiguiente(0);
+    });
+  }
+
   async intentarReconectar(): Promise<void> {
     const address = localStorage.getItem(STORAGE_KEY_ADDRESS);
-    const name = localStorage.getItem(STORAGE_KEY_NAME) || '';
+    const name    = localStorage.getItem(STORAGE_KEY_NAME) || '';
     if (!address || !this.bt) return;
     try {
       const yaConectado = await this.estaConectado();
@@ -352,64 +442,24 @@ export class PrinterService {
     }
   }
 
-
-  // Reemplaza escanearDispositivos() con esto:
   async escanearDispositivos(): Promise<any[]> {
+    // Pedir permisos ANTES de llamar a bt.list()
     await this.pedirPermisosBluetooth();
+
     console.log('[BT] bt disponible:', !!this.bt);
-    console.log('[BT] bluetoothSerial:', (window as any).bluetoothSerial);
+
     return new Promise((resolve) => {
       if (!this.bt) { resolve([]); return; }
       this.bt.list(
-        (devices: any[]) => { console.log('[BT] devices:', devices); resolve(devices || []); },
-        (err: any) => { console.log('[BT] error:', err); resolve([]); }
+        (devices: any[]) => {
+          console.log('[BT] Dispositivos vinculados encontrados:', devices);
+          resolve(devices || []);
+        },
+        (err: any) => {
+          console.error('[BT] Error al listar dispositivos:', err);
+          resolve([]);
+        }
       );
-    });
-  }
-
-  private async pedirPermisosBluetooth(): Promise<void> {
-    return new Promise<void>((resolve) => {
-      // En Capacitor con cordova-plugin-android-permissions
-      const permissions = (window as any).cordova?.plugins?.permissions;
-      if (!permissions) {
-        // Si no hay plugin de permisos, intentar continuar igual
-        // (funciona en Samsung porque ya los tiene otorgados)
-        resolve();
-        return;
-      }
-
-      const device = (window as any).device;
-      const sdkVersion = parseInt(device?.sdkVersion || '0', 10);
-      const androidVersion = parseInt((device?.version || '0').split('.')[0], 10);
-      const esAndroid12Plus = sdkVersion >= 31 || (sdkVersion === 0 && androidVersion >= 12);
-
-      const permisos: string[] = esAndroid12Plus
-        ? [
-          'android.permission.BLUETOOTH_CONNECT',
-          'android.permission.BLUETOOTH_SCAN',
-        ]
-        : [
-          'android.permission.BLUETOOTH',
-          'android.permission.ACCESS_FINE_LOCATION',
-        ];
-
-      const pedirSiguiente = (index: number) => {
-        if (index >= permisos.length) { resolve(); return; }
-        permissions.checkPermission(
-          permisos[index],
-          (status: any) => {
-            if (status.hasPermission) { pedirSiguiente(index + 1); return; }
-            permissions.requestPermission(
-              permisos[index],
-              () => pedirSiguiente(index + 1),
-              () => pedirSiguiente(index + 1)
-            );
-          },
-          () => pedirSiguiente(index + 1)
-        );
-      };
-
-      pedirSiguiente(0);
     });
   }
 
@@ -433,8 +483,18 @@ export class PrinterService {
     return new Promise((resolve) => {
       if (!this.bt) { resolve(); return; }
       this.bt.disconnect(
-        () => { this.impresora = null; localStorage.removeItem(STORAGE_KEY_ADDRESS); localStorage.removeItem(STORAGE_KEY_NAME); resolve(); },
-        () => { this.impresora = null; localStorage.removeItem(STORAGE_KEY_ADDRESS); localStorage.removeItem(STORAGE_KEY_NAME); resolve(); }
+        () => {
+          this.impresora = null;
+          localStorage.removeItem(STORAGE_KEY_ADDRESS);
+          localStorage.removeItem(STORAGE_KEY_NAME);
+          resolve();
+        },
+        () => {
+          this.impresora = null;
+          localStorage.removeItem(STORAGE_KEY_ADDRESS);
+          localStorage.removeItem(STORAGE_KEY_NAME);
+          resolve();
+        }
       );
     });
   }
@@ -472,19 +532,18 @@ export class PrinterService {
 
     const ESC = '\x1B';
     const LF = '\n';
-    const BOLD_ON = ESC + 'E\x01';
+    const BOLD_ON  = ESC + 'E\x01';
     const BOLD_OFF = ESC + 'E\x00';
-    const CENTER = ESC + 'a\x01';
-    const LEFT = ESC + 'a\x00';
-    const CUT = ESC + 'm';
-    const ANCHO = 32;
-    const LINEA = '-'.repeat(ANCHO);
+    const CENTER   = ESC + 'a\x01';
+    const LEFT     = ESC + 'a\x00';
+    const CUT      = ESC + 'm';
+    const ANCHO    = 32;
+    const LINEA    = '-'.repeat(ANCHO);
 
-    // Columnas tabla: |DESC(13)|CT(3)|PU(6)|TOTAL(5)|  = 32 chars
     const COL_DESC = 13;
     const COL_CANT = 3;
-    const COL_PU = 6;
-    const COL_TOT = 5;
+    const COL_PU   = 6;
+    const COL_TOT  = 5;
 
     const filaTabla = (desc: string, cant: string, pu: string, tot: string): string =>
       '|' + desc.substring(0, COL_DESC).padEnd(COL_DESC) +
@@ -505,16 +564,13 @@ export class PrinterService {
 
     const ahora = new Date();
     const fecha = `${ahora.getDate().toString().padStart(2, '0')}/${(ahora.getMonth() + 1).toString().padStart(2, '0')}/${ahora.getFullYear()}`;
-    const hora = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
-    // N. en lugar de N° para evitar problemas de encoding
+    const hora  = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
     const nroRecibo = datos.ventaId ? String(datos.ventaId).padStart(6, '0') : '------';
 
-    // ── 1. LOGO ───────────────────────────────────────────────────────────
     await this.escribirTexto(CENTER);
     await this.escribirBytes(LOGO_BYTES);
     await this.escribirTexto(LF);
 
-    // ── 2. CABECERA ───────────────────────────────────────────────────────
     let t = CENTER;
     t += BOLD_ON + 'INDUSTRIAL FATIMA' + BOLD_OFF + LF;
     t += 'CALLE DEL BATAN 4-56 Y EL ORO' + LF;
@@ -524,7 +580,6 @@ export class PrinterService {
     t += BOLD_ON + 'No. RECIBO: ' + nroRecibo + BOLD_OFF + LF;
     t += LINEA + LF;
 
-    // ── 3. DATOS DEL CLIENTE ──────────────────────────────────────────────
     t += LEFT;
     t += centrar('DATOS DEL CLIENTE') + LF;
     t += LINEA + LF;
@@ -536,14 +591,13 @@ export class PrinterService {
     t += col2('VENDEDOR:', (datos.vendedor || '-').substring(0, 18)) + LF;
     t += LINEA + LF;
 
-    // ── 4. TABLA PRODUCTOS ────────────────────────────────────────────────
     t += BOLD_ON + filaTabla('Descripcion', 'Ct', 'P.U.', 'Total') + BOLD_OFF + LF;
     t += separadorTabla() + LF;
 
     datos.items.forEach((item: any) => {
-      const pu = `$${(+item.precio_unitario).toFixed(2)}`;
+      const pu  = `$${(+item.precio_unitario).toFixed(2)}`;
       const sub = `$${(+item.subtotal).toFixed(2)}`;
-      const ct = String(item.cantidad);
+      const ct  = String(item.cantidad);
       t += filaTabla(item.nombre, ct, pu, sub) + LF;
       if (item.descuento > 0) {
         t += filaTabla(`Desc. -${item.descuento}%`, '', '', '') + LF;
@@ -551,8 +605,6 @@ export class PrinterService {
     });
 
     t += separadorTabla() + LF;
-
-    // ── 5. TOTALES ────────────────────────────────────────────────────────
     t += col2('Subtotal:', `$${(+datos.subtotal).toFixed(2)}`) + LF;
     if (datos.descuento > 0)
       t += col2('Desc.:', `-$${(+datos.descuento).toFixed(2)}`) + LF;
@@ -561,7 +613,6 @@ export class PrinterService {
     t += BOLD_ON + col2('Total:', `$${(+datos.total).toFixed(2)}`) + BOLD_OFF + LF;
     t += LINEA + LF;
 
-    // ── 6. PAGO ───────────────────────────────────────────────────────────
     t += col2('Tipo de Pago:', datos.formaPago) + LF;
     if (datos.formaPago === 'Efectivo') {
       t += col2('Recibido:', `$${(+datos.montoRecibido).toFixed(2)}`) + LF;
@@ -569,7 +620,6 @@ export class PrinterService {
     }
     t += LINEA + LF;
 
-    // ── 7. PIE ────────────────────────────────────────────────────────────
     t += CENTER;
     t += '*Este documento no tiene validez legal*' + LF;
     t += BOLD_ON + 'GRACIAS POR SU COMPRA' + BOLD_OFF + LF;
@@ -578,7 +628,6 @@ export class PrinterService {
     await this.escribirTexto(t);
   }
 
-  // ── RECIBO DE ABONO ───────────────────────────────────────────────────────
   async imprimirReciboAbono(datos: DatosReciboAbono): Promise<void> {
     const conectado = await this.estaConectado();
     if (!conectado) {
@@ -589,28 +638,26 @@ export class PrinterService {
 
     const ESC = '\x1B';
     const LF = '\n';
-    const BOLD_ON = ESC + 'E\x01';
+    const BOLD_ON  = ESC + 'E\x01';
     const BOLD_OFF = ESC + 'E\x00';
-    const CENTER = ESC + 'a\x01';
-    const LEFT = ESC + 'a\x00';
-    const CUT = ESC + 'm';
-    const ANCHO = 32;
-    const LINEA = '-'.repeat(ANCHO);
+    const CENTER   = ESC + 'a\x01';
+    const LEFT     = ESC + 'a\x00';
+    const CUT      = ESC + 'm';
+    const ANCHO    = 32;
+    const LINEA    = '-'.repeat(ANCHO);
 
     const col2 = (izq: string, der: string): string =>
       izq + ' '.repeat(Math.max(1, ANCHO - izq.length - der.length)) + der;
 
     const ahora = new Date();
     const fecha = `${ahora.getDate().toString().padStart(2, '0')}/${(ahora.getMonth() + 1).toString().padStart(2, '0')}/${ahora.getFullYear()}`;
-    const hora = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
+    const hora  = `${ahora.getHours().toString().padStart(2, '0')}:${ahora.getMinutes().toString().padStart(2, '0')}`;
     const nroRecibo = String(datos.ventaId).padStart(6, '0');
 
-    // ── LOGO ──────────────────────────────────────────────────────────────
     await this.escribirTexto(CENTER);
     await this.escribirBytes(LOGO_BYTES);
     await this.escribirTexto(LF);
 
-    // ── CABECERA ──────────────────────────────────────────────────────────
     let t = CENTER;
     t += BOLD_ON + 'INDUSTRIAL FATIMA' + BOLD_OFF + LF;
     t += 'CALLE DEL BATAN 4-56 Y EL ORO' + LF;
@@ -620,7 +667,6 @@ export class PrinterService {
     t += BOLD_ON + 'No.Recibo(abonado): ' + nroRecibo + BOLD_OFF + LF;
     t += LINEA + LF;
 
-    // ── DATOS DEL CLIENTE ─────────────────────────────────────────────────
     t += LEFT;
     t += ' '.repeat(7) + 'DATOS DEL CLIENTE' + LF;
     t += LINEA + LF;
@@ -632,12 +678,11 @@ export class PrinterService {
     t += col2('Vendedor:', (datos.vendedor || 'Admin').substring(0, 18)) + LF;
     t += LINEA + LF;
 
-    // ── SECCIÓN ABONO ─────────────────────────────────────────────────────
     t += CENTER;
     t += BOLD_ON + 'Abono' + BOLD_OFF + LF;
     t += LINEA + LF;
     t += LEFT;
-    // Formatear fecha de la venta
+
     let fechaVentaStr = 'Sin fecha';
     if (datos.fechaVenta) {
       const fv = new Date(datos.fechaVenta);
@@ -650,10 +695,9 @@ export class PrinterService {
     t += col2('Saldo Restante:', `$${(+datos.saldoRestante).toFixed(2)}`) + LF;
     t += LINEA + LF;
 
-    // ── PIE ───────────────────────────────────────────────────────────────
     t += CENTER;
     t += '*Este documento no tiene validez legal*' + LF;
-    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + LF;
+    t += BOLD_ON + 'GRACIAS POR SU COMPRA' + BOLD_OFF + LF;
     t += LF + LF + LF + CUT;
 
     await this.escribirTexto(t);
@@ -667,7 +711,7 @@ export interface DatosReciboAbono {
   clienteTelefono?: string;
   clienteDireccion?: string;
   vendedor?: string;
-  fechaVenta?: string;   // fecha de la venta original
+  fechaVenta?: string;
   valorTotalVenta: number;
   saldoPendiente: number;
   valorAbono: number;
