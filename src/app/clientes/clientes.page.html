@@ -322,7 +322,7 @@
           <!-- ── HEADER: número + badge estado ── -->
           <div class="popup-header">
             <p class="popup-orden-label">ORDEN</p>
-            <h2 class="popup-orden-num">{{ ordenSeleccionada?.num_orden }}</h2>
+            <h2 class="popup-orden-num">{{ ordenSeleccionada.num_orden }}</h2>
             <span class="popup-badge"
               [class.badge-cancelado]="ordenSeleccionada.estado === 'cancelado'"
               [class.badge-abono]="ordenSeleccionada.estado === 'abono'"
