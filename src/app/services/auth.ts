@@ -22,7 +22,7 @@ export class AuthService {
 
   private apiUrl = `${environment.apiUrl}/api/v1/auth`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ── Login ────────────────────────────────────────────────────────────────
   login(username: string, pin: string): Observable<LoginResponse> {
@@ -57,5 +57,11 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
+  }
+
+  verificarToken(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/verificar`, {
+      headers: { Authorization: `Bearer ${this.getToken()}` }
+    }).pipe(timeout(5000));
   }
 }
