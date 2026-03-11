@@ -373,3 +373,27 @@
   .total-lbl { font-size: 16px; font-weight: 800; color: #2D1B0E; }
   .total-val  { font-size: 16px; font-weight: 800; color: #590F23; }
 }
+.reimprimir-container {
+  padding: 16px 0 8px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-reimprimir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #590F23;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  width: 90%;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:disabled { opacity: 0.6; }
+}

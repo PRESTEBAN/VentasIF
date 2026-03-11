@@ -51,10 +51,10 @@
           <div class="menu-item" (click)="irACaja()">
             <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
           </div>
-<div class="menu-item" (click)="irANotas()">
-  <ion-icon name="document-text-outline"></ion-icon>
-  <span>Notas</span>
-</div>
+          <div class="menu-item" (click)="irANotas()">
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>Notas</span>
+          </div>
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
             <ion-icon name="log-out-outline"></ion-icon
@@ -319,6 +319,22 @@
                 >$ {{ ventaDetalle.total | number:'1.2-2' }}</span
               >
             </div>
+          </div>
+          <!-- Después de </div> del detalle-totales -->
+          <div class="reimprimir-container">
+            <button
+              class="btn-reimprimir"
+              (click)="reimprimirOrden()"
+              [disabled]="imprimiendo"
+            >
+              <ion-spinner
+                name="crescent"
+                *ngIf="imprimiendo"
+                style="width: 18px; height: 18px"
+              ></ion-spinner>
+              <ion-icon name="print-outline" *ngIf="!imprimiendo"></ion-icon>
+              {{ imprimiendo ? 'Imprimiendo...' : 'Reimprimir orden' }}
+            </button>
           </div>
         </div>
       </ion-content>
