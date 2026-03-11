@@ -19,6 +19,7 @@ export class PushNotificationsService {
 
   private inicializado = false;
   private localNotifId = 1000;
+  private tokenPendiente: string | null = null; // token en espera de JWT
 
   constructor(
     private router: Router,
@@ -27,17 +28,14 @@ export class PushNotificationsService {
   ) {}
 
   async init() {
-    // Permisos push
     const permStatus = await PushNotifications.requestPermissions();
     if (permStatus.receive !== 'granted') {
       console.warn('Permiso push denegado');
       return;
     }
 
-    // Permisos local notifications
     await LocalNotifications.requestPermissions();
 
-    // Listeners y canal solo se crean UNA vez
     if (!this.inicializado) {
       this.inicializado = true;
 
@@ -51,24 +49,27 @@ export class PushNotificationsService {
         visibility: 1,
       });
 
-      // Tap en notificación local → navegar a Órdenes
       LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
         if (action.notification.extra?.tipo === 'nueva_orden') {
           this.router.navigate(['/tabs/tab2']);
         }
       });
 
-      // Token FCM generado/rotado → registrar en backend
       PushNotifications.addListener('registration', (token: Token) => {
-        console.log('FCM Token:', token.value.substring(0, 20) + '...');
-        this.registrarToken(token.value);
+        console.log('FCM Token obtenido:', token.value.substring(0, 20) + '...');
+        // Intentar registrar — si no hay sesión, guardar para después
+        if (this.authService.estaLogueado()) {
+          this.registrarToken(token.value);
+        } else {
+          console.warn('FCM: sin sesión, guardando token para cuando haya JWT...');
+          this.tokenPendiente = token.value;
+        }
       });
 
       PushNotifications.addListener('registrationError', (err) => {
         console.error('Error registro FCM:', err);
       });
 
-      // App en FOREGROUND → FCM llega silenciosa → disparar notificación local nativa
       PushNotifications.addListener(
         'pushNotificationReceived',
         async (notification: PushNotificationSchema) => {
@@ -89,7 +90,6 @@ export class PushNotificationsService {
         }
       );
 
-      // App en BACKGROUND/KILLED → tap en notificación → navegar
       PushNotifications.addListener(
         'pushNotificationActionPerformed',
         (action: ActionPerformed) => {
@@ -100,18 +100,22 @@ export class PushNotificationsService {
       );
     }
 
-    // Registrar en FCM — si el token cambió (reinstalación),
-    // FCM dispara 'registration' con el token nuevo automáticamente
     await PushNotifications.register();
   }
 
-  private registrarToken(token: string) {
-    if (!this.authService.estaLogueado()) {
-      console.warn('FCM: sin sesión, token no registrado');
-      return;
+  // Llamar esto después de que el usuario inicia sesión
+  // para registrar el token pendiente si lo hay
+  registrarTokenPendiente() {
+    if (this.tokenPendiente && this.authService.estaLogueado()) {
+      console.log('FCM: registrando token pendiente...');
+      this.registrarToken(this.tokenPendiente);
+      this.tokenPendiente = null;
     }
+  }
+
+  private registrarToken(token: string) {
     const url = `${environment.apiUrl}/api/v1/fcm/token`;
-    console.log('FCM: URL =', url);
+    console.log('FCM: registrando en backend...');
     this.http
       .post(url, { token })
       .subscribe({

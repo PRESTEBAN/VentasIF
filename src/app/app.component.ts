@@ -39,18 +39,21 @@ export class AppComponent implements OnInit {
       this.ultimaRuta = event.urlAfterRedirects;
     });
 
-    console.log('APP: isNativePlatform =', Capacitor.isNativePlatform());
-    console.log('APP: estaLogueado =', this.authService.estaLogueado());
-
     if (Capacitor.isNativePlatform()) {
-      console.log('APP: agendando inicializarPush en 1s...');
+      // Inicializar push inmediatamente — los listeners se registran
+      // aunque no haya sesión todavía
+      this.pushService.init();
+
+      // Después de 2s intentar registrar token pendiente
+      // (por si FCM devolvió el token antes de que cargara la sesión)
       setTimeout(() => {
-        console.log('APP: setTimeout ejecutado, llamando inicializarPush...');
-        this.inicializarPush();
-      }, 1000);
+        this.pushService.registrarTokenPendiente();
+      }, 2000);
 
       App.addListener('appStateChange', ({ isActive }) => {
         if (isActive && this.authService.estaLogueado()) {
+          // Al volver del background, registrar token pendiente si hay
+          this.pushService.registrarTokenPendiente();
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
             this.router.navigate([this.ultimaRuta]);
           });
@@ -58,17 +61,4 @@ export class AppComponent implements OnInit {
       });
     }
   }
-
-  private async inicializarPush() {
-    console.log('APP: inicializarPush() llamado');
-    console.log('APP: estaLogueado =', this.authService.estaLogueado());
-    console.log('APP: JWT =', this.authService.getToken() ? 'EXISTE' : 'NULL');
-
-    try {
-      await this.pushService.init();
-      console.log('APP: pushService.init() completado');
-    } catch (e) {
-      console.error('APP: pushService.init() ERROR:', e);
-    }
-  }
-}   
+}
