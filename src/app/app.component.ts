@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { PrinterService } from './services/printer';
 import { AuthService } from './services/auth';
+import { PushNotificationsService } from './services/push-notifications';
 import { Router, NavigationEnd } from '@angular/router';
 import { App } from '@capacitor/app';
 import { filter } from 'rxjs/operators';
@@ -19,6 +20,7 @@ export class AppComponent implements OnInit {
   constructor(
     private printerService: PrinterService,
     private authService: AuthService,
+    private pushService: PushNotificationsService,
     private router: Router
   ) {}
 
@@ -38,6 +40,9 @@ export class AppComponent implements OnInit {
     });
 
     if (Capacitor.isNativePlatform()) {
+      // Inicializar push notifications solo en dispositivo nativo
+      this.pushService.init();
+
       App.addListener('appStateChange', ({ isActive }) => {
         if (isActive && this.authService.estaLogueado()) {
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
