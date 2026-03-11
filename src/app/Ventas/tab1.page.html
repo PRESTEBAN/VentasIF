@@ -404,7 +404,7 @@
     <ng-template>
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ editandoCarritoIndex >= 0 ? 'Editar producto' : productoSeleccionado?.nombre }}</ion-title>
+          <ion-title>{{ editandoCarritoIndex >= 0 ? productoSeleccionado?.nombre : productoSeleccionado?.nombre }}</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="cerrarProducto()"
               ><ion-icon name="close-outline"></ion-icon

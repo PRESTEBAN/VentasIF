@@ -291,6 +291,18 @@
   &.pill-fabrica {
     background: #F3E5F5; color: #6A1B9A; border: 1px solid #CE93D8;
   }
+
+  &.pill-almuerzo {
+    background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9;
+  }
+
+  &.pill-otros {
+    background: #FFF8E1; color: #F9A825; border: 1px solid #FFE082;
+  }
+
+  &.pill-deposito {
+    background: #F0FFF4; color: #2E7D32; border: 1px solid #A5D6A7;
+  }
 }
 
 /* TOTAL CARD */
@@ -548,6 +560,21 @@
   &.item-fabrica {
     background: #F9F0FF; color: #6A1B9A; font-weight: 700;
     ion-icon { color: #6A1B9A; }
+  }
+
+  &.item-almuerzo {
+    background: #E3F2FD; color: #1565C0; font-weight: 700;
+    ion-icon { color: #1565C0; }
+  }
+
+  &.item-otros {
+    background: #FFF8E1; color: #F9A825; font-weight: 700;
+    ion-icon { color: #F9A825; }
+  }
+
+  &.item-deposito {
+    background: #F0FFF4; color: #2E7D32; font-weight: 700;
+    ion-icon { color: #2E7D32; }
   }
 }
 
