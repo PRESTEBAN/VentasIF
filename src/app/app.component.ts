@@ -40,23 +40,15 @@ export class AppComponent implements OnInit {
     });
 
     if (Capacitor.isNativePlatform()) {
-      // Inicializar push inmediatamente — los listeners se registran
-      // aunque no haya sesión todavía
       this.pushService.init();
 
-      // Después de 2s intentar registrar token pendiente
-      // (por si FCM devolvió el token antes de que cargara la sesión)
       setTimeout(() => {
         this.pushService.intentarRegistrar();
       }, 2000);
 
       App.addListener('appStateChange', ({ isActive }) => {
-        if (isActive && this.authService.estaLogueado()) {
-          // Al volver del background, registrar token pendiente si hay
+        if (isActive) {
           this.pushService.intentarRegistrar();
-          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-            this.router.navigate([this.ultimaRuta]);
-          });
         }
       });
     }
