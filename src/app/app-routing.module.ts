@@ -9,6 +9,8 @@ const routes: Routes = [
   { path: 'historial', loadChildren: () => import('./historial/historial.module').then(m => m.HistorialPageModule) },
   { path: 'inventario',loadChildren: () => import('./inventario/inventario.module').then(m => m.InventarioPageModule) },
   { path: 'caja',      loadChildren: () => import('./caja/caja.module').then(m => m.CajaPageModule) },
+  { path: 'notas',     loadChildren: () => import('./notas/notas.module').then( m => m.NotasPageModule) },
+
 ];
 
 @NgModule({

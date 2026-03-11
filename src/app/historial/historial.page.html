@@ -2,8 +2,11 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-
-      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+      <div
+        class="menu-overlay"
+        [class.open]="menuAbierto"
+        (click)="cerrarMenu()"
+      ></div>
 
       <div class="menu-lateral" [class.open]="menuAbierto">
         <div class="menu-header">
@@ -16,13 +19,22 @@
         </div>
         <div class="menu-items">
           <p class="menu-seccion">Navegación</p>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
+          >
             <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
           </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
+          >
             <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
           </div>
-          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+          <div
+            class="menu-item"
+            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
+          >
             <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
           </div>
           <div class="menu-divider"></div>
@@ -37,11 +49,16 @@
             <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
           </div>
           <div class="menu-item" (click)="irACaja()">
-  <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+            <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
+          </div>
+<div class="menu-item" (click)="irANotas()">
+  <ion-icon name="document-text-outline"></ion-icon>
+  <span>Notas</span>
 </div>
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
-            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+            <ion-icon name="log-out-outline"></ion-icon
+            ><span>Cerrar Sesión</span>
           </div>
         </div>
       </div>
@@ -53,14 +70,18 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
-        <div class="delete-btn" (click)="toggleModoEliminacion()" [class.delete-btn-active]="modoEliminacion">
-          <ion-icon [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"></ion-icon>
+        <div
+          class="delete-btn"
+          (click)="toggleModoEliminacion()"
+          [class.delete-btn-active]="modoEliminacion"
+        >
+          <ion-icon
+            [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"
+          ></ion-icon>
         </div>
       </div>
 
-
       <div class="main-content">
-
         <div class="page-header">
           <h1 class="page-title">Historial de ventas</h1>
         </div>
@@ -79,21 +100,34 @@
             >
               <span class="dia-mes">{{ dia | date:'MMM':'':'es' }}</span>
               <span class="dia-numero">{{ dia | date:'d' }}</span>
-              <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
+              <span class="dia-semana"
+                >{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span
+              >
             </div>
           </div>
-          <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
+          <button
+            class="nav-btn"
+            (click)="semanaSiguiente()"
+            [disabled]="esSemanaActual()"
+          >
             <ion-icon name="chevron-forward-outline"></ion-icon>
           </button>
         </div>
 
         <div class="mes-anio-btn" (click)="abrirDatePicker()">
           <ion-icon name="calendar-outline"></ion-icon>
-          <span>{{ fechaSeleccionada | date:'MMMM yyyy':'':'es' | titlecase }}</span>
+          <span
+            >{{ fechaSeleccionada | date:'MMMM yyyy':'':'es' | titlecase
+            }}</span
+          >
           <ion-icon name="chevron-down-outline"></ion-icon>
         </div>
 
-        <div class="datepicker-overlay" *ngIf="mostrarDatePicker" (click)="cerrarDatePicker()">
+        <div
+          class="datepicker-overlay"
+          *ngIf="mostrarDatePicker"
+          (click)="cerrarDatePicker()"
+        >
           <div class="datepicker-card" (click)="$event.stopPropagation()">
             <p class="dp-titulo">Seleccionar fecha</p>
             <input
@@ -111,8 +145,16 @@
             <ion-icon name="checkmark-circle-outline"></ion-icon>
             {{ ventasSeleccionadas.size }} seleccionada(s)
           </span>
-          <button class="btn-eliminar-confirm" (click)="confirmarEliminacion()" [disabled]="ventasSeleccionadas.size === 0 || eliminando">
-            <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:4px"></ion-spinner>
+          <button
+            class="btn-eliminar-confirm"
+            (click)="confirmarEliminacion()"
+            [disabled]="ventasSeleccionadas.size === 0 || eliminando"
+          >
+            <ion-spinner
+              name="crescent"
+              *ngIf="eliminando"
+              style="width: 16px; height: 16px; margin-right: 4px"
+            ></ion-spinner>
             <ion-icon name="trash-outline" *ngIf="!eliminando"></ion-icon>
             {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
           </button>
@@ -124,7 +166,6 @@
         </div>
 
         <div class="ventas-lista" *ngIf="!cargando">
-
           <div class="sin-ventas" *ngIf="ventas.length === 0">
             <ion-icon name="receipt-outline"></ion-icon>
             <p>No hay ventas para este día</p>
@@ -148,7 +189,9 @@
             </div>
 
             <div class="venta-info">
-              <p class="venta-nombre">{{ venta.clienteNombre }} {{ venta.clienteApellido }}</p>
+              <p class="venta-nombre">
+                {{ venta.clienteNombre }} {{ venta.clienteApellido }}
+              </p>
               <!-- NÚMERO DE ORDEN en el card -->
               <p class="venta-orden">#{{ venta.ordenId }}</p>
               <p class="venta-negocio">{{ venta.clienteNegocio || '—' }}</p>
@@ -160,13 +203,18 @@
                 class="venta-estado"
                 [class.estado-entregado]="venta.estado === 'Entregado'"
                 [class.estado-pendiente]="venta.estado === 'Pendiente'"
-              >{{ venta.estado }}</p>
+              >
+                {{ venta.estado }}
+              </p>
               <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
             </div>
 
-            <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
+            <ion-icon
+              name="chevron-forward-outline"
+              class="venta-arrow"
+              *ngIf="!modoEliminacion"
+            ></ion-icon>
           </div>
-
         </div>
       </div>
     </div>
@@ -193,24 +241,28 @@
       </ion-header>
 
       <ion-content class="detalle-modal-content">
-
         <div class="loading-detalle" *ngIf="cargandoDetalle">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando detalle...</p>
         </div>
 
         <div class="detalle-body" *ngIf="ventaDetalle && !cargandoDetalle">
-
           <div class="detalle-avatar">
             <ion-icon name="person-circle-outline"></ion-icon>
           </div>
 
-          <h2 class="detalle-nombre">{{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}</h2>
+          <h2 class="detalle-nombre">
+            {{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}
+          </h2>
           <!-- NÚMERO DE ORDEN en el modal -->
           <p class="detalle-orden">#{{ ventaDetalle.ordenId }}</p>
-          <p class="detalle-negocio">{{ ventaDetalle.clienteNegocio || '—' }}</p>
+          <p class="detalle-negocio">
+            {{ ventaDetalle.clienteNegocio || '—' }}
+          </p>
           <p class="detalle-cedula">{{ ventaDetalle.clienteCedula }}</p>
-          <p class="detalle-tipo">{{ ventaDetalle.tipoCliente || 'Negocio' }}</p>
+          <p class="detalle-tipo">
+            {{ ventaDetalle.tipoCliente || 'Negocio' }}
+          </p>
 
           <div class="detalle-pago-row">
             <span class="pago-label">Tipo de pago:</span>
@@ -232,7 +284,12 @@
                 <td class="col-right">${{ item.subtotal | number:'1.2-2' }}</td>
               </tr>
               <tr *ngIf="ventaDetalle.items.length === 0">
-                <td colspan="3" style="text-align:center; color:#aaa; padding: 16px 0;">Sin productos</td>
+                <td
+                  colspan="3"
+                  style="text-align: center; color: #aaa; padding: 16px 0"
+                >
+                  Sin productos
+                </td>
               </tr>
             </tbody>
           </table>
@@ -240,25 +297,31 @@
           <div class="detalle-totales">
             <div class="total-fila">
               <span class="total-lbl">SubTotal:</span>
-              <span class="total-val">$ {{ ventaDetalle.subtotal | number:'1.2-2' }}</span>
+              <span class="total-val"
+                >$ {{ ventaDetalle.subtotal | number:'1.2-2' }}</span
+              >
             </div>
             <div class="total-fila">
               <span class="total-lbl">desc:</span>
-              <span class="total-val">$ {{ ventaDetalle.descuento | number:'1.2-2' }}</span>
+              <span class="total-val"
+                >$ {{ ventaDetalle.descuento | number:'1.2-2' }}</span
+              >
             </div>
             <div class="total-fila">
               <span class="total-lbl">Iva:</span>
-              <span class="total-val">$ {{ ventaDetalle.iva | number:'1.2-2' }}</span>
+              <span class="total-val"
+                >$ {{ ventaDetalle.iva | number:'1.2-2' }}</span
+              >
             </div>
             <div class="total-fila total-final">
               <span class="total-lbl">Total:</span>
-              <span class="total-val">$ {{ ventaDetalle.total | number:'1.2-2' }}</span>
+              <span class="total-val"
+                >$ {{ ventaDetalle.total | number:'1.2-2' }}</span
+              >
             </div>
           </div>
-
         </div>
       </ion-content>
     </ng-template>
   </ion-modal>
-
 </ion-content>

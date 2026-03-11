@@ -1,0 +1,245 @@
+<ion-content [fullscreen]="true" class="notas-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
+
+      <!-- OVERLAY Y MENÚ LATERAL -->
+      <div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+
+      <div class="menu-lateral" [class.open]="menuAbierto">
+        <div class="menu-header">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" class="menu-logo" />
+          <p class="menu-titulo">Industrial Fátima</p>
+          <p class="menu-usuario">
+            <ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual }}
+          </p>
+        </div>
+        <div class="menu-items">
+          <p class="menu-seccion">Navegación</p>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
+          </div>
+          <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
+          </div>
+          <div class="menu-divider"></div>
+          <p class="menu-seccion">Gestión</p>
+          <div class="menu-item" (click)="irAClientes()">
+            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
+          </div>
+          <div class="menu-item" (click)="irAHistorial()">
+            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
+          </div>
+          <div class="menu-item" (click)="irAInventario()">
+            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
+          </div>
+          <div class="menu-item" (click)="irACaja()">
+            <ion-icon name="trending-down-outline"></ion-icon><span>Caja</span>
+          </div>
+          <div class="menu-item menu-item-active">
+            <ion-icon name="document-text-outline"></ion-icon><span>Notas</span>
+          </div>
+          <div class="menu-divider"></div>
+          <div class="menu-item menu-logout" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
+        </div>
+        <div class="header-right">
+          <div class="header-icon-btn" (click)="abrirModalCrear()">
+            <ion-icon name="add-outline"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENIDO PRINCIPAL -->
+      <div class="main-content">
+        <div class="page-header">
+          <h1 class="page-title">Notas</h1>
+          <p class="page-sub">
+            {{ notas.length }} {{ notas.length === 1 ? 'nota' : 'notas' }}
+          </p>
+        </div>
+
+        <!-- BUSCADOR -->
+        <div class="search-wrap">
+          <ion-icon name="search-outline" class="search-icon"></ion-icon>
+          <input class="search-input" type="text" placeholder="Buscar por título o autor..."
+            [(ngModel)]="terminoBusqueda" (input)="filtrar()" />
+          <button class="search-clear" *ngIf="terminoBusqueda" (click)="limpiarBusqueda()">
+            <ion-icon name="close-outline"></ion-icon>
+          </button>
+        </div>
+
+        <!-- LOADING -->
+        <div class="loading-wrap" *ngIf="cargando">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Cargando notas...</p>
+        </div>
+
+        <!-- VACÍO -->
+        <div class="empty-state" *ngIf="!cargando && notasFiltradas.length === 0 && notas.length === 0">
+          <div class="empty-icon-wrap">
+            <ion-icon name="document-text-outline"></ion-icon>
+          </div>
+          <p class="empty-titulo">Sin notas aún</p>
+          <p class="empty-sub">Toca el botón + para crear tu primera nota</p>
+          <button class="btn-crear-vacio" (click)="abrirModalCrear()">
+            <ion-icon name="add-outline"></ion-icon> Nueva nota
+          </button>
+        </div>
+
+        <!-- SIN RESULTADOS DE BÚSQUEDA -->
+        <div class="empty-state" *ngIf="!cargando && notasFiltradas.length === 0 && notas.length > 0">
+          <div class="empty-icon-wrap"><ion-icon name="search-outline"></ion-icon></div>
+          <p class="empty-titulo">Sin resultados</p>
+          <p class="empty-sub">No hay notas que coincidan con "{{ terminoBusqueda }}"</p>
+        </div>
+
+        <!-- LISTA DE NOTAS -->
+        <div class="notas-lista" *ngIf="!cargando && notasFiltradas.length > 0">
+          <div class="nota-card" *ngFor="let nota of notasFiltradas" (click)="abrirDetalle(nota)">
+            <div class="nota-orden-badge" *ngIf="nota.num_orden">
+              <ion-icon name="receipt-outline"></ion-icon> #{{ nota.num_orden }}
+            </div>
+            <div class="nota-body">
+              <div class="nota-avatar">{{ getIniciales(nota.autor_nombre) }}</div>
+              <div class="nota-info">
+                <p class="nota-titulo">{{ nota.titulo }}</p>
+                <p class="nota-preview">{{ nota.texto | slice:0:80 }}{{ nota.texto.length > 80 ? '...' : '' }}</p>
+                <div class="nota-meta">
+                  <span class="meta-autor"><ion-icon name="person-outline"></ion-icon>{{ nota.autor_nombre }}</span>
+                  <span class="meta-fecha"><ion-icon name="time-outline"></ion-icon>{{ nota.created_at | date:'dd/MM/yy HH:mm':'':'es' }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="nota-acciones" (click)="$event.stopPropagation()">
+              <button class="btn-accion btn-editar" (click)="abrirModalEditar(nota)">
+                <ion-icon name="pencil-outline"></ion-icon>
+              </button>
+              <button class="btn-accion btn-borrar" (click)="confirmarBorrar(nota)">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /main-content -->
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE NOTA -->
+  <div class="modal-overlay" *ngIf="notaDetalle" (click)="cerrarDetalle()">
+    <div class="modal-card detalle-card" (click)="$event.stopPropagation()">
+      <div class="detalle-hero">
+        <div class="detalle-avatar">{{ getIniciales(notaDetalle.autor_nombre) }}</div>
+        <div class="detalle-hero-info">
+          <p class="detalle-autor">{{ notaDetalle.autor_nombre }}</p>
+          <p class="detalle-fecha">{{ notaDetalle.created_at | date:'dd/MM/yyyy HH:mm':'':'es' }}</p>
+        </div>
+        <button class="detalle-close" (click)="cerrarDetalle()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+      <div class="detalle-body">
+        <h2 class="detalle-titulo">{{ notaDetalle.titulo }}</h2>
+        <div class="detalle-orden-chip" *ngIf="notaDetalle.num_orden">
+          <ion-icon name="receipt-outline"></ion-icon>
+          Orden #{{ notaDetalle.num_orden }}
+        </div>
+        <div class="detalle-separador"></div>
+        <p class="detalle-texto">{{ notaDetalle.texto }}</p>
+      </div>
+      <div class="detalle-footer">
+        <button class="btn-aceptar" (click)="cerrarDetalle()">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR / EDITAR NOTA -->
+  <div class="modal-overlay" *ngIf="mostrarFormModal" (click)="cerrarFormModal()">
+    <div class="modal-card form-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icono">
+          <ion-icon [name]="modoEditar ? 'pencil-outline' : 'document-text-outline'"></ion-icon>
+        </div>
+        <h2 class="modal-titulo">{{ modoEditar ? 'Editar nota' : 'Nueva nota' }}</h2>
+      </div>
+      <div class="form-group">
+        <label>Creado por</label>
+        <div class="readonly-field">
+          <ion-icon name="person-circle-outline"></ion-icon>
+          {{ usuarioActualNombre }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Título <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="formNota.titulo" placeholder="Título de la nota"
+          [class.input-error]="errores.titulo" maxlength="200" />
+        <span class="field-error" *ngIf="errores.titulo">{{ errores.titulo }}</span>
+      </div>
+      <div class="form-group">
+        <label>Nota <span class="req">*</span></label>
+        <textarea [(ngModel)]="formNota.texto" placeholder="Escribe tu nota aquí..."
+          [class.input-error]="errores.texto" rows="4"></textarea>
+        <span class="field-error" *ngIf="errores.texto">{{ errores.texto }}</span>
+      </div>
+      <div class="form-group">
+        <label>Orden vinculada <span class="opcional-badge">opcional</span></label>
+        <div class="orden-input-wrap">
+          <span class="orden-prefix">#</span>
+          <input type="number" [(ngModel)]="formNota.orden_id" placeholder="Número de orden"
+            min="1" (input)="buscarOrden()" />
+        </div>
+        <div class="orden-preview" *ngIf="ordenPreview">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Orden #{{ ordenPreview.num_orden }} encontrada
+        </div>
+        <div class="orden-preview orden-no-encontrada" *ngIf="ordenNoEncontrada">
+          <ion-icon name="alert-circle-outline"></ion-icon>
+          Orden no encontrada
+        </div>
+      </div>
+      <span class="field-error" *ngIf="errores.general">{{ errores.general }}</span>
+      <div class="modal-btns">
+        <button class="btn-cancelar" (click)="cerrarFormModal()">Cancelar</button>
+        <button class="btn-guardar" (click)="guardarNota()" [disabled]="guardando">
+          <ion-spinner name="crescent" *ngIf="guardando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+          {{ guardando ? 'Guardando...' : (modoEditar ? 'Guardar cambios' : 'Crear nota') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMAR BORRAR -->
+  <div class="modal-overlay" *ngIf="mostrarConfirmarBorrar" (click)="cancelarBorrar()">
+    <div class="modal-card form-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-icono icono-danger"><ion-icon name="trash-outline"></ion-icon></div>
+        <h2 class="modal-titulo">¿Borrar nota?</h2>
+      </div>
+      <p class="borrar-titulo-preview">{{ notaABorrar?.titulo }}</p>
+      <p class="borrar-sub">Esta acción no se puede deshacer.</p>
+      <div class="modal-btns">
+        <button class="btn-cancelar" (click)="cancelarBorrar()" [disabled]="borrando">Cancelar</button>
+        <button class="btn-danger" (click)="borrarNota()" [disabled]="borrando">
+          <ion-spinner name="crescent" *ngIf="borrando" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+          {{ borrando ? 'Borrando...' : 'Sí, borrar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

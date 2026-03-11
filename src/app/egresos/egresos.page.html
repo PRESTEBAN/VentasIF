@@ -34,7 +34,6 @@
         <div class="header-right" (click)="abrirModal()" *ngIf="esDiaDeHoy"><ion-icon name="add-circle-outline"></ion-icon></div>
       </div>
 
-
       <div class="main-content">
         <div class="page-header"><h1 class="page-title">Egresos</h1></div>
 
@@ -93,9 +92,19 @@
                   </span>
                   <span class="meta-pill beneficiario"
                     [class.pill-vehiculo]="egreso.beneficiario === 'Vehiculo'"
-                    [class.pill-fabrica]="egreso.beneficiario === 'Fabrica'">
-                    <ion-icon [name]="egreso.beneficiario === 'Vehiculo' ? 'car-outline' : egreso.beneficiario === 'Fabrica' ? 'business-outline' : 'person-outline'"></ion-icon>
-                    {{ egreso.beneficiario === 'Vehiculo' ? 'Vehículo' : egreso.beneficiario === 'Fabrica' ? 'Fábrica' : getLabelBeneficiario(egreso.beneficiario) }}
+                    [class.pill-fabrica]="egreso.beneficiario === 'Fabrica'"
+                    [class.pill-comida]="egreso.beneficiario === 'Comida'"
+                    [class.pill-deposito]="egreso.beneficiario === 'Deposito'">
+                    <ion-icon [name]="egreso.beneficiario === 'Vehiculo' ? 'car-outline' :
+                                      egreso.beneficiario === 'Fabrica' ? 'business-outline' :
+                                      egreso.beneficiario === 'Comida' ? 'fast-food-outline' :
+                                      egreso.beneficiario === 'Deposito' ? 'arrow-up-circle-outline' :
+                                      'person-outline'"></ion-icon>
+                    {{ egreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
+                       egreso.beneficiario === 'Fabrica' ? 'Fábrica' :
+                       egreso.beneficiario === 'Comida' ? 'Comida' :
+                       egreso.beneficiario === 'Deposito' ? 'Depósito' :
+                       getLabelBeneficiario(egreso.beneficiario) }}
                   </span>
                 </div>
               </div>
@@ -156,21 +165,31 @@
           <div class="custom-select-wrap" (click)="toggleBeneficiario()">
             <span class="custom-select-valor" [class.placeholder]="!nuevoEgreso.beneficiario"
               [class.chip-vehiculo]="nuevoEgreso.beneficiario === 'Vehiculo'"
-              [class.chip-fabrica]="nuevoEgreso.beneficiario === 'Fabrica'">
-              {{ nuevoEgreso.beneficiario === 'Vehiculo' ? 'Vehículo' : nuevoEgreso.beneficiario === 'Fabrica' ? 'Fábrica' : nuevoEgreso.beneficiario ? getLabelBeneficiario(nuevoEgreso.beneficiario) : 'Seleccionar' }}
+              [class.chip-fabrica]="nuevoEgreso.beneficiario === 'Fabrica'"
+              [class.chip-comida]="nuevoEgreso.beneficiario === 'Comida'"
+              [class.chip-deposito]="nuevoEgreso.beneficiario === 'Deposito'">
+              {{ nuevoEgreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
+                 nuevoEgreso.beneficiario === 'Fabrica' ? 'Fábrica' :
+                 nuevoEgreso.beneficiario === 'Comida' ? 'Comida' :
+                 nuevoEgreso.beneficiario === 'Deposito' ? 'Depósito' :
+                 nuevoEgreso.beneficiario ? getLabelBeneficiario(nuevoEgreso.beneficiario) : 'Seleccionar' }}
             </span>
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdown"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdown">
+            <!-- OTROS — arriba -->
+            <p class="dropdown-grupo">Otros</p>
+            <div class="dropdown-item item-vehiculo" [class.item-activo]="nuevoEgreso.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiario('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
+            <div class="dropdown-item item-fabrica"  [class.item-activo]="nuevoEgreso.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiario('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
+            <div class="dropdown-item item-comida"   [class.item-activo]="nuevoEgreso.beneficiario === 'Comida'"   (click)="seleccionarBeneficiario('Comida')"><ion-icon name="fast-food-outline"></ion-icon>Comida</div>
+            <div class="dropdown-item item-deposito" [class.item-activo]="nuevoEgreso.beneficiario === 'Deposito'" (click)="seleccionarBeneficiario('Deposito')"><ion-icon name="arrow-up-circle-outline"></ion-icon>Depósito</div>
+            <!-- PERSONAS — abajo -->
             <p class="dropdown-grupo">Personas</p>
             <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="nuevoEgreso.beneficiario === u.username"
               (click)="seleccionarBeneficiario(u.username)">
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
-            <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-vehiculo" [class.item-activo]="nuevoEgreso.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiario('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
-            <div class="dropdown-item item-fabrica"  [class.item-activo]="nuevoEgreso.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiario('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
           </div>
           <span class="field-error" *ngIf="errores.beneficiario">{{ errores.beneficiario }}</span>
         </div>
@@ -231,21 +250,31 @@
           <div class="custom-select-wrap" (click)="toggleBeneficiarioEditar()">
             <span class="custom-select-valor" [class.placeholder]="!egresoEditando.beneficiario"
               [class.chip-vehiculo]="egresoEditando.beneficiario === 'Vehiculo'"
-              [class.chip-fabrica]="egresoEditando.beneficiario === 'Fabrica'">
-              {{ egresoEditando.beneficiario === 'Vehiculo' ? 'Vehículo' : egresoEditando.beneficiario === 'Fabrica' ? 'Fábrica' : egresoEditando.beneficiario ? getLabelBeneficiario(egresoEditando.beneficiario) : 'Seleccionar' }}
+              [class.chip-fabrica]="egresoEditando.beneficiario === 'Fabrica'"
+              [class.chip-comida]="egresoEditando.beneficiario === 'Comida'"
+              [class.chip-deposito]="egresoEditando.beneficiario === 'Deposito'">
+              {{ egresoEditando.beneficiario === 'Vehiculo' ? 'Vehículo' :
+                 egresoEditando.beneficiario === 'Fabrica' ? 'Fábrica' :
+                 egresoEditando.beneficiario === 'Comida' ? 'Comida' :
+                 egresoEditando.beneficiario === 'Deposito' ? 'Depósito' :
+                 egresoEditando.beneficiario ? getLabelBeneficiario(egresoEditando.beneficiario) : 'Seleccionar' }}
             </span>
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdownEditar"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdownEditar">
+            <!-- OTROS — arriba -->
+            <p class="dropdown-grupo">Otros</p>
+            <div class="dropdown-item item-vehiculo" [class.item-activo]="egresoEditando.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiarioEditar('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
+            <div class="dropdown-item item-fabrica"  [class.item-activo]="egresoEditando.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiarioEditar('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
+            <div class="dropdown-item item-comida"   [class.item-activo]="egresoEditando.beneficiario === 'Comida'"   (click)="seleccionarBeneficiarioEditar('Comida')"><ion-icon name="fast-food-outline"></ion-icon>Comida</div>
+            <div class="dropdown-item item-deposito" [class.item-activo]="egresoEditando.beneficiario === 'Deposito'" (click)="seleccionarBeneficiarioEditar('Deposito')"><ion-icon name="arrow-up-circle-outline"></ion-icon>Depósito</div>
+            <!-- PERSONAS — abajo -->
             <p class="dropdown-grupo">Personas</p>
             <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="egresoEditando.beneficiario === u.username"
               (click)="seleccionarBeneficiarioEditar(u.username)">
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
-            <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-vehiculo" [class.item-activo]="egresoEditando.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiarioEditar('Vehiculo')"><ion-icon name="car-outline"></ion-icon>Vehículo</div>
-            <div class="dropdown-item item-fabrica"  [class.item-activo]="egresoEditando.beneficiario === 'Fabrica'"  (click)="seleccionarBeneficiarioEditar('Fabrica')"><ion-icon name="business-outline"></ion-icon>Fábrica</div>
           </div>
           <span class="field-error" *ngIf="erroresEditar.beneficiario">{{ erroresEditar.beneficiario }}</span>
         </div>

@@ -1,4 +1,8 @@
-<div class="menu-overlay" [class.open]="menuAbierto" (click)="cerrarMenu()"></div>
+<div
+  class="menu-overlay"
+  [class.open]="menuAbierto"
+  (click)="cerrarMenu()"
+></div>
 
 <div class="menu-lateral" [class.open]="menuAbierto">
   <div class="menu-header">
@@ -11,13 +15,22 @@
   </div>
   <div class="menu-items">
     <p class="menu-seccion">Navegación</p>
-    <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])">
+    <div
+      class="menu-item"
+      (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
+    >
       <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
     </div>
-    <div class="menu-item menu-item-active" (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])">
+    <div
+      class="menu-item menu-item-active"
+      (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
+    >
       <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
     </div>
-    <div class="menu-item" (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])">
+    <div
+      class="menu-item"
+      (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
+    >
       <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
     </div>
     <div class="menu-divider"></div>
@@ -34,6 +47,10 @@
     <div class="menu-item" (click)="irACaja()">
       <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
     </div>
+    <div class="menu-item" (click)="irANotas()">
+  <ion-icon name="document-text-outline"></ion-icon>
+  <span>Notas</span>
+</div>
     <div class="menu-divider"></div>
     <div class="menu-item menu-logout" (click)="cerrarSesion()">
       <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
@@ -41,12 +58,10 @@
   </div>
 </div>
 
-
 <ion-content [fullscreen]="true" class="tab2-content">
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -54,12 +69,10 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.png" alt="Logo" />
         </div>
-        <div style="width: 26px;"></div>
+        <div style="width: 26px"></div>
       </div>
 
-
       <div class="main-content">
-
         <!-- TÍTULO -->
         <div class="page-header">
           <h1 class="page-title">Órdenes</h1>
@@ -87,7 +100,6 @@
         <!-- LISTA DE ÓRDENES -->
         <div class="ordenes-lista" *ngIf="!cargando && ordenes.length > 0">
           <div class="orden-card" *ngFor="let orden of ordenes">
-
             <!-- HEADER: cliente + número + fecha + estado -->
             <div class="orden-header">
               <div class="orden-avatar">
@@ -105,23 +117,35 @@
                     <ion-icon name="time-outline"></ion-icon>
                     {{ orden.fecha | date:'dd/MM/yy HH:mm' }}
                   </span>
-                  <span class="orden-vendedor" *ngIf="orden.usuario || orden.vendedor || orden.nombre_usuario">
+                  <span
+                    class="orden-vendedor"
+                    *ngIf="orden.usuario || orden.vendedor || orden.nombre_usuario"
+                  >
                     <ion-icon name="person-circle-outline"></ion-icon>
-                    Hecho por: <strong>{{ orden.usuario || orden.vendedor || orden.nombre_usuario }}</strong>
+                    Hecho por:
+                    <strong
+                      >{{ orden.usuario || orden.vendedor ||
+                      orden.nombre_usuario }}</strong
+                    >
                   </span>
                 </div>
               </div>
-              <div class="orden-estado-pill"
+              <div
+                class="orden-estado-pill"
                 [class.pill-pendiente]="!orden.listo_conductor && !orden.entregado_vendedor"
                 [class.pill-proceso]="orden.listo_conductor && !orden.entregado_vendedor"
-                [class.pill-listo]="orden.listo_conductor && orden.entregado_vendedor">
-                <ion-icon [name]="(!orden.listo_conductor && !orden.entregado_vendedor) ? 'hourglass-outline' :
+                [class.pill-listo]="orden.listo_conductor && orden.entregado_vendedor"
+              >
+                <ion-icon
+                  [name]="(!orden.listo_conductor && !orden.entregado_vendedor) ? 'hourglass-outline' :
                            (orden.listo_conductor && !orden.entregado_vendedor) ? 'cube-outline' :
-                           'checkmark-circle-outline'">
+                           'checkmark-circle-outline'"
+                >
                 </ion-icon>
                 <span>
-                  {{ (!orden.listo_conductor && !orden.entregado_vendedor) ? 'Pendiente' :
-                  (orden.listo_conductor && !orden.entregado_vendedor) ? 'Listo' : 'Entregado' }}
+                  {{ (!orden.listo_conductor && !orden.entregado_vendedor) ?
+                  'Pendiente' : (orden.listo_conductor &&
+                  !orden.entregado_vendedor) ? 'Listo' : 'Entregado' }}
                 </span>
               </div>
             </div>
@@ -141,9 +165,10 @@
             <!-- PROGRESS BAR -->
             <div class="orden-progress">
               <div class="progress-track">
-                <div class="progress-fill"
-                  [style.width]="(!orden.listo_conductor ? '0%' : (!orden.entregado_vendedor ? '50%' : '100%'))">
-                </div>
+                <div
+                  class="progress-fill"
+                  [style.width]="(!orden.listo_conductor ? '0%' : (!orden.entregado_vendedor ? '50%' : '100%'))"
+                ></div>
               </div>
               <div class="progress-steps">
                 <span class="step" [class.step-done]="orden.listo_conductor">
@@ -157,23 +182,38 @@
 
             <!-- ACCIONES -->
             <div class="orden-acciones">
-              <button class="accion-btn" [class.accion-done]="orden.listo_conductor"
-                [disabled]="actualizando[orden.venta_id]" (click)="toggleListo(orden)">
-                <ion-icon [name]="orden.listo_conductor ? 'checkmark-circle' : 'cube-outline'"></ion-icon>
-                <span>{{ orden.listo_conductor ? 'Preparado ✓' : 'Marcar Listo' }}</span>
+              <button
+                class="accion-btn"
+                [class.accion-done]="orden.listo_conductor"
+                [disabled]="actualizando[orden.venta_id]"
+                (click)="toggleListo(orden)"
+              >
+                <ion-icon
+                  [name]="orden.listo_conductor ? 'checkmark-circle' : 'cube-outline'"
+                ></ion-icon>
+                <span
+                  >{{ orden.listo_conductor ? 'Preparado ✓' : 'Marcar Listo'
+                  }}</span
+                >
               </button>
-              <button class="accion-btn" [class.accion-done]="orden.entregado_vendedor"
+              <button
+                class="accion-btn"
+                [class.accion-done]="orden.entregado_vendedor"
                 [class.accion-bloqueado]="!orden.listo_conductor && !orden.entregado_vendedor"
                 [disabled]="orden.entregado_vendedor || !orden.listo_conductor || actualizando[orden.venta_id]"
-                (click)="marcarEntregado(orden)">
-                <ion-icon [name]="orden.entregado_vendedor ? 'checkmark-circle' : 'bicycle-outline'"></ion-icon>
-                <span>{{ orden.entregado_vendedor ? 'Entregado ✓' : 'Marcar Entregado' }}</span>
+                (click)="marcarEntregado(orden)"
+              >
+                <ion-icon
+                  [name]="orden.entregado_vendedor ? 'checkmark-circle' : 'bicycle-outline'"
+                ></ion-icon>
+                <span
+                  >{{ orden.entregado_vendedor ? 'Entregado ✓' : 'Marcar
+                  Entregado' }}</span
+                >
               </button>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   </div>
