@@ -386,4 +386,5 @@ export class Tab3Page implements OnInit, OnDestroy {
     this.cerrarMenu();
     this.router.navigate(['/caja']);
   }
+  irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
 }

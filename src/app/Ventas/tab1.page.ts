@@ -242,6 +242,7 @@ export class Tab1Page implements OnInit, OnDestroy {
   irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irACaja()       { this.cerrarMenu(); this.router.navigate(['/caja']); }
+  irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
 
   // ── BUSCAR CLIENTE ────────────────────────────────────────────────────────
   buscarCliente() {

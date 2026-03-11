@@ -51,7 +51,10 @@
           <div class="menu-item" (click)="irACaja()">
             <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
           </div>
-
+          <div class="menu-item" (click)="irANotas()">
+  <ion-icon name="document-text-outline"></ion-icon>
+  <span>Notas</span>
+</div>
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
             <ion-icon name="log-out-outline"></ion-icon
@@ -180,7 +183,10 @@
             (click)="abrirProducto(producto)"
           >
             <!-- NUEVO: punto rojo cuando el producto está en el carrito -->
-            <div class="seleccionado-dot" *ngIf="estaEnCarrito(producto.id!)"></div>
+            <div
+              class="seleccionado-dot"
+              *ngIf="estaEnCarrito(producto.id!)"
+            ></div>
 
             <div
               class="stock-badge"
@@ -404,7 +410,10 @@
     <ng-template>
       <ion-header>
         <ion-toolbar>
-          <ion-title>{{ editandoCarritoIndex >= 0 ? productoSeleccionado?.nombre : productoSeleccionado?.nombre }}</ion-title>
+          <ion-title
+            >{{ editandoCarritoIndex >= 0 ? productoSeleccionado?.nombre :
+            productoSeleccionado?.nombre }}</ion-title
+          >
           <ion-buttons slot="end">
             <ion-button (click)="cerrarProducto()"
               ><ion-icon name="close-outline"></ion-icon

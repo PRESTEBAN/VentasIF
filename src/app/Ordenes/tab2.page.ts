@@ -174,4 +174,5 @@ export class Tab2Page implements OnInit, OnDestroy {
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
   irAlCarrito() { this.carritoEstado.solicitarAbrirCarrito(); this.router.navigate(['/tabs/tab1']); }
   irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
+  irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
 }
