@@ -1,132 +1,120 @@
 import { Injectable } from '@angular/core';
-import {
-  PushNotifications,
-  Token,
-  PushNotificationSchema,
-  ActionPerformed,
-} from '@capacitor/push-notifications';
-import {
-  LocalNotifications,
-  LocalNotificationSchema,
-} from '@capacitor/local-notifications';
-import { Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth';
 
+export interface Cliente {
+  id?: number;
+  cedula_ruc: string;        // ← renombrado de cedula
+  nombre: string;
+  apellido: string;
+  nombre_negocio?: string | null;
+  tipo_cliente: string;
+  direccion: string;
+  sector?: string | null;
+  telefono: string;
+  email?: string | null;
+  saldo?: number;
+  saldo_pendiente?: number;
+  credito_disponible?: number;
+  ultima_compra?: string | null;
+  activo?: number;
+  limite_credito?: number | null;
+  notas?: string | null;
+  fecha_creacion?: string;
+  fecha_modificacion?: string;
+}
+
+export interface Movimiento {
+  venta_id: number;
+  num_orden: string;
+  fecha: string;
+  valor: number;
+  estado: string;
+  saldo_acumulado: number;
+}
+
+export interface SaldoCliente {
+  id: number;
+  cedula_ruc: string;        // ← renombrado de cedula
+  cliente: string;
+  nombre_negocio: string | null;
+  tipo_cliente: string;
+  telefono: string;
+  saldo_pendiente: number;
+  limite_credito: number;
+  credito_disponible: number;
+  ultima_compra: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
-export class PushNotificationsService {
+export class ClienteService {
 
-  private localNotifId = 1000; // ID incremental para notificaciones locales
+  private apiUrl = `${environment.apiUrl}/api/v1/clientes`;
+  private abonosUrl = `${environment.apiUrl}/api/v1/abonos`;
 
-  constructor(
-    private router: Router,
-    private http: HttpClient,
-    private authService: AuthService
-  ) {}
+  constructor(private http: HttpClient, private authService: AuthService) { }
 
-  async init() {
-    // ── Permisos push ────────────────────────────────────────────────────
-    const permStatus = await PushNotifications.requestPermissions();
-    if (permStatus.receive !== 'granted') {
-      console.warn('Permiso de notificaciones denegado');
-      return;
-    }
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders({ 'Authorization': `Bearer ${this.authService.getToken()}` });
+  }
 
-    // ── Permisos local notifications (Android 13+) ───────────────────────
-    const localPerm = await LocalNotifications.requestPermissions();
-    if (localPerm.display !== 'granted') {
-      console.warn('Permiso local notifications denegado');
-    }
+  getAll(): Observable<Cliente[]> {
+    return this.http.get<Cliente[]>(this.apiUrl, { headers: this.getHeaders() });
+  }
 
-    // ── Crear canal Android para notificaciones locales ──────────────────
-    await LocalNotifications.createChannel({
-      id: 'ordenes',
-      name: 'Órdenes',
-      description: 'Notificaciones de nuevas órdenes',
-      importance: 5,        // IMPORTANCE_HIGH → hace sonar y aparece en pantalla
-      sound: 'default',
-      vibration: true,
-      visibility: 1,
-    });
+  getSaldos(): Observable<SaldoCliente[]> {
+    return this.http.get<SaldoCliente[]>(`${this.apiUrl}/saldos`, { headers: this.getHeaders() });
+  }
 
-    // ── Listener: tap en notificación local → navegar a Órdenes ─────────
-    LocalNotifications.addListener(
-      'localNotificationActionPerformed',
-      (action) => {
-        const data = action.notification.extra;
-        if (data?.tipo === 'nueva_orden') {
-          this.router.navigate(['/tabs/tab2']);
-        }
-      }
-    );
-
-    // ── Registrar dispositivo en FCM ─────────────────────────────────────
-    await PushNotifications.register();
-
-    PushNotifications.addListener('registration', (token: Token) => {
-      console.log('FCM Token:', token.value);
-      this.registrarToken(token.value);
-    });
-
-    PushNotifications.addListener('registrationError', (err) => {
-      console.error('Error registro FCM:', err);
-    });
-
-    // ── FOREGROUND: FCM llega silenciosa → disparar notificación local ───
-    PushNotifications.addListener(
-      'pushNotificationReceived',
-      async (notification: PushNotificationSchema) => {
-        console.log('Push recibida en foreground:', notification);
-
-        const id = this.localNotifId++;
-
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              id,
-              title: notification.title || 'Nueva notificación',
-              body: notification.body || '',
-              channelId: 'ordenes',
-              extra: notification.data,           // para la navegación al tapear
-              smallIcon: 'ic_stat_icon_config_sample', // icono blanco en la barra
-              sound: 'default',
-              actionTypeId: '',
-              schedule: { at: new Date(Date.now() + 100) }, // casi inmediata
-            } as LocalNotificationSchema,
-          ],
-        });
-      }
-    );
-
-    // ── BACKGROUND / KILLED: usuario tapea la push de FCM ───────────────
-    PushNotifications.addListener(
-      'pushNotificationActionPerformed',
-      (action: ActionPerformed) => {
-        const data = action.notification.data;
-        if (data?.tipo === 'nueva_orden') {
-          this.router.navigate(['/tabs/tab2']);
-        }
-      }
+  getAllConSaldos(): Observable<Cliente[]> {
+    return forkJoin({ clientes: this.getAll(), saldos: this.getSaldos() }).pipe(
+      map(({ clientes, saldos }) =>
+        clientes.map(c => {
+          const s = saldos.find(x => x.id === c.id);
+          return {
+            ...c,
+            saldo: s ? +s.saldo_pendiente : 0,
+            limite_credito: s ? +s.limite_credito : 0,
+            credito_disponible: s ? +s.credito_disponible : 0,
+            ultima_compra: s?.ultima_compra ?? null,
+          };
+        })
+      )
     );
   }
 
-  private registrarToken(token: string) {
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${this.authService.getToken()}`,
-    });
-    this.http
-      .post(`${environment.apiUrl}/api/fcm/token`, { token }, { headers })
-      .subscribe({
-        next: () => console.log('Token FCM registrado en backend'),
-        error: (e) => console.error('Error registrando token FCM:', e),
-      });
+  getById(id: number): Observable<Cliente> {
+    return this.http.get<Cliente>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
-  async eliminarToken() {
-    try {
-      await PushNotifications.removeAllDeliveredNotifications();
-      await LocalNotifications.removeAllDeliveredNotifications();
-    } catch (e) {}
+  create(cliente: Cliente): Observable<{ mensaje: string; id: number }> {
+    return this.http.post<{ mensaje: string; id: number }>(this.apiUrl, cliente, { headers: this.getHeaders() });
+  }
+
+  update(id: number, cliente: Partial<Cliente>): Observable<{ mensaje: string }> {
+    return this.http.put<{ mensaje: string }>(`${this.apiUrl}/${id}`, cliente, { headers: this.getHeaders() });
+  }
+
+  remove(id: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+  }
+
+  getMovimientos(clienteId: number): Observable<Movimiento[]> {
+    return this.http.get<Movimiento[]>(`${this.abonosUrl}/cliente/${clienteId}`, { headers: this.getHeaders() });
+  }
+
+  verificarCedula(cedula: string): Observable<{ existe: boolean }> {
+    return this.http.get<{ existe: boolean }>(`${this.apiUrl}/verificar-cedula/${cedula}`, { headers: this.getHeaders() });
+  }
+
+  registrarAbono(ventaId: number, clienteId: number, monto: number, formaPago?: string, notas?: string): Observable<any> {
+    return this.http.post(`${this.abonosUrl}`, {
+      venta_id: ventaId, cliente_id: clienteId, monto,
+      forma_pago: formaPago || 'Efectivo',
+      notas: notas || null
+    }, { headers: this.getHeaders() });
   }
 }
