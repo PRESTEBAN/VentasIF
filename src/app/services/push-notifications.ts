@@ -10,7 +10,7 @@ import {
   LocalNotificationSchema,
 } from '@capacitor/local-notifications';
 import { Router } from '@angular/router';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth';
 
@@ -106,17 +106,16 @@ export class PushNotificationsService {
   }
 
   private registrarToken(token: string) {
-    const jwtToken = this.authService.getToken();
-    if (!jwtToken) {
-      console.warn('FCM: sin JWT, token no registrado');
+    if (!this.authService.estaLogueado()) {
+      console.warn('FCM: sin sesión, token no registrado');
       return;
     }
-    const headers = new HttpHeaders({ Authorization: `Bearer ${jwtToken}` });
+    // Sin header manual — el interceptor agrega el JWT y hace refresh si expiró
     this.http
-      .post(`${environment.apiUrl}/api/fcm/token`, { token }, { headers })
+      .post(`${environment.apiUrl}/api/fcm/token`, { token })
       .subscribe({
         next: () => console.log('Token FCM registrado ✓'),
-        error: (e) => console.error('Error registrando token FCM:', e),
+        error: (e) => console.error('Error registrando token FCM:', e.status, JSON.stringify(e.error)),
       });
   }
 
