@@ -19,7 +19,8 @@ export class PushNotificationsService {
 
   private inicializado = false;
   private localNotifId = 1000;
-  private tokenPendiente: string | null = null; // token en espera de JWT
+  private ultimoToken: string | null = null;
+  private registrado = false; // evita registrar múltiples veces seguidas
 
   constructor(
     private router: Router,
@@ -57,13 +58,9 @@ export class PushNotificationsService {
 
       PushNotifications.addListener('registration', (token: Token) => {
         console.log('FCM Token obtenido:', token.value.substring(0, 20) + '...');
-        // Intentar registrar — si no hay sesión, guardar para después
-        if (this.authService.estaLogueado()) {
-          this.registrarToken(token.value);
-        } else {
-          console.warn('FCM: sin sesión, guardando token para cuando haya JWT...');
-          this.tokenPendiente = token.value;
-        }
+        this.ultimoToken = token.value;
+        this.registrado = false; // nuevo token = hay que re-registrar
+        this.intentarRegistrar();
       });
 
       PushNotifications.addListener('registrationError', (err) => {
@@ -98,29 +95,58 @@ export class PushNotificationsService {
           }
         }
       );
+
+      // ── Reintento al arranque: cada 5s hasta registrar (máx 10 intentos) ──
+      // Cubre el caso donde FCM devuelve el token antes de que haya JWT
+      let intentos = 0;
+      const intervaloArranque = setInterval(() => {
+        intentos++;
+        if (this.registrado || intentos >= 10) {
+          clearInterval(intervaloArranque);
+          if (!this.registrado) console.warn('FCM: máx intentos arranque alcanzado');
+          return;
+        }
+        console.log(`FCM: reintento arranque ${intentos}/10...`);
+        this.intentarRegistrar();
+      }, 5000);
+
+      // ── Renovación periódica cada 30 minutos ─────────────────────────────
+      setInterval(() => {
+        console.log('FCM: renovación periódica...');
+        this.registrado = false; // forzar re-registro
+        this.intentarRegistrar();
+      }, 30 * 60 * 1000);
     }
 
     await PushNotifications.register();
   }
 
-  // Llamar esto después de que el usuario inicia sesión
-  // para registrar el token pendiente si lo hay
-  registrarTokenPendiente() {
-    if (this.tokenPendiente && this.authService.estaLogueado()) {
-      console.log('FCM: registrando token pendiente...');
-      this.registrarToken(this.tokenPendiente);
-      this.tokenPendiente = null;
+  // Llamar después del login o al volver del background
+  intentarRegistrar() {
+    if (!this.ultimoToken) {
+      console.warn('FCM: no hay token aún');
+      return;
     }
+    if (!this.authService.estaLogueado()) {
+      console.warn('FCM: sin sesión, se registrará después del login');
+      return;
+    }
+    this.registrarToken(this.ultimoToken);
   }
 
   private registrarToken(token: string) {
     const url = `${environment.apiUrl}/api/v1/fcm/token`;
-    console.log('FCM: registrando en backend...');
     this.http
       .post(url, { token })
       .subscribe({
-        next: () => console.log('Token FCM registrado ✓'),
-        error: (e) => console.error('Error registrando token FCM:', e.status, JSON.stringify(e.error)),
+        next: () => {
+          console.log('Token FCM registrado ✓');
+          this.registrado = true;
+        },
+        error: (e) => {
+          console.error('Error registrando token FCM:', e.status, JSON.stringify(e.error));
+          this.registrado = false;
+        },
       });
   }
 
