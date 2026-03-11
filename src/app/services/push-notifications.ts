@@ -17,7 +17,8 @@ import { AuthService } from './auth';
 @Injectable({ providedIn: 'root' })
 export class PushNotificationsService {
 
-  private localNotifId = 1000; // ID incremental para notificaciones locales
+  private inicializado = false;
+  private localNotifId = 1000;
 
   constructor(
     private router: Router,
@@ -26,99 +27,95 @@ export class PushNotificationsService {
   ) {}
 
   async init() {
-    // ── Permisos push ────────────────────────────────────────────────────
+    // Permisos push
     const permStatus = await PushNotifications.requestPermissions();
     if (permStatus.receive !== 'granted') {
-      console.warn('Permiso de notificaciones denegado');
+      console.warn('Permiso push denegado');
       return;
     }
 
-    // ── Permisos local notifications (Android 13+) ───────────────────────
-    const localPerm = await LocalNotifications.requestPermissions();
-    if (localPerm.display !== 'granted') {
-      console.warn('Permiso local notifications denegado');
-    }
+    // Permisos local notifications
+    await LocalNotifications.requestPermissions();
 
-    // ── Crear canal Android para notificaciones locales ──────────────────
-    await LocalNotifications.createChannel({
-      id: 'ordenes',
-      name: 'Órdenes',
-      description: 'Notificaciones de nuevas órdenes',
-      importance: 5,        // IMPORTANCE_HIGH → hace sonar y aparece en pantalla
-      sound: 'default',
-      vibration: true,
-      visibility: 1,
-    });
+    // Listeners y canal solo se crean UNA vez
+    if (!this.inicializado) {
+      this.inicializado = true;
 
-    // ── Listener: tap en notificación local → navegar a Órdenes ─────────
-    LocalNotifications.addListener(
-      'localNotificationActionPerformed',
-      (action) => {
-        const data = action.notification.extra;
-        if (data?.tipo === 'nueva_orden') {
+      await LocalNotifications.createChannel({
+        id: 'ordenes',
+        name: 'Órdenes',
+        description: 'Notificaciones de nuevas órdenes',
+        importance: 5,
+        sound: 'default',
+        vibration: true,
+        visibility: 1,
+      });
+
+      // Tap en notificación local → navegar a Órdenes
+      LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+        if (action.notification.extra?.tipo === 'nueva_orden') {
           this.router.navigate(['/tabs/tab2']);
         }
-      }
-    );
+      });
 
-    // ── Registrar dispositivo en FCM ─────────────────────────────────────
-    await PushNotifications.register();
+      // Token FCM generado/rotado → registrar en backend
+      PushNotifications.addListener('registration', (token: Token) => {
+        console.log('FCM Token:', token.value.substring(0, 20) + '...');
+        this.registrarToken(token.value);
+      });
 
-    PushNotifications.addListener('registration', (token: Token) => {
-      console.log('FCM Token:', token.value);
-      this.registrarToken(token.value);
-    });
+      PushNotifications.addListener('registrationError', (err) => {
+        console.error('Error registro FCM:', err);
+      });
 
-    PushNotifications.addListener('registrationError', (err) => {
-      console.error('Error registro FCM:', err);
-    });
-
-    // ── FOREGROUND: FCM llega silenciosa → disparar notificación local ───
-    PushNotifications.addListener(
-      'pushNotificationReceived',
-      async (notification: PushNotificationSchema) => {
-        console.log('Push recibida en foreground:', notification);
-
-        const id = this.localNotifId++;
-
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              id,
+      // App en FOREGROUND → FCM llega silenciosa → disparar notificación local nativa
+      PushNotifications.addListener(
+        'pushNotificationReceived',
+        async (notification: PushNotificationSchema) => {
+          console.log('Push foreground recibida:', notification);
+          await LocalNotifications.schedule({
+            notifications: [{
+              id: this.localNotifId++,
               title: notification.title || 'Nueva notificación',
               body: notification.body || '',
               channelId: 'ordenes',
-              extra: notification.data,           // para la navegación al tapear
-              smallIcon: 'ic_stat_icon_config_sample', // icono blanco en la barra
+              extra: notification.data,
+              smallIcon: 'ic_stat_icon_config_sample',
               sound: 'default',
               actionTypeId: '',
-              schedule: { at: new Date(Date.now() + 100) }, // casi inmediata
-            } as LocalNotificationSchema,
-          ],
-        });
-      }
-    );
-
-    // ── BACKGROUND / KILLED: usuario tapea la push de FCM ───────────────
-    PushNotifications.addListener(
-      'pushNotificationActionPerformed',
-      (action: ActionPerformed) => {
-        const data = action.notification.data;
-        if (data?.tipo === 'nueva_orden') {
-          this.router.navigate(['/tabs/tab2']);
+              schedule: { at: new Date(Date.now() + 100) },
+            } as LocalNotificationSchema],
+          });
         }
-      }
-    );
+      );
+
+      // App en BACKGROUND/KILLED → tap en notificación → navegar
+      PushNotifications.addListener(
+        'pushNotificationActionPerformed',
+        (action: ActionPerformed) => {
+          if (action.notification.data?.tipo === 'nueva_orden') {
+            this.router.navigate(['/tabs/tab2']);
+          }
+        }
+      );
+    }
+
+    // Registrar en FCM — si el token cambió (reinstalación),
+    // FCM dispara 'registration' con el token nuevo automáticamente
+    await PushNotifications.register();
   }
 
   private registrarToken(token: string) {
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${this.authService.getToken()}`,
-    });
+    const jwtToken = this.authService.getToken();
+    if (!jwtToken) {
+      console.warn('FCM: sin JWT, token no registrado');
+      return;
+    }
+    const headers = new HttpHeaders({ Authorization: `Bearer ${jwtToken}` });
     this.http
       .post(`${environment.apiUrl}/api/fcm/token`, { token }, { headers })
       .subscribe({
-        next: () => console.log('Token FCM registrado en backend'),
+        next: () => console.log('Token FCM registrado ✓'),
         error: (e) => console.error('Error registrando token FCM:', e),
       });
   }
