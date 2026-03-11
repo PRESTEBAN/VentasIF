@@ -112,7 +112,7 @@ export class PushNotificationsService {
     }
     // Sin header manual — el interceptor agrega el JWT y hace refresh si expiró
     this.http
-      .post(`${environment.apiUrl}/api/fcm/token`, { token })
+      .post(`${environment.apiUrl}/api/v1/fcm/token`, { token })
       .subscribe({
         next: () => console.log('Token FCM registrado ✓'),
         error: (e) => console.error('Error registrando token FCM:', e.status, JSON.stringify(e.error)),
