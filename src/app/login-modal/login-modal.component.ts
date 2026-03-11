@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { AlertController, ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth';
+import { PushNotificationsService } from '../services/push-notifications';
 
 @Component({
   selector: 'app-login-modal',
@@ -16,14 +17,15 @@ export class LoginModalComponent implements OnInit {
   mostrarPassword: boolean = false;
   errorUsuario: string = '';
   errorPassword: string = '';
-  errorGeneral: string = '';   // para errores del servidor (credenciales inválidas, etc.)
+  errorGeneral: string = '';
   cargando: boolean = false;
 
   constructor(
     private modalCtrl: ModalController,
     private router: Router,
     private authService: AuthService,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private pushService: PushNotificationsService
   ) { }
 
   ngOnInit() { }
@@ -39,14 +41,12 @@ export class LoginModalComponent implements OnInit {
   }
 
   login() {
-    // Limpiar errores previos
     this.errorUsuario = '';
     this.errorPassword = '';
     this.errorGeneral = '';
 
     let valido = true;
 
-    // ── Validar usuario ──────────────────────────────────────────────────────
     if (this.usuario.trim() === '') {
       this.errorUsuario = 'Ingresa tu usuario';
       valido = false;
@@ -55,7 +55,6 @@ export class LoginModalComponent implements OnInit {
       valido = false;
     }
 
-    // ── Validar PIN ──────────────────────────────────────────────────────────
     if (this.password.trim() === '') {
       this.errorPassword = 'Ingresa tu contraseña';
       valido = false;
@@ -66,15 +65,17 @@ export class LoginModalComponent implements OnInit {
 
     if (!valido) return;
 
-    // ── Llamada al backend ───────────────────────────────────────────────────
     this.cargando = true;
 
     this.authService.login(this.usuario.trim(), this.password).subscribe({
       next: (res) => {
         this.cargando = false;
-        this.authService.guardarSesion(res);           // guarda token + usuario
+        this.authService.guardarSesion(res);
         this.modalCtrl.dismiss({ usuario: res.usuario });
         this.router.navigate(['/tabs/tab1']);
+
+        // ── Registrar token FCM pendiente ahora que hay JWT ──────────────
+        this.pushService.intentarRegistrar();
       },
       error: async (err) => {
         this.cargando = false;
