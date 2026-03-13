@@ -28,7 +28,8 @@ export class PushNotificationsService {
     private authService: AuthService
   ) {}
 
-  async init() {
+async init() {
+  try {
     const permStatus = await PushNotifications.requestPermissions();
     if (permStatus.receive !== 'granted') {
       console.warn('Permiso push denegado');
@@ -40,15 +41,19 @@ export class PushNotificationsService {
     if (!this.inicializado) {
       this.inicializado = true;
 
-      await LocalNotifications.createChannel({
-        id: 'ordenes',
-        name: 'Órdenes',
-        description: 'Notificaciones de nuevas órdenes',
-        importance: 5,
-        sound: 'default',
-        vibration: true,
-        visibility: 1,
-      });
+      try {
+        await LocalNotifications.createChannel({
+          id: 'ordenes',
+          name: 'Órdenes',
+          description: 'Notificaciones de nuevas órdenes',
+          importance: 5,
+          sound: 'default',
+          vibration: true,
+          visibility: 1,
+        });
+      } catch (e) {
+        console.warn('FCM: error creando canal:', e);
+      }
 
       LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
         if (action.notification.extra?.tipo === 'nueva_orden') {
@@ -59,31 +64,35 @@ export class PushNotificationsService {
       PushNotifications.addListener('registration', (token: Token) => {
         console.log('FCM Token obtenido:', token.value.substring(0, 20) + '...');
         this.ultimoToken = token.value;
-        this.registrado = false; // nuevo token = hay que re-registrar
+        this.registrado = false;
         this.intentarRegistrar();
       });
 
       PushNotifications.addListener('registrationError', (err) => {
         console.error('Error registro FCM:', err);
+        // No relanzar — solo loguear
       });
 
       PushNotifications.addListener(
         'pushNotificationReceived',
         async (notification: PushNotificationSchema) => {
-          console.log('Push foreground recibida:', notification);
-          await LocalNotifications.schedule({
-            notifications: [{
-              id: this.localNotifId++,
-              title: notification.title || 'Nueva notificación',
-              body: notification.body || '',
-              channelId: 'ordenes',
-              extra: notification.data,
-              smallIcon: 'ic_stat_icon_config_sample',
-              sound: 'default',
-              actionTypeId: '',
-              schedule: { at: new Date(Date.now() + 100) },
-            } as LocalNotificationSchema],
-          });
+          try {
+            await LocalNotifications.schedule({
+              notifications: [{
+                id: this.localNotifId++,
+                title: notification.title || 'Nueva notificación',
+                body: notification.body || '',
+                channelId: 'ordenes',
+                extra: notification.data,
+                smallIcon: 'ic_stat_icon_config_sample',
+                sound: 'default',
+                actionTypeId: '',
+                schedule: { at: new Date(Date.now() + 100) },
+              } as LocalNotificationSchema],
+            });
+          } catch (e) {
+            console.warn('FCM: error mostrando notificación local:', e);
+          }
         }
       );
 
@@ -96,30 +105,31 @@ export class PushNotificationsService {
         }
       );
 
-      // ── Reintento al arranque: cada 5s hasta registrar (máx 10 intentos) ──
-      // Cubre el caso donde FCM devuelve el token antes de que haya JWT
       let intentos = 0;
       const intervaloArranque = setInterval(() => {
         intentos++;
         if (this.registrado || intentos >= 10) {
           clearInterval(intervaloArranque);
-          if (!this.registrado) console.warn('FCM: máx intentos arranque alcanzado');
           return;
         }
-        console.log(`FCM: reintento arranque ${intentos}/10...`);
         this.intentarRegistrar();
       }, 5000);
 
-      // ── Renovación periódica cada 30 minutos ─────────────────────────────
       setInterval(() => {
-        console.log('FCM: renovación periódica...');
-        this.registrado = false; // forzar re-registro
+        this.registrado = false;
         this.intentarRegistrar();
       }, 30 * 60 * 1000);
     }
 
     await PushNotifications.register();
+
+  } catch (e) {
+    // ← ESTO ES LO MÁS IMPORTANTE
+    // Si Firebase no está configurado o cualquier otra cosa falla,
+    // la app NO crashea — simplemente las notificaciones no funcionan
+    console.error('FCM: error en init(), notificaciones desactivadas:', e);
   }
+}
 
   // Llamar después del login o al volver del background
   intentarRegistrar() {

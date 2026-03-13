@@ -14,7 +14,6 @@ import { Capacitor } from '@capacitor/core';
   standalone: false,
 })
 export class AppComponent implements OnInit {
-
   private ultimaRuta = '/tabs/tab1';
 
   constructor(
@@ -26,29 +25,38 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     if ((window as any).cordova) {
-      document.addEventListener('deviceready', () => {
-        this.printerService.intentarReconectar();
-      }, false);
+      document.addEventListener(
+        'deviceready',
+        () => {
+          this.printerService.intentarReconectar();
+        },
+        false
+      );
     } else {
       this.printerService.intentarReconectar();
     }
 
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.ultimaRuta = event.urlAfterRedirects;
-    });
+    this.router.events
+      .pipe(filter((event) => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.ultimaRuta = event.urlAfterRedirects;
+      });
 
+    // ✅ así debe quedar
     if (Capacitor.isNativePlatform()) {
-      this.pushService.init();
-
+      this.pushService.init().catch((e) => {
+        console.error('Push init error:', e);
+      });
       setTimeout(() => {
-        this.pushService.intentarRegistrar();
+        try {
+          this.pushService.intentarRegistrar();
+        } catch (e) {}
       }, 2000);
-
       App.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
-          this.pushService.intentarRegistrar();
+          try {
+            this.pushService.intentarRegistrar();
+          } catch (e) {}
         }
       });
     }
