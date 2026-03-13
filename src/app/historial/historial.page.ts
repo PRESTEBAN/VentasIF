@@ -12,9 +12,9 @@ export interface VentaHistorial {
   clienteApellido: string;
   clienteNegocio: string | null;
   clienteCedula: string;
-  clienteTelefono: string;     // ← nuevo
-  clienteDireccion: string;    // ← nuevo
-  vendedor: string;            // ← nuevo
+  clienteTelefono: string;
+  clienteDireccion: string;
+  vendedor: string;
   tipoCliente?: string;
   estado: 'Entregado' | 'Pendiente';
   total: number;
@@ -23,8 +23,8 @@ export interface VentaHistorial {
   iva: number;
   fecha: string;
   formaPago: string;
-  montoRecibido: number;       // ← nuevo
-  vuelto: number;              // ← nuevo
+  montoRecibido: number;
+  vuelto: number;
   items: VentaItem[];
   saldoGenerado: number;
 }
@@ -32,8 +32,8 @@ export interface VentaHistorial {
 export interface VentaItem {
   nombre: string;
   cantidad: number;
-  precio_unitario: number;     // ← nuevo
-  descuento: number;           // ← nuevo
+  precio_unitario: number;
+  descuento: number;
   subtotal: number;
 }
 
@@ -110,6 +110,17 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.detenerPolling();
   }
 
+  // ── GETTERS RESUMEN ──
+  get totalVentasPagadas(): number {
+    return this.ventas
+      .filter(v => v.saldoGenerado === 0)
+      .reduce((acc, v) => acc + v.total, 0);
+  }
+
+  get totalAbonos(): number {
+    return this.abonos.reduce((acc, a) => acc + a.monto, 0);
+  }
+
   iniciarPolling() {
     this.detenerPolling();
     this.pollingInterval = setInterval(() => {
@@ -124,38 +135,37 @@ export class HistorialPage implements OnInit, OnDestroy {
     }
   }
 
-  // Carga silenciosa — solo agrega ventas nuevas sin spinner
   cargarVentasSilencioso() {
-  const fechaStr = this.formatearFecha(this.fechaSeleccionada);
-  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        const idsActuales = new Set(this.ventas.map(v => v.id));
-        (data || []).forEach(v => {
-          const venta = this.mapearVenta(v);
-          if (!idsActuales.has(venta.id)) this.ventas = [venta, ...this.ventas];
-        });
-      },
-      error: () => {}
-    });
+    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
+    this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          const idsActuales = new Set(this.ventas.map(v => v.id));
+          (data || []).forEach(v => {
+            const venta = this.mapearVenta(v);
+            if (!idsActuales.has(venta.id)) this.ventas = [venta, ...this.ventas];
+          });
+        },
+        error: () => {}
+      });
 
-  this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        this.abonos = (data || []).map(a => ({
-          id: a.id, ventaId: a.venta_id,
-          clienteNombre: a.cliente_nombre || '',
-          clienteNegocio: a.nombre_negocio || null,
-          cedula: a.cedula || '',
-          monto: parseFloat(a.monto) || 0,
-          formaPago: a.forma_pago || '',
-          fecha: a.fecha || '',
-          notas: a.notas || null,
-        }));
-      },
-      error: () => {}
-    });
-}
+    this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.abonos = (data || []).map(a => ({
+            id: a.id, ventaId: a.venta_id,
+            clienteNombre: a.cliente_nombre || '',
+            clienteNegocio: a.nombre_negocio || null,
+            cedula: a.cedula || '',
+            monto: parseFloat(a.monto) || 0,
+            formaPago: a.forma_pago || '',
+            fecha: a.fecha || '',
+            notas: a.notas || null,
+          }));
+        },
+        error: () => {}
+      });
+  }
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -227,84 +237,85 @@ export class HistorialPage implements OnInit, OnDestroy {
   }
 
   cargarVentas() {
-  this.cargando = true;
-  this.ventas = [];
-  this.abonos = [];
-  const fechaStr = this.formatearFecha(this.fechaSeleccionada);
+    this.cargando = true;
+    this.ventas = [];
+    this.abonos = [];
+    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
 
-  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        this.ventas = (data || []).map(v => this.mapearVenta(v)).reverse();
-        this.cargando = false;
-      },
-      error: () => { this.ventas = []; this.cargando = false; }
-    });
+    this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.ventas = (data || []).map(v => this.mapearVenta(v)).reverse();
+          this.cargando = false;
+        },
+        error: () => { this.ventas = []; this.cargando = false; }
+      });
 
-  this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
-    .subscribe({
-      next: (data) => {
-        this.abonos = (data || []).map(a => ({
-          id: a.id,
-          ventaId: a.venta_id,
-          clienteNombre: a.cliente_nombre || '',
-          clienteNegocio: a.nombre_negocio || null,
-          cedula: a.cedula || '',
-          monto: parseFloat(a.monto) || 0,
-          formaPago: a.forma_pago || '',
-          fecha: a.fecha || '',
-          notas: a.notas || null,
-        }));
-      },
-      error: () => { this.abonos = []; }
-    });
-}
+    this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (data) => {
+          this.abonos = (data || []).map(a => ({
+            id: a.id,
+            ventaId: a.venta_id,
+            clienteNombre: a.cliente_nombre || '',
+            clienteNegocio: a.nombre_negocio || null,
+            cedula: a.cedula || '',
+            monto: parseFloat(a.monto) || 0,
+            formaPago: a.forma_pago || '',
+            fecha: a.fecha || '',
+            notas: a.notas || null,
+          }));
+        },
+        error: () => { this.abonos = []; }
+      });
+  }
 
   private mapearVenta(v: any): VentaHistorial {
-  const nombreCompleto: string = v.cliente || v.clienteNombre || '';
-  const partes = nombreCompleto.trim().split(' ');
-  const nombre = partes[0] || '';
-  const apellido = partes.slice(1).join(' ') || '';
+    const nombreCompleto: string = v.cliente || v.clienteNombre || '';
+    const partes = nombreCompleto.trim().split(' ');
+    const nombre = partes[0] || '';
+    const apellido = partes.slice(1).join(' ') || '';
 
-  const estadoRaw = (v.estado || '').toLowerCase();
-  const estado: 'Entregado' | 'Pendiente' = estadoRaw === 'entregado' ? 'Entregado' : 'Pendiente';
+    const estadoRaw = (v.estado || '').toLowerCase();
+    const estado: 'Entregado' | 'Pendiente' = estadoRaw === 'entregado' ? 'Entregado' : 'Pendiente';
 
-  const rawItems = v.items || v.detalle || v.detalles || [];
-  const ventaId = v.venta_id || v.id;
+    const rawItems = v.items || v.detalle || v.detalles || [];
+    const ventaId = v.venta_id || v.id;
 
-  const tipoRaw = v.tipo_cliente || v.tipo || v.cliente_tipo || '';
-  const tipoCliente = tipoRaw === 'particular' ? 'Particular' : tipoRaw === 'negocio' ? 'Negocio' : tipoRaw || '—';
+    const tipoRaw = v.tipo_cliente || v.tipo || v.cliente_tipo || '';
+    const tipoCliente = tipoRaw === 'particular' ? 'Particular' : tipoRaw === 'negocio' ? 'Negocio' : tipoRaw || '—';
 
-  return {
-    id: ventaId,
-    ordenId: ventaId,
-    clienteNombre: nombre,
-    clienteApellido: apellido,
-    clienteNegocio: v.nombre_negocio || null,
-    clienteCedula: v.cedula || '',
-    clienteTelefono: v.telefono || '',        // ← nuevo
-    clienteDireccion: v.direccion || '',      // ← nuevo
-    vendedor: v.vendedor || '',               // ← nuevo
-    tipoCliente,
-    estado,
-    saldoGenerado: parseFloat(v.saldo_generado) || 0,
-    total: parseFloat(v.total) || 0,
-    subtotal: parseFloat(v.subtotal) || 0,
-    descuento: parseFloat(v.descuento) || 0,
-    iva: parseFloat(v.iva) || 0,
-    fecha: v.fecha || v.created_at || '',
-    formaPago: v.tipo_pago || v.forma_pago || '',
-    montoRecibido: parseFloat(v.monto_recibido) || 0,   // ← nuevo
-    vuelto: parseFloat(v.vuelto) || 0,                  // ← nuevo
-    items: rawItems.map((item: any) => ({
-      nombre: item.nombre || item.producto || item.producto_nombre || '',
-      cantidad: item.cantidad || 0,
-      precio_unitario: parseFloat(item.precio_unitario) || 0,   // ← nuevo
-      descuento: parseFloat(item.descuento) || 0,               // ← nuevo
-      subtotal: parseFloat(item.subtotal) || 0,
-    }))
-  };
-}
+    return {
+      id: ventaId,
+      ordenId: ventaId,
+      clienteNombre: nombre,
+      clienteApellido: apellido,
+      clienteNegocio: v.nombre_negocio || null,
+      clienteCedula: v.cedula || '',
+      clienteTelefono: v.telefono || '',
+      clienteDireccion: v.direccion || '',
+      vendedor: v.vendedor || '',
+      tipoCliente,
+      estado,
+      saldoGenerado: parseFloat(v.saldo_generado) || 0,
+      total: parseFloat(v.total) || 0,
+      subtotal: parseFloat(v.subtotal) || 0,
+      descuento: parseFloat(v.descuento) || 0,
+      iva: parseFloat(v.iva) || 0,
+      fecha: v.fecha || v.created_at || '',
+      formaPago: v.tipo_pago || v.forma_pago || '',
+      montoRecibido: parseFloat(v.monto_recibido) || 0,
+      vuelto: parseFloat(v.vuelto) || 0,
+      items: rawItems.map((item: any) => ({
+        nombre: item.nombre || item.producto || item.producto_nombre || '',
+        cantidad: item.cantidad || 0,
+        precio_unitario: parseFloat(item.precio_unitario) || 0,
+        descuento: parseFloat(item.descuento) || 0,
+        subtotal: parseFloat(item.subtotal) || 0,
+      }))
+    };
+  }
+
   formatearFecha(fecha: Date): string {
     const d = fecha.getDate().toString().padStart(2, '0');
     const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
@@ -434,47 +445,47 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
-async reimprimirOrden() {
-  if (!this.ventaDetalle || this.imprimiendo) return;
+  async reimprimirOrden() {
+    if (!this.ventaDetalle || this.imprimiendo) return;
 
-  this.imprimiendo = true;
-  try {
-    const datos: DatosRecibo = {
-      ventaId: this.ventaDetalle.id,
-      clienteNombre: `${this.ventaDetalle.clienteNombre} ${this.ventaDetalle.clienteApellido}`.trim(),
-      clienteCedula: this.ventaDetalle.clienteCedula,
-      clienteTelefono: this.ventaDetalle.clienteTelefono,
-      clienteDireccion: this.ventaDetalle.clienteDireccion,
-      vendedor: this.ventaDetalle.vendedor,
-      items: this.ventaDetalle.items.map(item => ({
-        nombre: item.nombre,
-        cantidad: item.cantidad,
-        precio_unitario: item.precio_unitario,
-        descuento: item.descuento,
-        subtotal: item.subtotal,
-      })),
-      subtotal: this.ventaDetalle.subtotal,
-      descuento: this.ventaDetalle.descuento,
-      iva: this.ventaDetalle.iva,
-      ivaPercent: this.ventaDetalle.iva > 0 ? 15 : 0,
-      total: this.ventaDetalle.total,
-      formaPago: this.ventaDetalle.formaPago,
-      montoRecibido: this.ventaDetalle.montoRecibido,
-      vuelto: this.ventaDetalle.vuelto,
-    };
+    this.imprimiendo = true;
+    try {
+      const datos: DatosRecibo = {
+        ventaId: this.ventaDetalle.id,
+        clienteNombre: `${this.ventaDetalle.clienteNombre} ${this.ventaDetalle.clienteApellido}`.trim(),
+        clienteCedula: this.ventaDetalle.clienteCedula,
+        clienteTelefono: this.ventaDetalle.clienteTelefono,
+        clienteDireccion: this.ventaDetalle.clienteDireccion,
+        vendedor: this.ventaDetalle.vendedor,
+        items: this.ventaDetalle.items.map(item => ({
+          nombre: item.nombre,
+          cantidad: item.cantidad,
+          precio_unitario: item.precio_unitario,
+          descuento: item.descuento,
+          subtotal: item.subtotal,
+        })),
+        subtotal: this.ventaDetalle.subtotal,
+        descuento: this.ventaDetalle.descuento,
+        iva: this.ventaDetalle.iva,
+        ivaPercent: this.ventaDetalle.iva > 0 ? 15 : 0,
+        total: this.ventaDetalle.total,
+        formaPago: this.ventaDetalle.formaPago,
+        montoRecibido: this.ventaDetalle.montoRecibido,
+        vuelto: this.ventaDetalle.vuelto,
+      };
 
-    await this.printerService.imprimirRecibo(datos);
-  } catch (err: any) {
-    const alert = await this.alertCtrl.create({
-      header: 'Error de impresión',
-      message: err?.message || 'No se pudo imprimir. Verifica que la impresora esté conectada.',
-      buttons: ['OK']
-    });
-    await alert.present();
-  } finally {
-    this.imprimiendo = false;
+      await this.printerService.imprimirRecibo(datos);
+    } catch (err: any) {
+      const alert = await this.alertCtrl.create({
+        header: 'Error de impresión',
+        message: err?.message || 'No se pudo imprimir. Verifica que la impresora esté conectada.',
+        buttons: ['OK']
+      });
+      await alert.present();
+    } finally {
+      this.imprimiendo = false;
+    }
   }
-}
 
   irAClientes() {
     this.cerrarMenu();

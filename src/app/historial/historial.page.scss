@@ -407,6 +407,35 @@
 .pago-cancelado { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
 .pago-pendiente { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
 
+// ── FILA MÉTODO DE PAGO ──
+.pago-row {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 4px; margin-top: 3px; flex-wrap: nowrap;
+}
+
+.metodo-nombre {
+  display: inline-block;
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; border-radius: 20px;
+  letter-spacing: 0.3px; white-space: nowrap;
+}
+
+.metodo-efectivo-pill {
+  background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7;
+}
+.metodo-transferencia-pill {
+  background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9;
+}
+.metodo-credito-pill {
+  background: #F3E5F5; color: #6A1B9A; border: 1px solid #CE93D8;
+}
+.metodo-cheque-pill {
+  background: #FFF8E1; color: #F57F17; border: 1px solid #FFD54F;
+}
+.metodo-otro-pill {
+  background: #ECEFF1; color: #546E7A; border: 1px solid #B0BEC5;
+}
+
 // ── SECCIÓN ABONOS ──
 .seccion-abonos { padding: 16px 0 6px 0; }
 .seccion-titulo {
@@ -441,4 +470,41 @@
   font-size: 13px; font-weight: 800;
   color: #2E7D32; margin: 3px 0 0 0 !important;
   text-align: right;
+}
+
+// ── RESUMEN DEL DÍA ──
+.resumen-dia {
+  margin-top: 10px;
+  background: #1B5E20;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+
+.resumen-fila {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  &:last-of-type { border-bottom: 1px solid rgba(255,255,255,0.12); }
+}
+
+.resumen-label {
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.85);
+}
+
+.resumen-valor {
+  font-size: 13px; font-weight: 700; color: #fff;
+}
+
+.resumen-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 10px; margin-top: 2px;
+}
+
+.resumen-total-lbl {
+  font-size: 15px; font-weight: 800; color: #fff;
+}
+
+.resumen-total-val {
+  font-size: 22px; font-weight: 900; color: #fff;
 }
