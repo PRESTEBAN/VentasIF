@@ -26,6 +26,7 @@ export interface VentaHistorial {
   montoRecibido: number;       // ← nuevo
   vuelto: number;              // ← nuevo
   items: VentaItem[];
+  saldoGenerado: number;
 }
 
 export interface VentaItem {
@@ -36,6 +37,17 @@ export interface VentaItem {
   subtotal: number;
 }
 
+export interface AbonoHistorial {
+  id: number;
+  ventaId: number;
+  clienteNombre: string;
+  clienteNegocio: string | null;
+  cedula: string;
+  monto: number;
+  formaPago: string;
+  fecha: string;
+  notas: string | null;
+}
 
 @Component({
   selector: 'app-historial',
@@ -54,6 +66,7 @@ export class HistorialPage implements OnInit, OnDestroy {
   mostrarDatePicker = false;
 
   ventas: VentaHistorial[] = [];
+  abonos: AbonoHistorial[] = [];
   cargando = false;
 
   mostrarDetalle = false;
@@ -113,24 +126,36 @@ export class HistorialPage implements OnInit, OnDestroy {
 
   // Carga silenciosa — solo agrega ventas nuevas sin spinner
   cargarVentasSilencioso() {
-    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
-    this.http
-      .get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, {
-        headers: this.getHeaders(),
-      })
-      .subscribe({
-        next: (data) => {
-          const idsActuales = new Set(this.ventas.map((v) => v.id));
-          (data || []).forEach((v) => {
-            const venta = this.mapearVenta(v);
-            if (!idsActuales.has(venta.id)) {
-              this.ventas = [venta, ...this.ventas];
-            }
-          });
-        },
-        error: () => {},
-      });
-  }
+  const fechaStr = this.formatearFecha(this.fechaSeleccionada);
+  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => {
+        const idsActuales = new Set(this.ventas.map(v => v.id));
+        (data || []).forEach(v => {
+          const venta = this.mapearVenta(v);
+          if (!idsActuales.has(venta.id)) this.ventas = [venta, ...this.ventas];
+        });
+      },
+      error: () => {}
+    });
+
+  this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => {
+        this.abonos = (data || []).map(a => ({
+          id: a.id, ventaId: a.venta_id,
+          clienteNombre: a.cliente_nombre || '',
+          clienteNegocio: a.nombre_negocio || null,
+          cedula: a.cedula || '',
+          monto: parseFloat(a.monto) || 0,
+          formaPago: a.forma_pago || '',
+          fecha: a.fecha || '',
+          notas: a.notas || null,
+        }));
+      },
+      error: () => {}
+    });
+}
 
   private getHeaders(): HttpHeaders {
     const token = this.authService.getToken();
@@ -202,25 +227,38 @@ export class HistorialPage implements OnInit, OnDestroy {
   }
 
   cargarVentas() {
-    this.cargando = true;
-    this.ventas = [];
-    const fechaStr = this.formatearFecha(this.fechaSeleccionada);
+  this.cargando = true;
+  this.ventas = [];
+  this.abonos = [];
+  const fechaStr = this.formatearFecha(this.fechaSeleccionada);
 
-    this.http
-      .get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, {
-        headers: this.getHeaders(),
-      })
-      .subscribe({
-        next: (data) => {
-          this.ventas = (data || []).map((v) => this.mapearVenta(v)).reverse();
-          this.cargando = false;
-        },
-        error: () => {
-          this.ventas = [];
-          this.cargando = false;
-        },
-      });
-  }
+  this.http.get<any[]>(`${this.API}/ventas-ruta?fecha=${fechaStr}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => {
+        this.ventas = (data || []).map(v => this.mapearVenta(v)).reverse();
+        this.cargando = false;
+      },
+      error: () => { this.ventas = []; this.cargando = false; }
+    });
+
+  this.http.get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, { headers: this.getHeaders() })
+    .subscribe({
+      next: (data) => {
+        this.abonos = (data || []).map(a => ({
+          id: a.id,
+          ventaId: a.venta_id,
+          clienteNombre: a.cliente_nombre || '',
+          clienteNegocio: a.nombre_negocio || null,
+          cedula: a.cedula || '',
+          monto: parseFloat(a.monto) || 0,
+          formaPago: a.forma_pago || '',
+          fecha: a.fecha || '',
+          notas: a.notas || null,
+        }));
+      },
+      error: () => { this.abonos = []; }
+    });
+}
 
   private mapearVenta(v: any): VentaHistorial {
   const nombreCompleto: string = v.cliente || v.clienteNombre || '';
@@ -249,6 +287,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     vendedor: v.vendedor || '',               // ← nuevo
     tipoCliente,
     estado,
+    saldoGenerado: parseFloat(v.saldo_generado) || 0,
     total: parseFloat(v.total) || 0,
     subtotal: parseFloat(v.subtotal) || 0,
     descuento: parseFloat(v.descuento) || 0,

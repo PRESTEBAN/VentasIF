@@ -166,56 +166,78 @@
         </div>
 
         <div class="ventas-lista" *ngIf="!cargando">
-          <div class="sin-ventas" *ngIf="ventas.length === 0">
-            <ion-icon name="receipt-outline"></ion-icon>
-            <p>No hay ventas para este día</p>
-          </div>
+  <div class="sin-ventas" *ngIf="ventas.length === 0 && abonos.length === 0">
+    <ion-icon name="receipt-outline"></ion-icon>
+    <p>No hay ventas para este día</p>
+  </div>
 
-          <div
-            class="venta-card"
-            *ngFor="let venta of ventas"
-            (click)="verVenta(venta)"
-            [class.venta-seleccionada]="estaSeleccionada(venta.id)"
-          >
-            <div class="venta-check" *ngIf="modoEliminacion">
-              <ion-icon
-                [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'"
-                [class.checked]="estaSeleccionada(venta.id)"
-              ></ion-icon>
-            </div>
+  <!-- ── VENTAS ── -->
+  <div
+    class="venta-card"
+    *ngFor="let venta of ventas"
+    (click)="verVenta(venta)"
+    [class.venta-seleccionada]="estaSeleccionada(venta.id)"
+  >
+    <div class="venta-check" *ngIf="modoEliminacion">
+      <ion-icon
+        [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'"
+        [class.checked]="estaSeleccionada(venta.id)"
+      ></ion-icon>
+    </div>
 
-            <div class="venta-avatar">
-              <ion-icon name="person-circle-outline"></ion-icon>
-            </div>
+    <div class="venta-avatar">
+      <ion-icon name="person-circle-outline"></ion-icon>
+    </div>
 
-            <div class="venta-info">
-              <p class="venta-nombre">
-                {{ venta.clienteNombre }} {{ venta.clienteApellido }}
-              </p>
-              <!-- NÚMERO DE ORDEN en el card -->
-              <p class="venta-orden">#{{ venta.ordenId }}</p>
-              <p class="venta-negocio">{{ venta.clienteNegocio || '—' }}</p>
-              <p class="venta-cedula">{{ venta.clienteCedula }}</p>
-            </div>
+    <div class="venta-info">
+      <p class="venta-nombre">{{ venta.clienteNombre }} {{ venta.clienteApellido }}</p>
+      <p class="venta-orden">#{{ venta.ordenId }}</p>
+      <p class="venta-negocio">{{ venta.clienteNegocio || '—' }}</p>
+      <p class="venta-cedula">{{ venta.clienteCedula }}</p>
+    </div>
 
-            <div class="venta-derecha">
-              <p
-                class="venta-estado"
-                [class.estado-entregado]="venta.estado === 'Entregado'"
-                [class.estado-pendiente]="venta.estado === 'Pendiente'"
-              >
-                {{ venta.estado }}
-              </p>
-              <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
-            </div>
+    <div class="venta-derecha">
+      <p class="venta-estado"
+        [class.estado-entregado]="venta.estado === 'Entregado'"
+        [class.estado-pendiente]="venta.estado === 'Pendiente'">
+        {{ venta.estado }}
+      </p>
+      <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
+      <span class="pago-pill pago-cancelado" *ngIf="venta.saldoGenerado === 0">PAG</span>
+      <span class="pago-pill pago-pendiente" *ngIf="venta.saldoGenerado > 0">PEND</span>
+    </div>
 
-            <ion-icon
-              name="chevron-forward-outline"
-              class="venta-arrow"
-              *ngIf="!modoEliminacion"
-            ></ion-icon>
-          </div>
-        </div>
+    <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
+  </div>
+
+  <!-- ── ABONOS ── -->
+  <div class="seccion-abonos" *ngIf="abonos.length > 0">
+    <p class="seccion-titulo">
+      <ion-icon name="cash-outline"></ion-icon>
+      Abonos del día
+    </p>
+  </div>
+
+  <div class="abono-card" *ngFor="let abono of abonos">
+    <div class="abono-avatar">
+      <ion-icon name="cash-outline"></ion-icon>
+    </div>
+
+    <div class="venta-info">
+      <p class="venta-nombre">{{ abono.clienteNombre }}</p>
+      <p class="venta-orden">Abono → Orden #{{ abono.ventaId }}</p>
+      <p class="venta-negocio">{{ abono.clienteNegocio || '—' }}</p>
+      <p class="venta-cedula">{{ abono.cedula }}</p>
+    </div>
+
+    <div class="venta-derecha">
+      <span class="pago-pill abono-pill">ABONO</span>
+      <p class="abono-monto">+${{ abono.monto | number:'1.2-2' }}</p>
+      <p class="venta-total">{{ abono.formaPago }}</p>
+    </div>
+  </div>
+
+</div>
       </div>
     </div>
   </div>

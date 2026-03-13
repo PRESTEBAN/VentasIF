@@ -397,3 +397,48 @@
 
   &:disabled { opacity: 0.6; }
 }
+// ── BADGE PAG/PEND ──
+.pago-pill {
+  display: inline-block;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 7px; border-radius: 20px;
+  margin-top: 3px; letter-spacing: 0.5px;
+}
+.pago-cancelado { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+.pago-pendiente { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
+
+// ── SECCIÓN ABONOS ──
+.seccion-abonos { padding: 16px 0 6px 0; }
+.seccion-titulo {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 800; color: #555;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin: 0;
+  ion-icon { font-size: 16px; color: #2E7D32; }
+}
+
+.abono-card {
+  background: #fff; border-radius: 14px; padding: 12px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border: 1px solid #C8E6C9;
+}
+
+.abono-avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: #E8F5E9; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #A5D6A7;
+  ion-icon { font-size: 24px; color: #2E7D32; }
+}
+
+.abono-pill {
+  background: #E8F5E9; color: #2E7D32;
+  border: 1px solid #A5D6A7;
+}
+
+.abono-monto {
+  font-size: 13px; font-weight: 800;
+  color: #2E7D32; margin: 3px 0 0 0 !important;
+  text-align: right;
+}
