@@ -21,17 +21,30 @@ export class AppComponent implements OnInit {
     private authService: AuthService,
     private pushService: PushNotificationsService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit() {
-    if ((window as any).cordova) {
-      document.addEventListener(
-        'deviceready',
-        () => {
-          this.printerService.intentarReconectar();
+    this.inicializarApp();
+  }
+
+  private inicializarApp() {
+    if (this.authService.getRefreshToken() && this.authService.estaLogueado()) {
+      this.authService.refreshToken().subscribe({
+        next: (data) => {
+          this.authService.guardarNuevoToken(data.token, data.refreshToken);
+          console.log('✅ Token renovado al arrancar');
         },
-        false
-      );
+        error: (e) => { 
+          console.warn('⚠️ Refresh falló, interceptor se encargará');
+        }
+      });
+    }
+
+    // El resto de la inicialización NO espera al refresh
+    if ((window as any).cordova) {
+      document.addEventListener('deviceready', () => {
+        this.printerService.intentarReconectar();
+      }, false);
     } else {
       this.printerService.intentarReconectar();
     }
@@ -42,21 +55,14 @@ export class AppComponent implements OnInit {
         this.ultimaRuta = event.urlAfterRedirects;
       });
 
-    // ✅ así debe quedar
     if (Capacitor.isNativePlatform()) {
-      this.pushService.init().catch((e) => {
-        console.error('Push init error:', e);
-      });
+      this.pushService.init().catch((e) => console.error('Push init error:', e));
       setTimeout(() => {
-        try {
-          this.pushService.intentarRegistrar();
-        } catch (e) {}
+        try { this.pushService.intentarRegistrar(); } catch (e) { }
       }, 2000);
       App.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
-          try {
-            this.pushService.intentarRegistrar();
-          } catch (e) {}
+          try { this.pushService.intentarRegistrar(); } catch (e) { }
         }
       });
     }
