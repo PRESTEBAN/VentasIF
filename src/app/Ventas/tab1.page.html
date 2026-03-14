@@ -2,67 +2,14 @@
   <div class="background-container">
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
-      <div
-        class="menu-overlay"
-        [class.open]="menuAbierto"
-        (click)="cerrarMenu()"
-      ></div>
-
       
-      <div class="menu-lateral" [class.open]="menuAbierto">
-        <div class="menu-header">
-          <img src="assets/LOGO_IF.png" alt="Logo" class="menu-logo" />
-          <p class="menu-titulo">Industrial Fátima</p>
-          <p class="menu-usuario">
-            <ion-icon name="person-circle-outline"></ion-icon>{{ usuarioActual
-            }}
-          </p>
-        </div>
-        <div class="menu-items">
-          <p class="menu-seccion">Navegación</p>
-          <div
-            class="menu-item menu-item-active"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab1'])"
-          >
-            <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
-          </div>
-          <div
-            class="menu-item"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab2'])"
-          >
-            <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
-          </div>
-          <div
-            class="menu-item"
-            (click)="cerrarMenu(); router.navigate(['/tabs/tab3'])"
-          >
-            <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
-          </div>
-          <div class="menu-divider"></div>
-          <p class="menu-seccion">Gestión</p>
-          <div class="menu-item" (click)="irAClientes()">
-            <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
-          </div>
-          <div class="menu-item" (click)="irAHistorial()">
-            <ion-icon name="time-outline"></ion-icon><span>Historial</span>
-          </div>
-          <div class="menu-item" (click)="irAInventario()">
-            <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
-          </div>
-          <div class="menu-item">
-            <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
-          </div>
-          <div class="menu-item" (click)="irANotas()">
-            <ion-icon name="document-text-outline"></ion-icon>
-            <span>Notas</span>
-          </div>
-          <div class="menu-divider"></div>
-          <div class="menu-item menu-logout" (click)="cerrarSesion()">
-            <ion-icon name="log-out-outline"></ion-icon
-            ><span>Cerrar Sesión</span>
-          </div>
-        </div>
-      </div>
+      <app-menu-lateral
+        [abierto]="menuAbierto"
+        [paginaActiva]="'tab1'"
+        [usuarioActual]="usuarioActual"
+        (cerrar)="menuAbierto = false"
+      >
+      </app-menu-lateral>
 
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">

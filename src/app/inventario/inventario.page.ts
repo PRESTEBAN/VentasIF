@@ -260,8 +260,5 @@ export class InventarioPage implements OnInit, OnDestroy {
   abrirMenu()     { this.menuAbierto = true; }
   cerrarMenu()    { this.menuAbierto = false; }
   cerrarSesion()  { this.authService.logout(); this.router.navigate(['/login']); }
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
-  irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
-  irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
+
 }
