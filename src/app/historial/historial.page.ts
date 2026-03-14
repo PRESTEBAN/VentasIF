@@ -110,6 +110,17 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.detenerPolling();
   }
 
+  // ── GETTERS RESUMEN ──
+  get totalVentasPagadas(): number {
+    return this.ventas
+      .filter(v => v.saldoGenerado === 0)
+      .reduce((acc, v) => acc + v.total, 0);
+  }
+
+  get totalAbonos(): number {
+    return this.abonos.reduce((acc, a) => acc + a.monto, 0);
+  }
+
   iniciarPolling() {
     this.detenerPolling();
     this.pollingInterval = setInterval(() => {
@@ -124,7 +135,6 @@ export class HistorialPage implements OnInit, OnDestroy {
     }
   }
 
-  // Carga silenciosa — solo agrega ventas nuevas sin spinner
   cargarVentasSilencioso() {
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
     this.http

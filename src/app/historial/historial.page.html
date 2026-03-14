@@ -151,8 +151,14 @@
         {{ venta.estado }}
       </p>
       <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
-      <span class="pago-pill pago-cancelado" *ngIf="venta.saldoGenerado === 0">PAG</span>
-      <span class="pago-pill pago-pendiente" *ngIf="venta.saldoGenerado > 0">PEND</span>
+      <div class="pago-row">
+        <span class="pago-pill pago-cancelado" *ngIf="venta.saldoGenerado === 0">PAG</span>
+        <span class="pago-pill pago-pendiente" *ngIf="venta.saldoGenerado > 0">PEND</span>
+        <span class="metodo-nombre metodo-efectivo-pill"      *ngIf="venta.formaPago === 'efectivo'">E</span>
+        <span class="metodo-nombre metodo-transferencia-pill" *ngIf="venta.formaPago === 'transferencia'">T</span>
+        <span class="metodo-nombre metodo-credito-pill"       *ngIf="venta.formaPago === 'credito'">C</span>
+        <span class="metodo-nombre metodo-cheque-pill"        *ngIf="venta.formaPago === 'cheques'">Ch</span>
+      </div>
     </div>
 
     <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
@@ -182,6 +188,22 @@
       <span class="pago-pill abono-pill">ABONO</span>
       <p class="abono-monto">+${{ abono.monto | number:'1.2-2' }}</p>
       <p class="venta-total">{{ abono.formaPago }}</p>
+    </div>
+  </div>
+
+  <!-- ── RESUMEN DEL DÍA ── -->
+  <div class="resumen-dia" *ngIf="ventas.length > 0 || abonos.length > 0">
+    <div class="resumen-fila" *ngIf="ventas.length > 0">
+      <span class="resumen-label">Ventas pagadas</span>
+      <span class="resumen-valor">${{ totalVentasPagadas | number:'1.2-2' }}</span>
+    </div>
+    <div class="resumen-fila" *ngIf="abonos.length > 0">
+      <span class="resumen-label">Abonos del día</span>
+      <span class="resumen-valor">${{ totalAbonos | number:'1.2-2' }}</span>
+    </div>
+    <div class="resumen-total">
+      <span class="resumen-total-lbl">Total cobrado</span>
+      <span class="resumen-total-val">${{ (totalVentasPagadas + totalAbonos) | number:'1.2-2' }}</span>
     </div>
   </div>
 
