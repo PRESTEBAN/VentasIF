@@ -11,33 +11,72 @@
 
   <div class="menu-items">
     <p class="menu-seccion">Navegación</p>
-    <div class="menu-item" [class.menu-item-active]="esActivo('tab1')" (click)="navegar('/tabs/tab1')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('tab1')"
+      (click)="navegar('/tabs/tab1')"
+    >
       <ion-icon name="cart-outline"></ion-icon><span>Ventas</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('tab2')" (click)="navegar('/tabs/tab2')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('tab2')"
+      (click)="navegar('/tabs/tab2')"
+    >
       <ion-icon name="receipt-outline"></ion-icon><span>Ordenes</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('tab3')" (click)="navegar('/tabs/tab3')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('tab3')"
+      (click)="navegar('/tabs/tab3')"
+    >
       <ion-icon name="cash-outline"></ion-icon><span>Cierre de Caja</span>
     </div>
 
     <div class="menu-divider"></div>
     <p class="menu-seccion">Gestión</p>
 
-    <div class="menu-item" [class.menu-item-active]="esActivo('clientes')" (click)="navegar('/clientes')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('clientes')"
+      (click)="navegar('/clientes')"
+    >
       <ion-icon name="people-outline"></ion-icon><span>Clientes</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('historial')" (click)="navegar('/historial')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('historial')"
+      (click)="navegar('/historial')"
+    >
       <ion-icon name="time-outline"></ion-icon><span>Historial</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('inventario')" (click)="navegar('/inventario')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('inventario')"
+      (click)="navegar('/inventario')"
+    >
       <ion-icon name="cube-outline"></ion-icon><span>Inventario</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('caja')" (click)="navegar('/caja')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('caja')"
+      (click)="navegar('/caja')"
+    >
       <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
     </div>
-    <div class="menu-item" [class.menu-item-active]="esActivo('notas')" (click)="navegar('/notas')">
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('notas')"
+      (click)="navegar('/notas')"
+    >
       <ion-icon name="document-text-outline"></ion-icon><span>Notas</span>
+    </div>
+    <div
+      class="menu-item"
+      [class.menu-item-active]="esActivo('reportes')"
+      (click)="navegar('/reportes')"
+    >
+      <ion-icon name="stats-chart-outline"></ion-icon><span>Reportes</span>
     </div>
 
     <div class="menu-divider"></div>
