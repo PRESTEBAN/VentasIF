@@ -28,19 +28,11 @@
         </div>
 
         <div class="tabs-row">
-          <button
-            class="tab-btn"
-            [class.tab-activo]="tabActivo === 'ingresos'"
-            (click)="tabActivo = 'ingresos'; cargarDatos()"
-          >
+          <button class="tab-btn" [class.tab-activo]="tabActivo === 'ingresos'" (click)="tabActivo = 'ingresos'; cargarDatos()">
             <ion-icon name="trending-up-outline"></ion-icon>
             <span>Ingresos</span>
           </button>
-          <button
-            class="tab-btn"
-            [class.tab-activo]="tabActivo === 'egresos'"
-            (click)="tabActivo = 'egresos'; cargarDatos()"
-          >
+          <button class="tab-btn" [class.tab-activo]="tabActivo === 'egresos'" (click)="tabActivo = 'egresos'; cargarDatos()">
             <ion-icon name="trending-down-outline"></ion-icon>
             <span>Egresos</span>
           </button>
@@ -50,9 +42,7 @@
         <div *ngIf="tabActivo === 'ingresos'">
           <div class="fondo-card" *ngIf="esDiaDeHoy">
             <div class="fondo-header">
-              <div class="fondo-icono">
-                <ion-icon name="cash-outline"></ion-icon>
-              </div>
+              <div class="fondo-icono"><ion-icon name="cash-outline"></ion-icon></div>
               <div class="fondo-info">
                 <p class="fondo-label">Fondo Inicial</p>
                 <p class="fondo-valor">${{ fondoInicial | number:'1.2-2' }}</p>
@@ -64,25 +54,16 @@
           </div>
 
           <div class="semana-selector">
-            <button class="nav-btn" (click)="semanaAnterior()">
-              <ion-icon name="chevron-back-outline"></ion-icon>
-            </button>
+            <button class="nav-btn" (click)="semanaAnterior()"><ion-icon name="chevron-back-outline"></ion-icon></button>
             <div class="dias-scroll">
-              <div
-                class="dia-item"
-                *ngFor="let dia of semanaActual"
-                [class.dia-activo]="esDiaSeleccionado(dia)"
-                [class.dia-hoy]="esHoy(dia)"
-                (click)="seleccionarDia(dia)"
-              >
+              <div class="dia-item" *ngFor="let dia of semanaActual"
+                [class.dia-activo]="esDiaSeleccionado(dia)" [class.dia-hoy]="esHoy(dia)" (click)="seleccionarDia(dia)">
                 <span class="dia-mes">{{ dia | date:'MMM':'':'es' }}</span>
                 <span class="dia-numero">{{ dia | date:'d' }}</span>
                 <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
               </div>
             </div>
-            <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
-              <ion-icon name="chevron-forward-outline"></ion-icon>
-            </button>
+            <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
           </div>
 
           <div class="mes-anio-btn" (click)="abrirDatePicker()">
@@ -98,9 +79,7 @@
 
           <div *ngIf="!cargando">
             <div class="sin-items" *ngIf="ingresos.length === 0">
-              <div class="sin-icono">
-                <ion-icon name="trending-up-outline"></ion-icon>
-              </div>
+              <div class="sin-icono"><ion-icon name="trending-up-outline"></ion-icon></div>
               <p class="sin-titulo">Sin ingresos adicionales</p>
               <p class="sin-sub">No hay registros para este día</p>
               <button class="btn-agregar-vacio" (click)="abrirModalIngreso()" *ngIf="esDiaDeHoy">
@@ -110,21 +89,15 @@
 
             <div class="items-lista" *ngIf="ingresos.length > 0">
               <div class="item-card ingreso-card" *ngFor="let ingreso of ingresos">
-                <div class="item-icono">
-                  <ion-icon name="trending-up-outline"></ion-icon>
-                </div>
+                <div class="item-icono"><ion-icon name="trending-up-outline"></ion-icon></div>
                 <div class="item-info">
                   <p class="item-detalle">{{ ingreso.motivo }}</p>
                   <p class="item-fecha">{{ ingreso.fecha | date:'dd/MM/yyyy HH:mm':'':'es' }}</p>
                 </div>
                 <span class="item-valor ingreso-valor">${{ ingreso.monto | number:'1.2-2' }}</span>
                 <div class="egreso-acciones" *ngIf="esIngresoEditable(ingreso)">
-                  <button class="btn-editar-item" (click)="abrirEditarIngreso(ingreso)">
-                    <ion-icon name="pencil-outline"></ion-icon>
-                  </button>
-                  <button class="btn-borrar-item" (click)="confirmarBorrarIngreso(ingreso)">
-                    <ion-icon name="trash-outline"></ion-icon>
-                  </button>
+                  <button class="btn-editar-item" (click)="abrirEditarIngreso(ingreso)"><ion-icon name="pencil-outline"></ion-icon></button>
+                  <button class="btn-borrar-item" (click)="confirmarBorrarIngreso(ingreso)"><ion-icon name="trash-outline"></ion-icon></button>
                 </div>
                 <div class="egreso-cerrado-icon" *ngIf="!esIngresoEditable(ingreso)">
                   <ion-icon name="lock-closed-outline"></ion-icon>
@@ -153,25 +126,16 @@
         <!-- TAB: EGRESOS -->
         <div *ngIf="tabActivo === 'egresos'">
           <div class="semana-selector">
-            <button class="nav-btn" (click)="semanaAnterior()">
-              <ion-icon name="chevron-back-outline"></ion-icon>
-            </button>
+            <button class="nav-btn" (click)="semanaAnterior()"><ion-icon name="chevron-back-outline"></ion-icon></button>
             <div class="dias-scroll">
-              <div
-                class="dia-item"
-                *ngFor="let dia of semanaActual"
-                [class.dia-activo]="esDiaSeleccionado(dia)"
-                [class.dia-hoy]="esHoy(dia)"
-                (click)="seleccionarDia(dia)"
-              >
+              <div class="dia-item" *ngFor="let dia of semanaActual"
+                [class.dia-activo]="esDiaSeleccionado(dia)" [class.dia-hoy]="esHoy(dia)" (click)="seleccionarDia(dia)">
                 <span class="dia-mes">{{ dia | date:'MMM':'':'es' }}</span>
                 <span class="dia-numero">{{ dia | date:'d' }}</span>
                 <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
               </div>
             </div>
-            <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
-              <ion-icon name="chevron-forward-outline"></ion-icon>
-            </button>
+            <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()"><ion-icon name="chevron-forward-outline"></ion-icon></button>
           </div>
 
           <div class="mes-anio-btn" (click)="abrirDatePicker()">
@@ -187,9 +151,7 @@
 
           <div *ngIf="!cargando">
             <div class="sin-items" *ngIf="egresos.length === 0">
-              <div class="sin-icono egreso-sin-icono">
-                <ion-icon name="trending-down-outline"></ion-icon>
-              </div>
+              <div class="sin-icono egreso-sin-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
               <p class="sin-titulo">Sin egresos</p>
               <p class="sin-sub">No hay registros para este día</p>
               <button class="btn-agregar-vacio egreso-btn-vacio" (click)="abrirModalEgreso()" *ngIf="esDiaDeHoy">
@@ -199,9 +161,7 @@
 
             <div class="items-lista" *ngIf="egresos.length > 0">
               <div class="item-card" *ngFor="let egreso of egresos">
-                <div class="item-icono egreso-icono-card">
-                  <ion-icon name="trending-down-outline"></ion-icon>
-                </div>
+                <div class="item-icono egreso-icono-card"><ion-icon name="trending-down-outline"></ion-icon></div>
                 <div class="item-info">
                   <p class="item-detalle">{{ egreso.detalle }}</p>
                   <div class="egreso-meta">
@@ -209,8 +169,7 @@
                       <ion-icon name="person-outline"></ion-icon>
                       {{ getLabelBeneficiario(egreso.responsable) }}
                     </span>
-                    <span
-                      class="meta-pill beneficiario"
+                    <span class="meta-pill beneficiario"
                       [class.pill-fabrica]="egreso.beneficiario === 'ChFat'"
                       [class.pill-otros]="egreso.beneficiario === 'Otros'"
                       [class.pill-deposito]="egreso.beneficiario === 'Deposito'"
@@ -220,20 +179,17 @@
                       [class.pill-retencion]="egreso.beneficiario === 'Retencion'"
                       [class.pill-parqueo]="egreso.beneficiario === 'Parqueo'"
                     >
-                      <ion-icon
-                        [name]="
-                                egreso.beneficiario === 'ChFat'     ? 'business-outline' :
-                                egreso.beneficiario === 'Otros'       ? 'ellipsis-horizontal-outline' :
-                                egreso.beneficiario === 'Deposito'    ? 'arrow-up-circle-outline' :
-                                egreso.beneficiario === 'Viaticos'    ? 'restaurant-outline' :
-                                egreso.beneficiario === 'Combustible' ? 'flame-outline' :
-                                egreso.beneficiario === 'Anticipo'    ? 'wallet-outline' :
-                                egreso.beneficiario === 'Retencion'   ? 'shield-outline' :
-                                egreso.beneficiario === 'Parqueo'     ? 'car-outline' :
-                                'person-outline'"
-                      ></ion-icon>
-                      {{
-                         egreso.beneficiario === 'ChFat'     ? 'ChFat' :
+                      <ion-icon [name]="
+                        egreso.beneficiario === 'ChFat'      ? 'business-outline' :
+                        egreso.beneficiario === 'Otros'       ? 'ellipsis-horizontal-outline' :
+                        egreso.beneficiario === 'Deposito'    ? 'arrow-up-circle-outline' :
+                        egreso.beneficiario === 'Viaticos'    ? 'restaurant-outline' :
+                        egreso.beneficiario === 'Combustible' ? 'flame-outline' :
+                        egreso.beneficiario === 'Anticipo'    ? 'wallet-outline' :
+                        egreso.beneficiario === 'Retencion'   ? 'shield-outline' :
+                        egreso.beneficiario === 'Parqueo'     ? 'car-outline' :
+                        'person-outline'"></ion-icon>
+                      {{ egreso.beneficiario === 'ChFat'      ? 'ChFat' :
                          egreso.beneficiario === 'Otros'       ? 'Otros' :
                          egreso.beneficiario === 'Deposito'    ? 'Depósitos' :
                          egreso.beneficiario === 'Viaticos'    ? 'Viáticos' :
@@ -246,14 +202,9 @@
                   </div>
                 </div>
                 <span class="item-valor egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
-
                 <div class="egreso-acciones" *ngIf="esEgresoEditable(egreso)">
-                  <button class="btn-editar-item" (click)="abrirEditar(egreso)">
-                    <ion-icon name="pencil-outline"></ion-icon>
-                  </button>
-                  <button class="btn-borrar-item" (click)="confirmarBorrarEgreso(egreso)">
-                    <ion-icon name="trash-outline"></ion-icon>
-                  </button>
+                  <button class="btn-editar-item" (click)="abrirEditar(egreso)"><ion-icon name="pencil-outline"></ion-icon></button>
+                  <button class="btn-borrar-item" (click)="confirmarBorrarEgreso(egreso)"><ion-icon name="trash-outline"></ion-icon></button>
                 </div>
                 <div class="egreso-cerrado-icon" *ngIf="esDiaDeHoy && !esEgresoEditable(egreso)">
                   <ion-icon name="lock-closed-outline"></ion-icon>
@@ -275,12 +226,7 @@
   <div class="datepicker-overlay" *ngIf="mostrarDatePicker" (click)="cerrarDatePicker()">
     <div class="datepicker-card" (click)="$event.stopPropagation()">
       <p class="dp-titulo">Seleccionar fecha</p>
-      <input
-        type="date"
-        class="dp-input"
-        [value]="fechaSeleccionada | date:'yyyy-MM-dd'"
-        (change)="onDatePickerChange($event)"
-      />
+      <input type="date" class="dp-input" [value]="fechaSeleccionada | date:'yyyy-MM-dd'" (change)="onDatePickerChange($event)" />
       <button class="dp-btn" (click)="cerrarDatePicker()">Cerrar</button>
     </div>
   </div>
@@ -289,9 +235,7 @@
   <div class="modal-overlay" *ngIf="mostrarModalFondo" (click)="cerrarModalFondo()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #2e7d32, #1b5e20)">
-          <ion-icon name="cash-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #2e7d32, #1b5e20)"><ion-icon name="cash-outline"></ion-icon></div>
         <h2 class="modal-titulo">Fondo Inicial</h2>
         <p class="modal-sub" *ngIf="fondoModificado">Requiere clave de administrador</p>
       </div>
@@ -311,8 +255,8 @@
       <span class="field-error" *ngIf="erroresFondo.general">{{ erroresFondo.general }}</span>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarModalFondo()">Cancelar</button>
-        <button class="btn-anadir" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);" (click)="guardarFondo()" [disabled]="guardandoFondo">
-          <ion-spinner name="crescent" *ngIf="guardandoFondo" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); box-shadow: 0 4px 12px rgba(46,125,50,0.3);" (click)="guardarFondo()" [disabled]="guardandoFondo">
+          <ion-spinner name="crescent" *ngIf="guardandoFondo" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ guardandoFondo ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
@@ -323,9 +267,7 @@
   <div class="modal-overlay" *ngIf="mostrarModalIngreso" (click)="cerrarModalIngreso()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #2e7d32, #1b5e20)">
-          <ion-icon name="trending-up-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #2e7d32, #1b5e20)"><ion-icon name="trending-up-outline"></ion-icon></div>
         <h2 class="modal-titulo">Añadir Ingreso</h2>
       </div>
       <div class="form-group">
@@ -344,8 +286,8 @@
       <span class="field-error" *ngIf="erroresIngreso.general">{{ erroresIngreso.general }}</span>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarModalIngreso()">Cancelar</button>
-        <button class="btn-anadir" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);" (click)="guardarIngreso()" [disabled]="guardandoIngreso">
-          <ion-spinner name="crescent" *ngIf="guardandoIngreso" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #2e7d32, #1b5e20); box-shadow: 0 4px 12px rgba(46,125,50,0.3);" (click)="guardarIngreso()" [disabled]="guardandoIngreso">
+          <ion-spinner name="crescent" *ngIf="guardandoIngreso" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ guardandoIngreso ? 'Guardando...' : 'Añadir' }}
         </button>
       </div>
@@ -356,9 +298,7 @@
   <div class="modal-overlay" *ngIf="mostrarEditarIngreso" (click)="cerrarEditarIngreso()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #1565c0, #0d47a1)">
-          <ion-icon name="pencil-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #1565c0, #0d47a1)"><ion-icon name="pencil-outline"></ion-icon></div>
         <h2 class="modal-titulo">Editar Ingreso</h2>
       </div>
       <div class="form-group">
@@ -377,8 +317,8 @@
       <span class="field-error" *ngIf="erroresEditarIngreso.general">{{ erroresEditarIngreso.general }}</span>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarEditarIngreso()">Cancelar</button>
-        <button class="btn-anadir" style="background: linear-gradient(135deg, #1565c0, #0d47a1); box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);" (click)="guardarEdicionIngreso()" [disabled]="guardandoEditarIngreso">
-          <ion-spinner name="crescent" *ngIf="guardandoEditarIngreso" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #1565c0, #0d47a1); box-shadow: 0 4px 12px rgba(21,101,192,0.3);" (click)="guardarEdicionIngreso()" [disabled]="guardandoEditarIngreso">
+          <ion-spinner name="crescent" *ngIf="guardandoEditarIngreso" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ guardandoEditarIngreso ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
@@ -389,9 +329,7 @@
   <div class="modal-overlay" *ngIf="mostrarModalEgreso" (click)="cerrarModalEgreso()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono">
-          <ion-icon name="trending-down-outline"></ion-icon>
-        </div>
+        <div class="modal-icono"><ion-icon name="trending-down-outline"></ion-icon></div>
         <h2 class="modal-titulo">Añadir Egreso</h2>
       </div>
       <div class="form-group">
@@ -409,23 +347,19 @@
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarResponsableDropdown"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarResponsableDropdown">
-            <div
-              class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="nuevoEgreso.responsable === u.username"
-              (click)="seleccionarResponsable(u.username)"
-            >
+              (click)="seleccionarResponsable(u.username)">
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
           </div>
           <span class="field-error" *ngIf="erroresEgreso.responsable">{{ erroresEgreso.responsable }}</span>
         </div>
         <div class="form-group half">
-          <label>Beneficiario</label>
+          <label>Categoría</label>
           <div class="custom-select-wrap" (click)="toggleBeneficiario()">
             <span class="custom-select-valor" [class.placeholder]="!nuevoEgreso.beneficiario">
-              {{
-                 nuevoEgreso.beneficiario === 'ChFat'     ? 'ChFat' :
+              {{ nuevoEgreso.beneficiario === 'ChFat'      ? 'ChFat' :
                  nuevoEgreso.beneficiario === 'Otros'       ? 'Otros' :
                  nuevoEgreso.beneficiario === 'Deposito'    ? 'Depósitos' :
                  nuevoEgreso.beneficiario === 'Viaticos'    ? 'Viáticos' :
@@ -438,44 +372,64 @@
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdown"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdown">
-            <p class="dropdown-grupo">Personas</p>
-            <div
-              class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
-              [class.item-activo]="nuevoEgreso.beneficiario === u.username"
-              (click)="seleccionarBeneficiario(u.username)"
-            >
-              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
-            </div>
-            <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-combustible" [class.item-activo]="nuevoEgreso.beneficiario === 'Combustible'" (click)="seleccionarBeneficiario('Combustible')">
+            <p class="dropdown-grupo">Categoría</p>
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Combustible'" (click)="seleccionarBeneficiario('Combustible')">
               <ion-icon name="flame-outline"></ion-icon>Combustible
             </div>
-            <div class="dropdown-item item-parqueo" [class.item-activo]="nuevoEgreso.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiario('Parqueo')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiario('Parqueo')">
               <ion-icon name="car-outline"></ion-icon>Parqueo
             </div>
-            <div class="dropdown-item item-viaticos" [class.item-activo]="nuevoEgreso.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiario('Viaticos')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiario('Viaticos')">
               <ion-icon name="restaurant-outline"></ion-icon>Viáticos
             </div>
-            <div class="dropdown-item item-anticipo" [class.item-activo]="nuevoEgreso.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiario('Anticipo')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiario('Anticipo')">
               <ion-icon name="wallet-outline"></ion-icon>Anticipo
             </div>
-            <div class="dropdown-item item-retencion" [class.item-activo]="nuevoEgreso.beneficiario === 'Retencion'" (click)="seleccionarBeneficiario('Retencion')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Retencion'" (click)="seleccionarBeneficiario('Retencion')">
               <ion-icon name="shield-outline"></ion-icon>Retención
             </div>
-            <div class="dropdown-item item-fabrica" [class.item-activo]="nuevoEgreso.beneficiario === 'ChFat'" (click)="seleccionarBeneficiario('ChFat')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'ChFat'" (click)="seleccionarBeneficiario('ChFat')">
               <ion-icon name="business-outline"></ion-icon>ChFat
             </div>
-            <div class="dropdown-item item-deposito" [class.item-activo]="nuevoEgreso.beneficiario === 'Deposito'" (click)="seleccionarBeneficiario('Deposito')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Deposito'" (click)="seleccionarBeneficiario('Deposito')">
               <ion-icon name="arrow-up-circle-outline"></ion-icon>Depósitos
             </div>
-            <div class="dropdown-item item-otros" [class.item-activo]="nuevoEgreso.beneficiario === 'Otros'" (click)="seleccionarBeneficiario('Otros')">
+            <div class="dropdown-item" [class.item-activo]="nuevoEgreso.beneficiario === 'Otros'" (click)="seleccionarBeneficiario('Otros')">
               <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
+            </div>
+            <p class="dropdown-grupo">Personas</p>
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
+              [class.item-activo]="nuevoEgreso.beneficiario === u.username"
+              (click)="seleccionarBeneficiario(u.username)">
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
           </div>
           <span class="field-error" *ngIf="erroresEgreso.beneficiario">{{ erroresEgreso.beneficiario }}</span>
         </div>
       </div>
+
+      <!-- Campo venta: aparece solo al seleccionar Retención -->
+      <div class="form-group" *ngIf="nuevoEgreso.beneficiario === 'Retencion'">
+        <label>Venta del día</label>
+        <div class="custom-select-wrap" (click)="toggleVentasDropdown()">
+          <span class="custom-select-valor" [class.placeholder]="!ventaAnticipo">
+            {{ ventaAnticipo ? getLabelVenta(ventaAnticipo) : 'Seleccionar venta...' }}
+          </span>
+          <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarVentasDropdown"></ion-icon>
+        </div>
+        <div class="custom-dropdown" *ngIf="mostrarVentasDropdown">
+          <div class="dropdown-item" *ngIf="ventasDelDia.length === 0" style="color:#AAA;cursor:default;">
+            <ion-icon name="receipt-outline"></ion-icon>Sin ventas hoy
+          </div>
+          <div class="dropdown-item" *ngFor="let v of ventasDelDia"
+            [class.item-activo]="ventaAnticipo?.id === v.id"
+            (click)="seleccionarVentaAnticipo(v)">
+            <ion-icon name="receipt-outline"></ion-icon>
+            #{{ v.id }} — {{ v.clienteNombre }} {{ v.clienteApellido }} — ${{ v.total | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Valor</label>
         <div class="valor-input-wrap">
@@ -488,7 +442,7 @@
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarModalEgreso()">Cancelar</button>
         <button class="btn-anadir" (click)="guardarEgreso()" [disabled]="guardandoEgreso">
-          <ion-spinner name="crescent" *ngIf="guardandoEgreso" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+          <ion-spinner name="crescent" *ngIf="guardandoEgreso" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ guardandoEgreso ? 'Guardando...' : 'Añadir' }}
         </button>
       </div>
@@ -499,9 +453,7 @@
   <div class="modal-overlay" *ngIf="mostrarEditarModal" (click)="cerrarEditar()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #1565c0, #0d47a1)">
-          <ion-icon name="pencil-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #1565c0, #0d47a1)"><ion-icon name="pencil-outline"></ion-icon></div>
         <h2 class="modal-titulo">Editar Egreso</h2>
       </div>
       <div class="form-group">
@@ -519,22 +471,18 @@
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarResponsableDropdownEditar"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarResponsableDropdownEditar">
-            <div
-              class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
               [class.item-activo]="egresoEditando.responsable === u.username"
-              (click)="seleccionarResponsableEditar(u.username)"
-            >
+              (click)="seleccionarResponsableEditar(u.username)">
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
           </div>
         </div>
         <div class="form-group half">
-          <label>Beneficiario</label>
+          <label>Categoría</label>
           <div class="custom-select-wrap" (click)="toggleBeneficiarioEditar()">
             <span class="custom-select-valor" [class.placeholder]="!egresoEditando.beneficiario">
-              {{
-                 egresoEditando.beneficiario === 'ChFat'     ? 'ChFat' :
+              {{ egresoEditando.beneficiario === 'ChFat'      ? 'ChFat' :
                  egresoEditando.beneficiario === 'Otros'       ? 'Otros' :
                  egresoEditando.beneficiario === 'Deposito'    ? 'Depósitos' :
                  egresoEditando.beneficiario === 'Viaticos'    ? 'Viáticos' :
@@ -547,43 +495,63 @@
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdownEditar"></ion-icon>
           </div>
           <div class="custom-dropdown" *ngIf="mostrarBeneficiarioDropdownEditar">
-            <p class="dropdown-grupo">Personas</p>
-            <div
-              class="dropdown-item"
-              *ngFor="let u of usuariosSinAdmin"
-              [class.item-activo]="egresoEditando.beneficiario === u.username"
-              (click)="seleccionarBeneficiarioEditar(u.username)"
-            >
-              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
-            </div>
-            <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-combustible" [class.item-activo]="egresoEditando.beneficiario === 'Combustible'" (click)="seleccionarBeneficiarioEditar('Combustible')">
+            <p class="dropdown-grupo">Categoría</p>
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Combustible'" (click)="seleccionarBeneficiarioEditar('Combustible')">
               <ion-icon name="flame-outline"></ion-icon>Combustible
             </div>
-            <div class="dropdown-item item-parqueo" [class.item-activo]="egresoEditando.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiarioEditar('Parqueo')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiarioEditar('Parqueo')">
               <ion-icon name="car-outline"></ion-icon>Parqueo
             </div>
-            <div class="dropdown-item item-viaticos" [class.item-activo]="egresoEditando.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiarioEditar('Viaticos')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiarioEditar('Viaticos')">
               <ion-icon name="restaurant-outline"></ion-icon>Viáticos
             </div>
-            <div class="dropdown-item item-anticipo" [class.item-activo]="egresoEditando.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiarioEditar('Anticipo')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiarioEditar('Anticipo')">
               <ion-icon name="wallet-outline"></ion-icon>Anticipo
             </div>
-            <div class="dropdown-item item-retencion" [class.item-activo]="egresoEditando.beneficiario === 'Retencion'" (click)="seleccionarBeneficiarioEditar('Retencion')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Retencion'" (click)="seleccionarBeneficiarioEditar('Retencion')">
               <ion-icon name="shield-outline"></ion-icon>Retención
             </div>
-            <div class="dropdown-item item-fabrica" [class.item-activo]="egresoEditando.beneficiario === 'ChFat'" (click)="seleccionarBeneficiarioEditar('ChFat')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'ChFat'" (click)="seleccionarBeneficiarioEditar('ChFat')">
               <ion-icon name="business-outline"></ion-icon>ChFat
             </div>
-            <div class="dropdown-item item-deposito" [class.item-activo]="egresoEditando.beneficiario === 'Deposito'" (click)="seleccionarBeneficiarioEditar('Deposito')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Deposito'" (click)="seleccionarBeneficiarioEditar('Deposito')">
               <ion-icon name="arrow-up-circle-outline"></ion-icon>Depósitos
             </div>
-            <div class="dropdown-item item-otros" [class.item-activo]="egresoEditando.beneficiario === 'Otros'" (click)="seleccionarBeneficiarioEditar('Otros')">
+            <div class="dropdown-item" [class.item-activo]="egresoEditando.beneficiario === 'Otros'" (click)="seleccionarBeneficiarioEditar('Otros')">
               <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
+            </div>
+            <p class="dropdown-grupo">Personas</p>
+            <div class="dropdown-item" *ngFor="let u of usuariosSinAdmin"
+              [class.item-activo]="egresoEditando.beneficiario === u.username"
+              (click)="seleccionarBeneficiarioEditar(u.username)">
+              <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Campo venta: aparece solo al editar un egreso de tipo Retención -->
+      <div class="form-group" *ngIf="egresoEditando.beneficiario === 'Retencion'">
+        <label>Venta del día</label>
+        <div class="custom-select-wrap" (click)="toggleVentasDropdownEditar()">
+          <span class="custom-select-valor" [class.placeholder]="!ventaAnticipoEditar">
+            {{ ventaAnticipoEditar ? getLabelVenta(ventaAnticipoEditar) : 'Seleccionar venta...' }}
+          </span>
+          <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarVentasDropdownEditar"></ion-icon>
+        </div>
+        <div class="custom-dropdown" *ngIf="mostrarVentasDropdownEditar">
+          <div class="dropdown-item" *ngIf="ventasDelDia.length === 0" style="color:#AAA;cursor:default;">
+            <ion-icon name="receipt-outline"></ion-icon>Sin ventas hoy
+          </div>
+          <div class="dropdown-item" *ngFor="let v of ventasDelDia"
+            [class.item-activo]="ventaAnticipoEditar?.id === v.id"
+            (click)="seleccionarVentaAnticipoEditar(v)">
+            <ion-icon name="receipt-outline"></ion-icon>
+            #{{ v.id }} — {{ v.clienteNombre }} {{ v.clienteApellido }} — ${{ v.total | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label>Valor</label>
         <div class="valor-input-wrap">
@@ -595,8 +563,8 @@
       <span class="field-error" *ngIf="erroresEditar.general">{{ erroresEditar.general }}</span>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cerrarEditar()">Cancelar</button>
-        <button class="btn-anadir" style="background: linear-gradient(135deg, #1565c0, #0d47a1); box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
-          <ion-spinner name="crescent" *ngIf="guardandoEdicion" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #1565c0, #0d47a1); box-shadow: 0 4px 12px rgba(21,101,192,0.3);" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
+          <ion-spinner name="crescent" *ngIf="guardandoEdicion" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ guardandoEdicion ? 'Guardando...' : 'Guardar' }}
         </button>
       </div>
@@ -607,9 +575,7 @@
   <div class="modal-overlay" *ngIf="mostrarConfirmarBorrar">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div class="modal-icono" style="background: linear-gradient(135deg, #e53935, #b71c1c)">
-          <ion-icon name="trash-outline"></ion-icon>
-        </div>
+        <div class="modal-icono" style="background: linear-gradient(135deg, #e53935, #b71c1c)"><ion-icon name="trash-outline"></ion-icon></div>
         <h2 class="modal-titulo">¿Borrar registro?</h2>
       </div>
       <p style="text-align: center; color: #888; font-size: 13px; margin: 0 0 20px 0;">
@@ -617,8 +583,8 @@
       </p>
       <div class="modal-btns">
         <button class="btn-cancelar" (click)="cancelarBorrar()" [disabled]="borrando">Cancelar</button>
-        <button class="btn-anadir" style="background: linear-gradient(135deg, #e53935, #b71c1c); box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);" (click)="ejecutarBorrar()" [disabled]="borrando">
-          <ion-spinner name="crescent" *ngIf="borrando" style="width: 16px; height: 16px; margin-right: 6px"></ion-spinner>
+        <button class="btn-anadir" style="background: linear-gradient(135deg, #e53935, #b71c1c); box-shadow: 0 4px 12px rgba(229,57,53,0.3);" (click)="ejecutarBorrar()" [disabled]="borrando">
+          <ion-spinner name="crescent" *ngIf="borrando" style="width:16px;height:16px;margin-right:6px"></ion-spinner>
           {{ borrando ? 'Borrando...' : 'Sí, borrar' }}
         </button>
       </div>
