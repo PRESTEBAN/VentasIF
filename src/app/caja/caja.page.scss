@@ -61,17 +61,13 @@
   padding: 10px 8px; border: none; border-radius: 12px;
   background: transparent; cursor: pointer;
   font-size: 13px; font-weight: 700; color: #A07050;
-  transition: all 0.2s;
-  -webkit-appearance: none;
+  transition: all 0.2s; -webkit-appearance: none;
   ion-icon { font-size: 16px; }
-
   &.tab-activo {
-    background: #fff;
-    color: #590F23;
+    background: #fff; color: #590F23;
     box-shadow: 0 2px 8px rgba(89,15,35,0.15);
     ion-icon { color: #590F23; }
   }
-
   &:active { transform: scale(0.97); }
 }
 
@@ -209,7 +205,6 @@
 }
 
 .egreso-sin-icono ion-icon { color: #CCA888 !important; }
-
 .sin-titulo { font-size: 18px; font-weight: 800; color: #2D1B0E; margin: 0; }
 .sin-sub    { font-size: 13px; color: #AAA; margin: 0; }
 
@@ -246,24 +241,17 @@
   ion-icon { font-size: 20px; color: #fff; }
 }
 
-.egreso-icono-card {
-  background: linear-gradient(135deg, #590F23, #A83A1A) !important;
-}
+.egreso-icono-card { background: linear-gradient(135deg, #590F23, #A83A1A) !important; }
 
 .item-info { flex: 1; min-width: 0; }
 
 .item-detalle {
-  font-size: 13px; font-weight: 700; color: #2D1B0E;
-  margin: 0 0 4px 0;
+  font-size: 13px; font-weight: 700; color: #2D1B0E; margin: 0 0 4px 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 .item-fecha { font-size: 11px; color: #AAA; font-weight: 500; margin: 0; }
-
-.item-valor {
-  font-size: 15px; font-weight: 900; flex-shrink: 0;
-}
-
+.item-valor { font-size: 15px; font-weight: 900; flex-shrink: 0; }
 .ingreso-valor { color: #2E7D32; }
 .egreso-valor  { color: #E53935; }
 
@@ -276,33 +264,19 @@
   font-size: 10px; font-weight: 600;
   ion-icon { font-size: 11px; }
 
-  &.responsable {
-    background: #F0F4FF; color: #3B5BDB; border: 1px solid #BAC8FF;
-  }
+  &.responsable  { background: #F0F4FF; color: #3B5BDB; border: 1px solid #BAC8FF; }
+  &.beneficiario { background: #F0F9F0; color: #2E7D32; border: 1px solid #A5D6A7; }
 
-  &.beneficiario {
-    background: #F0F9F0; color: #2E7D32; border: 1px solid #A5D6A7;
-  }
-
-  &.pill-vehiculo {
-    background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80;
-  }
-
-  &.pill-fabrica {
-    background: #F3E5F5; color: #6A1B9A; border: 1px solid #CE93D8;
-  }
-
-  &.pill-almuerzo {
-    background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9;
-  }
-
-  &.pill-otros {
-    background: #FFF8E1; color: #F9A825; border: 1px solid #FFE082;
-  }
-
-  &.pill-deposito {
-    background: #F0FFF4; color: #2E7D32; border: 1px solid #A5D6A7;
-  }
+  &.pill-vehiculo    { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
+  &.pill-fabrica     { background: #F3E5F5; color: #6A1B9A; border: 1px solid #CE93D8; }
+  &.pill-almuerzo    { background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }
+  &.pill-otros       { background: #FFF8E1; color: #F9A825; border: 1px solid #FFE082; }
+  &.pill-deposito    { background: #F0FFF4; color: #2E7D32; border: 1px solid #A5D6A7; }
+  &.pill-viaticos    { background: #E8F4FD; color: #0277BD; border: 1px solid #81D4FA; }
+  &.pill-combustible { background: #FBE9E7; color: #BF360C; border: 1px solid #FFAB91; }
+  &.pill-anticipo    { background: #EDE7F6; color: #4527A0; border: 1px solid #B39DDB; }
+  &.pill-retencion   { background: #E8EAF6; color: #283593; border: 1px solid #9FA8DA; }
+  &.pill-parqueo     { background: #E0F2F1; color: #00695C; border: 1px solid #80CBC4; }
 }
 
 /* TOTAL CARD */
@@ -319,24 +293,17 @@
 
 .egreso-total {
   background: linear-gradient(135deg, #590F23, #8B2020) !important;
-  flex-direction: row !important;
-  align-items: center !important;
+  flex-direction: row !important; align-items: center !important;
   justify-content: space-between !important;
 }
 
-.total-row-item {
-  display: flex; justify-content: space-between; align-items: center;
-}
-
+.total-row-item { display: flex; justify-content: space-between; align-items: center; }
 .total-label      { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.8); }
 .total-label-big  { font-size: 14px; font-weight: 800; color: #fff; }
 .total-valor-sm   { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.9); }
 .total-valor-big  { font-size: 22px; font-weight: 900; color: #fff; }
 .total-valor      { font-size: 22px; font-weight: 900; color: #fff; }
-
-.total-divider {
-  height: 1px; background: rgba(255,255,255,0.2); margin: 4px 0;
-}
+.total-divider    { height: 1px; background: rgba(255,255,255,0.2); margin: 4px 0; }
 
 /* ACCIONES */
 .egreso-acciones {
@@ -430,14 +397,12 @@
   position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
   background: rgba(0,0,0,0.6); z-index: 2000;
   display: flex; align-items: center; justify-content: center;
-  animation: fadeIn 0.2s ease;
-  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease; backdrop-filter: blur(3px);
 }
 
 .modal-card {
   background: #fff; border-radius: 24px;
-  width: 88%; max-width: 340px;
-  padding: 24px 20px 20px 20px;
+  width: 88%; max-width: 340px; padding: 24px 20px 20px 20px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -454,18 +419,13 @@
   ion-icon { font-size: 28px; color: #fff; }
 }
 
-.modal-titulo {
-  font-size: 20px; font-weight: 800; color: #1A1A1A;
-  margin: 0; text-align: center;
-}
-
-.modal-sub { font-size: 12px; color: #AAA; margin: 0; text-align: center; }
+.modal-titulo { font-size: 20px; font-weight: 800; color: #1A1A1A; margin: 0; text-align: center; }
+.modal-sub    { font-size: 12px; color: #AAA; margin: 0; text-align: center; }
 
 .form-row { display: flex; gap: 10px; }
 
 .form-group {
-  display: flex; flex-direction: column; margin-bottom: 14px;
-  position: relative;
+  display: flex; flex-direction: column; margin-bottom: 14px; position: relative;
   &.half { flex: 1; }
 
   label {
@@ -481,9 +441,7 @@
     &:focus { border-color: #590F23; background: #fff; }
   }
 
-  input[type="password"] {
-    letter-spacing: 2px;
-  }
+  input[type="password"] { letter-spacing: 2px; }
 }
 
 .valor-input-wrap {
@@ -493,8 +451,7 @@
   &:focus-within { border-color: #590F23; background: #fff; }
 
   .valor-prefix {
-    padding: 11px 0 11px 12px;
-    font-size: 15px; font-weight: 700; color: #590F23;
+    padding: 11px 0 11px 12px; font-size: 15px; font-weight: 700; color: #590F23;
   }
 
   input {
@@ -508,8 +465,7 @@
 .custom-select-wrap {
   display: flex; align-items: center; justify-content: space-between;
   border: 1.5px solid #EDE0D0; border-radius: 12px;
-  padding: 10px 12px; background: #F9F4EE; cursor: pointer;
-  min-height: 44px;
+  padding: 10px 12px; background: #F9F4EE; cursor: pointer; min-height: 44px;
   &:active { border-color: #590F23; }
 }
 
@@ -527,8 +483,7 @@
   position: absolute; left: 0; right: 0;
   background: #fff; border-radius: 12px; border: 1.5px solid #EDE0D0;
   box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 100;
-  overflow-y: auto; max-height: 220px;
-  margin-top: 4px; top: 100%;
+  overflow-y: auto; max-height: 220px; margin-top: 4px; top: 100%;
   animation: popIn 0.15s ease;
 }
 
@@ -547,35 +502,17 @@
   &:last-child { border-bottom: none; }
   &:active { background: #F5EDE0; }
 
-  &.item-activo {
-    background: #FDF0F3; color: #590F23; font-weight: 700;
-    ion-icon { color: #590F23; }
-  }
-
-  &.item-vehiculo {
-    background: #FFF8F0; color: #E65100; font-weight: 700;
-    ion-icon { color: #E65100; }
-  }
-
-  &.item-fabrica {
-    background: #F9F0FF; color: #6A1B9A; font-weight: 700;
-    ion-icon { color: #6A1B9A; }
-  }
-
-  &.item-almuerzo {
-    background: #E3F2FD; color: #1565C0; font-weight: 700;
-    ion-icon { color: #1565C0; }
-  }
-
-  &.item-otros {
-    background: #FFF8E1; color: #F9A825; font-weight: 700;
-    ion-icon { color: #F9A825; }
-  }
-
-  &.item-deposito {
-    background: #F0FFF4; color: #2E7D32; font-weight: 700;
-    ion-icon { color: #2E7D32; }
-  }
+  &.item-activo     { background: #FDF0F3; color: #590F23; font-weight: 700; ion-icon { color: #590F23; } }
+  &.item-vehiculo   { background: #FFF8F0; color: #E65100; font-weight: 700; ion-icon { color: #E65100; } }
+  &.item-fabrica    { background: #F9F0FF; color: #6A1B9A; font-weight: 700; ion-icon { color: #6A1B9A; } }
+  &.item-almuerzo   { background: #E3F2FD; color: #1565C0; font-weight: 700; ion-icon { color: #1565C0; } }
+  &.item-otros      { background: #FFF8E1; color: #F9A825; font-weight: 700; ion-icon { color: #F9A825; } }
+  &.item-deposito   { background: #F0FFF4; color: #2E7D32; font-weight: 700; ion-icon { color: #2E7D32; } }
+  &.item-viaticos   { background: #E8F4FD; color: #0277BD; font-weight: 700; ion-icon { color: #0277BD; } }
+  &.item-combustible{ background: #FBE9E7; color: #BF360C; font-weight: 700; ion-icon { color: #BF360C; } }
+  &.item-anticipo   { background: #EDE7F6; color: #4527A0; font-weight: 700; ion-icon { color: #4527A0; } }
+  &.item-retencion  { background: #E8EAF6; color: #283593; font-weight: 700; ion-icon { color: #283593; } }
+  &.item-parqueo    { background: #E0F2F1; color: #00695C; font-weight: 700; ion-icon { color: #00695C; } }
 }
 
 .field-error { font-size: 10px; color: #E53935; margin-top: 4px; }

@@ -42,9 +42,9 @@
             <ion-icon name="wallet-outline"></ion-icon><span>Caja</span>
           </div>
           <div class="menu-item" (click)="irANotas()">
-  <ion-icon name="document-text-outline"></ion-icon>
-  <span>Notas</span>
-</div>
+            <ion-icon name="document-text-outline"></ion-icon>
+            <span>Notas</span>
+          </div>
           <div class="menu-divider"></div>
           <div class="menu-item menu-logout" (click)="cerrarSesion()">
             <ion-icon name="log-out-outline"></ion-icon><span>Cerrar Sesión</span>
@@ -253,25 +253,36 @@
                     </span>
                     <span
                       class="meta-pill beneficiario"
-                      [class.pill-vehiculo]="egreso.beneficiario === 'Vehiculo'"
-                      [class.pill-fabrica]="egreso.beneficiario === 'Fabrica'"
-                      [class.pill-almuerzo]="egreso.beneficiario === 'Almuerzo'"
+                      [class.pill-fabrica]="egreso.beneficiario === 'ChFat'"
                       [class.pill-otros]="egreso.beneficiario === 'Otros'"
                       [class.pill-deposito]="egreso.beneficiario === 'Deposito'"
+                      [class.pill-viaticos]="egreso.beneficiario === 'Viaticos'"
+                      [class.pill-combustible]="egreso.beneficiario === 'Combustible'"
+                      [class.pill-anticipo]="egreso.beneficiario === 'Anticipo'"
+                      [class.pill-retencion]="egreso.beneficiario === 'Retencion'"
+                      [class.pill-parqueo]="egreso.beneficiario === 'Parqueo'"
                     >
                       <ion-icon
-                        [name]="egreso.beneficiario === 'Vehiculo' ? 'car-outline' :
-                                egreso.beneficiario === 'Fabrica'  ? 'business-outline' :
-                                egreso.beneficiario === 'Almuerzo' ? 'restaurant-outline' :
-                                egreso.beneficiario === 'Otros'    ? 'ellipsis-horizontal-outline' :
-                                egreso.beneficiario === 'Deposito' ? 'arrow-up-circle-outline' :
+                        [name]="
+                                egreso.beneficiario === 'ChFat'     ? 'business-outline' :
+                                egreso.beneficiario === 'Otros'       ? 'ellipsis-horizontal-outline' :
+                                egreso.beneficiario === 'Deposito'    ? 'arrow-up-circle-outline' :
+                                egreso.beneficiario === 'Viaticos'    ? 'restaurant-outline' :
+                                egreso.beneficiario === 'Combustible' ? 'flame-outline' :
+                                egreso.beneficiario === 'Anticipo'    ? 'wallet-outline' :
+                                egreso.beneficiario === 'Retencion'   ? 'shield-outline' :
+                                egreso.beneficiario === 'Parqueo'     ? 'car-outline' :
                                 'person-outline'"
                       ></ion-icon>
-                      {{ egreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
-                         egreso.beneficiario === 'Fabrica'  ? 'Fábrica' :
-                         egreso.beneficiario === 'Almuerzo' ? 'Almuerzo' :
-                         egreso.beneficiario === 'Otros'    ? 'Otros' :
-                         egreso.beneficiario === 'Deposito' ? 'Depósitos' :
+                      {{
+                         egreso.beneficiario === 'ChFat'     ? 'ChFat' :
+                         egreso.beneficiario === 'Otros'       ? 'Otros' :
+                         egreso.beneficiario === 'Deposito'    ? 'Depósitos' :
+                         egreso.beneficiario === 'Viaticos'    ? 'Viáticos' :
+                         egreso.beneficiario === 'Combustible' ? 'Combustible' :
+                         egreso.beneficiario === 'Anticipo'    ? 'Anticipo' :
+                         egreso.beneficiario === 'Retencion'   ? 'Retención' :
+                         egreso.beneficiario === 'Parqueo'     ? 'Parqueo' :
                          getLabelBeneficiario(egreso.beneficiario) }}
                     </span>
                   </div>
@@ -452,14 +463,18 @@
           <span class="field-error" *ngIf="erroresEgreso.responsable">{{ erroresEgreso.responsable }}</span>
         </div>
         <div class="form-group half">
-          <label>Beneficiario</label>
+          <label>Categoria/Beneficiario</label>
           <div class="custom-select-wrap" (click)="toggleBeneficiario()">
             <span class="custom-select-valor" [class.placeholder]="!nuevoEgreso.beneficiario">
-              {{ nuevoEgreso.beneficiario === 'Vehiculo' ? 'Vehículo' :
-                 nuevoEgreso.beneficiario === 'Fabrica'  ? 'Fábrica' :
-                 nuevoEgreso.beneficiario === 'Almuerzo' ? 'Almuerzo' :
-                 nuevoEgreso.beneficiario === 'Otros'    ? 'Otros' :
-                 nuevoEgreso.beneficiario === 'Deposito' ? 'Depósitos' :
+              {{
+                 nuevoEgreso.beneficiario === 'ChFat'     ? 'ChFat' :
+                 nuevoEgreso.beneficiario === 'Otros'       ? 'Otros' :
+                 nuevoEgreso.beneficiario === 'Deposito'    ? 'Depósitos' :
+                 nuevoEgreso.beneficiario === 'Viaticos'    ? 'Viáticos' :
+                 nuevoEgreso.beneficiario === 'Combustible' ? 'Combustible' :
+                 nuevoEgreso.beneficiario === 'Anticipo'    ? 'Anticipo' :
+                 nuevoEgreso.beneficiario === 'Retencion'   ? 'Retención' :
+                 nuevoEgreso.beneficiario === 'Parqueo'     ? 'Parqueo' :
                  nuevoEgreso.beneficiario ? getLabelBeneficiario(nuevoEgreso.beneficiario) : 'Seleccionar' }}
             </span>
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdown"></ion-icon>
@@ -475,20 +490,29 @@
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
             <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-vehiculo" [class.item-activo]="nuevoEgreso.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiario('Vehiculo')">
-              <ion-icon name="car-outline"></ion-icon>Vehículo
+            <div class="dropdown-item item-combustible" [class.item-activo]="nuevoEgreso.beneficiario === 'Combustible'" (click)="seleccionarBeneficiario('Combustible')">
+              <ion-icon name="flame-outline"></ion-icon>Combustible
             </div>
-            <div class="dropdown-item item-fabrica" [class.item-activo]="nuevoEgreso.beneficiario === 'Fabrica'" (click)="seleccionarBeneficiario('Fabrica')">
-              <ion-icon name="business-outline"></ion-icon>Fábrica
+            <div class="dropdown-item item-parqueo" [class.item-activo]="nuevoEgreso.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiario('Parqueo')">
+              <ion-icon name="car-outline"></ion-icon>Parqueo
             </div>
-            <div class="dropdown-item item-almuerzo" [class.item-activo]="nuevoEgreso.beneficiario === 'Almuerzo'" (click)="seleccionarBeneficiario('Almuerzo')">
-              <ion-icon name="restaurant-outline"></ion-icon>Almuerzo
+            <div class="dropdown-item item-viaticos" [class.item-activo]="nuevoEgreso.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiario('Viaticos')">
+              <ion-icon name="restaurant-outline"></ion-icon>Viáticos
             </div>
-            <div class="dropdown-item item-otros" [class.item-activo]="nuevoEgreso.beneficiario === 'Otros'" (click)="seleccionarBeneficiario('Otros')">
-              <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
+            <div class="dropdown-item item-anticipo" [class.item-activo]="nuevoEgreso.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiario('Anticipo')">
+              <ion-icon name="wallet-outline"></ion-icon>Anticipo
+            </div>
+            <div class="dropdown-item item-retencion" [class.item-activo]="nuevoEgreso.beneficiario === 'Retencion'" (click)="seleccionarBeneficiario('Retencion')">
+              <ion-icon name="shield-outline"></ion-icon>Retención
+            </div>
+            <div class="dropdown-item item-fabrica" [class.item-activo]="nuevoEgreso.beneficiario === 'ChFat'" (click)="seleccionarBeneficiario('ChFat')">
+              <ion-icon name="business-outline"></ion-icon>ChFat
             </div>
             <div class="dropdown-item item-deposito" [class.item-activo]="nuevoEgreso.beneficiario === 'Deposito'" (click)="seleccionarBeneficiario('Deposito')">
               <ion-icon name="arrow-up-circle-outline"></ion-icon>Depósitos
+            </div>
+            <div class="dropdown-item item-otros" [class.item-activo]="nuevoEgreso.beneficiario === 'Otros'" (click)="seleccionarBeneficiario('Otros')">
+              <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
             </div>
           </div>
           <span class="field-error" *ngIf="erroresEgreso.beneficiario">{{ erroresEgreso.beneficiario }}</span>
@@ -551,11 +575,15 @@
           <label>Beneficiario</label>
           <div class="custom-select-wrap" (click)="toggleBeneficiarioEditar()">
             <span class="custom-select-valor" [class.placeholder]="!egresoEditando.beneficiario">
-              {{ egresoEditando.beneficiario === 'Vehiculo' ? 'Vehículo' :
-                 egresoEditando.beneficiario === 'Fabrica'  ? 'Fábrica' :
-                 egresoEditando.beneficiario === 'Almuerzo' ? 'Almuerzo' :
-                 egresoEditando.beneficiario === 'Otros'    ? 'Otros' :
-                 egresoEditando.beneficiario === 'Deposito' ? 'Depósitos' :
+              {{
+                 egresoEditando.beneficiario === 'ChFat'     ? 'ChFat' :
+                 egresoEditando.beneficiario === 'Otros'       ? 'Otros' :
+                 egresoEditando.beneficiario === 'Deposito'    ? 'Depósitos' :
+                 egresoEditando.beneficiario === 'Viaticos'    ? 'Viáticos' :
+                 egresoEditando.beneficiario === 'Combustible' ? 'Combustible' :
+                 egresoEditando.beneficiario === 'Anticipo'    ? 'Anticipo' :
+                 egresoEditando.beneficiario === 'Retencion'   ? 'Retención' :
+                 egresoEditando.beneficiario === 'Parqueo'     ? 'Parqueo' :
                  egresoEditando.beneficiario ? getLabelBeneficiario(egresoEditando.beneficiario) : 'Seleccionar' }}
             </span>
             <ion-icon name="chevron-down-outline" class="select-arrow" [class.rotado]="mostrarBeneficiarioDropdownEditar"></ion-icon>
@@ -571,20 +599,29 @@
               <ion-icon name="person-outline"></ion-icon>{{ u.nombre }} {{ u.apellido }}
             </div>
             <p class="dropdown-grupo">Otros</p>
-            <div class="dropdown-item item-vehiculo" [class.item-activo]="egresoEditando.beneficiario === 'Vehiculo'" (click)="seleccionarBeneficiarioEditar('Vehiculo')">
-              <ion-icon name="car-outline"></ion-icon>Vehículo
+            <div class="dropdown-item item-combustible" [class.item-activo]="egresoEditando.beneficiario === 'Combustible'" (click)="seleccionarBeneficiarioEditar('Combustible')">
+              <ion-icon name="flame-outline"></ion-icon>Combustible
             </div>
-            <div class="dropdown-item item-fabrica" [class.item-activo]="egresoEditando.beneficiario === 'Fabrica'" (click)="seleccionarBeneficiarioEditar('Fabrica')">
-              <ion-icon name="business-outline"></ion-icon>Fábrica
+            <div class="dropdown-item item-parqueo" [class.item-activo]="egresoEditando.beneficiario === 'Parqueo'" (click)="seleccionarBeneficiarioEditar('Parqueo')">
+              <ion-icon name="car-outline"></ion-icon>Parqueo
             </div>
-            <div class="dropdown-item item-almuerzo" [class.item-activo]="egresoEditando.beneficiario === 'Almuerzo'" (click)="seleccionarBeneficiarioEditar('Almuerzo')">
-              <ion-icon name="restaurant-outline"></ion-icon>Almuerzo
+            <div class="dropdown-item item-viaticos" [class.item-activo]="egresoEditando.beneficiario === 'Viaticos'" (click)="seleccionarBeneficiarioEditar('Viaticos')">
+              <ion-icon name="restaurant-outline"></ion-icon>Viáticos
             </div>
-            <div class="dropdown-item item-otros" [class.item-activo]="egresoEditando.beneficiario === 'Otros'" (click)="seleccionarBeneficiarioEditar('Otros')">
-              <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
+            <div class="dropdown-item item-anticipo" [class.item-activo]="egresoEditando.beneficiario === 'Anticipo'" (click)="seleccionarBeneficiarioEditar('Anticipo')">
+              <ion-icon name="wallet-outline"></ion-icon>Anticipo
+            </div>
+            <div class="dropdown-item item-retencion" [class.item-activo]="egresoEditando.beneficiario === 'Retencion'" (click)="seleccionarBeneficiarioEditar('Retencion')">
+              <ion-icon name="shield-outline"></ion-icon>Retención
+            </div>
+            <div class="dropdown-item item-fabrica" [class.item-activo]="egresoEditando.beneficiario === 'ChFat'" (click)="seleccionarBeneficiarioEditar('ChFat')">
+              <ion-icon name="business-outline"></ion-icon>ChFat
             </div>
             <div class="dropdown-item item-deposito" [class.item-activo]="egresoEditando.beneficiario === 'Deposito'" (click)="seleccionarBeneficiarioEditar('Deposito')">
               <ion-icon name="arrow-up-circle-outline"></ion-icon>Depósitos
+            </div>
+            <div class="dropdown-item item-otros" [class.item-activo]="egresoEditando.beneficiario === 'Otros'" (click)="seleccionarBeneficiarioEditar('Otros')">
+              <ion-icon name="ellipsis-horizontal-outline"></ion-icon>Otros
             </div>
           </div>
         </div>
