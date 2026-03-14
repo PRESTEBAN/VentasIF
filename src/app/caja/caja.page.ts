@@ -201,13 +201,13 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   // ---- CARGA -------------------------------------------------------
-  cargarDatos() {
-    this.cargando = true; this.egresos = []; this.ingresos = [];
+  cargarDatos(silent = false) {
+    if (!silent) { this.cargando = true; this.egresos = []; this.ingresos = []; }
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
 
     this.http.get<Egreso[]>(`${this.API}/egresos?fecha=${fechaStr}`, { headers: this.getHeaders() }).subscribe({
       next: (data) => { this.egresos = data; this.cargando = false; },
-      error: () => { this.egresos = []; this.cargando = false; }
+      error: () => { if (!silent) { this.egresos = []; } this.cargando = false; }
     });
 
     if (this.esDiaDeHoy) {
@@ -218,7 +218,7 @@ export class CajaPage implements OnInit, OnDestroy {
           this.cierreActivoId  = data.cierre_id || 0;
           this.ingresos        = data.ingresos || [];
         },
-        error: () => { this.ingresos = []; }
+        error: () => { if (!silent) this.ingresos = []; }
       });
     } else {
       this.http.get<any>(`${this.API}/ingresos/fecha/${fechaStr}`, { headers: this.getHeaders() }).subscribe({
@@ -228,7 +228,7 @@ export class CajaPage implements OnInit, OnDestroy {
           this.cierreActivoId  = data.cierre_id || 0;
           this.ingresos        = data.ingresos || [];
         },
-        error: () => { this.ingresos = []; this.fondoInicial = 40; this.cierreActivoId = 0; }
+        error: () => { if (!silent) { this.ingresos = []; this.fondoInicial = 40; this.cierreActivoId = 0; } }
       });
     }
   }
@@ -241,7 +241,7 @@ export class CajaPage implements OnInit, OnDestroy {
   cargarDatosSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
     if (!this.esDiaDeHoy) return;
-    this.cargarDatos();
+    this.cargarDatos(true);
   }
 
   cargarUsuarios() {
