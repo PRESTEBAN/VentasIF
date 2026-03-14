@@ -73,7 +73,7 @@ export class NotasPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     const user = this.authService.getUsuario();
-    this.usuarioActual       = user?.username || '';
+    this.usuarioActual       = user?.nombre || '';
     this.usuarioActualNombre = user?.nombre
       ? `${user.nombre}${user.apellido ? ' ' + user.apellido : ''}`
       : user?.username || '';
