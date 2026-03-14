@@ -107,7 +107,7 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // Ventas del día (para Retención)
   ventasDelDia: VentaDelDia[]       = [];
-  ventaAnticipo: VentaDelDia | null = null;  // reutilizamos para Retención – añadir
+  ventaAnticipo: VentaDelDia | null = null;
   mostrarVentasDropdown             = false;
 
   mostrarEditarModal                = false;
@@ -117,12 +117,17 @@ export class CajaPage implements OnInit, OnDestroy {
   mostrarResponsableDropdownEditar  = false;
   mostrarBeneficiarioDropdownEditar = false;
 
-  ventaAnticipoEditar: VentaDelDia | null = null;  // para Retención – editar
+  ventaAnticipoEditar: VentaDelDia | null = null;
   mostrarVentasDropdownEditar             = false;
 
   mostrarConfirmarBorrar = false;
   borrando               = false;
   private itemABorrar: { tipo: 'ingreso' | 'egreso'; id: number } | null = null;
+
+  // ---- MODAL VER DETALLE (solo visualización) ----
+  mostrarModalVer   = false;
+  itemVisualizando: any = null;
+  tipoVisualizando: 'ingreso' | 'egreso' = 'ingreso';
 
   constructor(
     public router: Router,
@@ -517,6 +522,24 @@ export class CajaPage implements OnInit, OnDestroy {
       },
       error: () => { this.borrando = false; this.cancelarBorrar(); }
     });
+  }
+
+  // ---- MODAL VER DETALLE (solo visualización) ----------------------
+  verIngreso(ingreso: Ingreso) {
+    this.itemVisualizando = ingreso;
+    this.tipoVisualizando = 'ingreso';
+    this.mostrarModalVer  = true;
+  }
+
+  verEgreso(egreso: Egreso) {
+    this.itemVisualizando = egreso;
+    this.tipoVisualizando = 'egreso';
+    this.mostrarModalVer  = true;
+  }
+
+  cerrarModalVer() {
+    this.mostrarModalVer  = false;
+    this.itemVisualizando = null;
   }
 
   // ---- MENU --------------------------------------------------------

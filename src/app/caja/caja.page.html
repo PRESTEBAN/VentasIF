@@ -88,14 +88,16 @@
             </div>
 
             <div class="items-lista" *ngIf="ingresos.length > 0">
-              <div class="item-card ingreso-card" *ngFor="let ingreso of ingresos">
+              <!-- ← CLICK AÑADIDO AQUÍ -->
+              <div class="item-card ingreso-card" *ngFor="let ingreso of ingresos"
+                (click)="verIngreso(ingreso)" style="cursor:pointer">
                 <div class="item-icono"><ion-icon name="trending-up-outline"></ion-icon></div>
                 <div class="item-info">
                   <p class="item-detalle">{{ ingreso.motivo }}</p>
                   <p class="item-fecha">{{ ingreso.fecha | date:'dd/MM/yyyy HH:mm':'':'es' }}</p>
                 </div>
                 <span class="item-valor ingreso-valor">${{ ingreso.monto | number:'1.2-2' }}</span>
-                <div class="egreso-acciones" *ngIf="esIngresoEditable(ingreso)">
+                <div class="egreso-acciones" *ngIf="esIngresoEditable(ingreso)" (click)="$event.stopPropagation()">
                   <button class="btn-editar-item" (click)="abrirEditarIngreso(ingreso)"><ion-icon name="pencil-outline"></ion-icon></button>
                   <button class="btn-borrar-item" (click)="confirmarBorrarIngreso(ingreso)"><ion-icon name="trash-outline"></ion-icon></button>
                 </div>
@@ -160,7 +162,9 @@
             </div>
 
             <div class="items-lista" *ngIf="egresos.length > 0">
-              <div class="item-card" *ngFor="let egreso of egresos">
+              <!-- ← CLICK AÑADIDO AQUÍ -->
+              <div class="item-card" *ngFor="let egreso of egresos"
+                (click)="verEgreso(egreso)" style="cursor:pointer">
                 <div class="item-icono egreso-icono-card"><ion-icon name="trending-down-outline"></ion-icon></div>
                 <div class="item-info">
                   <p class="item-detalle">{{ egreso.detalle }}</p>
@@ -202,7 +206,7 @@
                   </div>
                 </div>
                 <span class="item-valor egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>
-                <div class="egreso-acciones" *ngIf="esEgresoEditable(egreso)">
+                <div class="egreso-acciones" *ngIf="esEgresoEditable(egreso)" (click)="$event.stopPropagation()">
                   <button class="btn-editar-item" (click)="abrirEditar(egreso)"><ion-icon name="pencil-outline"></ion-icon></button>
                   <button class="btn-borrar-item" (click)="confirmarBorrarEgreso(egreso)"><ion-icon name="trash-outline"></ion-icon></button>
                 </div>
@@ -408,7 +412,6 @@
         </div>
       </div>
 
-      <!-- Campo venta: aparece solo al seleccionar Retención -->
       <div class="form-group" *ngIf="nuevoEgreso.beneficiario === 'Retencion'">
         <label>Venta del día</label>
         <div class="custom-select-wrap" (click)="toggleVentasDropdown()">
@@ -530,7 +533,6 @@
         </div>
       </div>
 
-      <!-- Campo venta: aparece solo al editar un egreso de tipo Retención -->
       <div class="form-group" *ngIf="egresoEditando.beneficiario === 'Retencion'">
         <label>Venta del día</label>
         <div class="custom-select-wrap" (click)="toggleVentasDropdownEditar()">
@@ -590,4 +592,89 @@
       </div>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- MODAL: VER DETALLE (solo visualización)                       -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" *ngIf="mostrarModalVer" (click)="cerrarModalVer()">
+    <div class="modal-card ver-card" (click)="$event.stopPropagation()">
+
+      <!-- ── INGRESO ── -->
+      <ng-container *ngIf="tipoVisualizando === 'ingreso' && itemVisualizando">
+        <div class="modal-header">
+          <div class="modal-icono" style="background: linear-gradient(135deg, #2e7d32, #1b5e20)">
+            <ion-icon name="trending-up-outline"></ion-icon>
+          </div>
+          <h2 class="modal-titulo">Detalle de Ingreso</h2>
+        </div>
+
+        <div class="ver-fila">
+          <span class="ver-label">Motivo</span>
+          <span class="ver-valor">{{ itemVisualizando.motivo }}</span>
+        </div>
+        <div class="ver-fila">
+          <span class="ver-label">Monto</span>
+          <span class="ver-valor ver-monto ingreso-monto">${{ itemVisualizando.monto | number:'1.2-2' }}</span>
+        </div>
+        <div class="ver-fila" *ngIf="itemVisualizando.fecha">
+          <span class="ver-label">Fecha</span>
+          <span class="ver-valor">{{ itemVisualizando.fecha | date:'dd/MM/yyyy HH:mm':'':'es' }}</span>
+        </div>
+      </ng-container>
+
+      <!-- ── EGRESO ── -->
+      <ng-container *ngIf="tipoVisualizando === 'egreso' && itemVisualizando">
+        <div class="modal-header">
+          <div class="modal-icono" style="background: linear-gradient(135deg, #590F23, #A83A1A)">
+            <ion-icon name="trending-down-outline"></ion-icon>
+          </div>
+          <h2 class="modal-titulo">Detalle de Egreso</h2>
+        </div>
+
+        <div class="ver-fila">
+          <span class="ver-label">Detalle</span>
+          <span class="ver-valor">{{ itemVisualizando.detalle }}</span>
+        </div>
+        <div class="ver-fila">
+          <span class="ver-label">Monto</span>
+          <span class="ver-valor ver-monto egreso-monto">${{ itemVisualizando.valor | number:'1.2-2' }}</span>
+        </div>
+        <div class="ver-fila">
+          <span class="ver-label">Responsable</span>
+          <span class="ver-valor">{{ getLabelBeneficiario(itemVisualizando.responsable) }}</span>
+        </div>
+        <div class="ver-fila">
+          <span class="ver-label">Categoría</span>
+          <span class="ver-valor ver-categoria">
+            <ion-icon [name]="
+              itemVisualizando.beneficiario === 'ChFat'      ? 'business-outline' :
+              itemVisualizando.beneficiario === 'Otros'       ? 'ellipsis-horizontal-outline' :
+              itemVisualizando.beneficiario === 'Deposito'    ? 'arrow-up-circle-outline' :
+              itemVisualizando.beneficiario === 'Viaticos'    ? 'restaurant-outline' :
+              itemVisualizando.beneficiario === 'Combustible' ? 'flame-outline' :
+              itemVisualizando.beneficiario === 'Anticipo'    ? 'wallet-outline' :
+              itemVisualizando.beneficiario === 'Retencion'   ? 'shield-outline' :
+              itemVisualizando.beneficiario === 'Parqueo'     ? 'car-outline' :
+              'person-outline'"></ion-icon>
+            {{ itemVisualizando.beneficiario === 'ChFat'      ? 'ChFat' :
+               itemVisualizando.beneficiario === 'Otros'       ? 'Otros' :
+               itemVisualizando.beneficiario === 'Deposito'    ? 'Depósitos' :
+               itemVisualizando.beneficiario === 'Viaticos'    ? 'Viáticos' :
+               itemVisualizando.beneficiario === 'Combustible' ? 'Combustible' :
+               itemVisualizando.beneficiario === 'Anticipo'    ? 'Anticipo' :
+               itemVisualizando.beneficiario === 'Retencion'   ? 'Retención' :
+               itemVisualizando.beneficiario === 'Parqueo'     ? 'Parqueo' :
+               getLabelBeneficiario(itemVisualizando.beneficiario) }}
+          </span>
+        </div>
+        <div class="ver-fila" *ngIf="itemVisualizando.fecha">
+          <span class="ver-label">Fecha</span>
+          <span class="ver-valor">{{ itemVisualizando.fecha | date:'dd/MM/yyyy HH:mm':'':'es' }}</span>
+        </div>
+      </ng-container>
+
+      <button class="btn-cancelar ver-btn-cerrar" (click)="cerrarModalVer()">Cerrar</button>
+    </div>
+  </div>
+
 </ion-content>

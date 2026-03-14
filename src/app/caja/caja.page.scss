@@ -225,6 +225,8 @@
   background: #fff; border-radius: 16px; padding: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.07); border: 1px solid #F0E6DA;
   animation: slideIn 0.25s ease;
+  transition: transform 0.12s, box-shadow 0.12s;
+  &:active { transform: scale(0.98); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
 }
 
 .ingreso-card { border-color: #C8E6C9; }
@@ -501,18 +503,7 @@
   ion-icon { font-size: 15px; color: #AAA; }
   &:last-child { border-bottom: none; }
   &:active { background: #F5EDE0; }
-
-  &.item-activo     { background: #FDF0F3; color: #590F23; font-weight: 700; ion-icon { color: #590F23; } }
-
-
-
-
-
-
-
-
-
-
+  &.item-activo { background: #FDF0F3; color: #590F23; font-weight: 700; ion-icon { color: #590F23; } }
 }
 
 .field-error { font-size: 10px; color: #E53935; margin-top: 4px; }
@@ -533,4 +524,75 @@
   -webkit-appearance: none; box-shadow: 0 4px 12px rgba(89,15,35,0.3);
   &:active   { opacity: 0.9; transform: scale(0.98); }
   &:disabled { opacity: 0.6; }
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* MODAL VER DETALLE                                              */
+/* ═══════════════════════════════════════════════════════════════ */
+
+.ver-card {
+  padding: 22px 18px 18px;
+  max-width: 310px;
+}
+
+.ver-fila {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #F0E6DA;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.ver-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #AAA;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  flex-shrink: 0;
+  padding-top: 2px;
+  min-width: 72px;
+}
+
+.ver-valor {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2D1B0E;
+  text-align: right;
+  flex: 1;
+  line-height: 1.35;
+}
+
+.ver-monto {
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+}
+
+.ingreso-monto { color: #2E7D32; }
+.egreso-monto  { color: #E53935; }
+
+.ver-categoria {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+
+  ion-icon {
+    font-size: 14px;
+    color: #590F23;
+    flex-shrink: 0;
+  }
+}
+
+.ver-btn-cerrar {
+  margin-top: 16px;
+  width: 100%;
+  border-radius: 30px;
+  flex: unset;
 }
