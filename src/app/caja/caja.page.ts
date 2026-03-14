@@ -41,8 +41,8 @@ export class CajaPage implements OnInit, OnDestroy {
 
   private readonly API = 'https://ventasif-if-api.onrender.com/api/v1';
 
-  menuAbierto    = false;
-  usuarioActual  = '';
+  menuAbierto = false;
+  usuarioActual = '';
   usernameActual = '';
   tabActivo: 'ingresos' | 'egresos' = 'ingresos';
 
@@ -52,16 +52,16 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- CALENDARIO ----
   fechaSeleccionada: Date = new Date();
-  semanaBase: Date        = new Date();
-  semanaActual: Date[]    = [];
-  mostrarDatePicker       = false;
+  semanaBase: Date = new Date();
+  semanaActual: Date[] = [];
+  mostrarDatePicker = false;
 
   // ---- INGRESOS ----
-  ingresos: Ingreso[]   = [];
-  fondoInicial          = 40;
-  fondoModificado       = false;
-  cierreActivoId        = 0;
-  cargando              = false;
+  ingresos: Ingreso[] = [];
+  fondoInicial = 40;
+  fondoModificado = false;
+  cierreActivoId = 0;
+  cargando = false;
 
   get totalIngresos(): number {
     return this.ingresos.reduce((acc, i) => acc + +i.monto, 0);
@@ -69,19 +69,19 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // Modal fondo
   mostrarModalFondo = false;
-  guardandoFondo    = false;
-  nuevoFondo        = 40;
-  claveAdmin        = '';
+  guardandoFondo = false;
+  nuevoFondo = 40;
+  claveAdmin = '';
   erroresFondo: any = {};
 
   // Modal ingreso
-  mostrarModalIngreso  = false;
-  guardandoIngreso     = false;
+  mostrarModalIngreso = false;
+  guardandoIngreso = false;
   nuevoIngreso: Ingreso = { monto: 0, motivo: '' };
-  erroresIngreso: any  = {};
+  erroresIngreso: any = {};
 
   // Modal editar ingreso
-  mostrarEditarIngreso   = false;
+  mostrarEditarIngreso = false;
   guardandoEditarIngreso = false;
   ingresoEditando: Ingreso = { monto: 0, motivo: '' };
   erroresEditarIngreso: any = {};
@@ -95,24 +95,24 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   // Modal egreso
-  mostrarModalEgreso           = false;
-  guardandoEgreso              = false;
-  nuevoEgreso: Egreso          = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
-  erroresEgreso: any           = {};
-  mostrarResponsableDropdown   = false;
-  mostrarBeneficiarioDropdown  = false;
+  mostrarModalEgreso = false;
+  guardandoEgreso = false;
+  nuevoEgreso: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
+  erroresEgreso: any = {};
+  mostrarResponsableDropdown = false;
+  mostrarBeneficiarioDropdown = false;
 
   // Modal editar egreso
-  mostrarEditarModal                = false;
-  guardandoEdicion                  = false;
-  egresoEditando: Egreso            = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
-  erroresEditar: any                = {};
-  mostrarResponsableDropdownEditar  = false;
+  mostrarEditarModal = false;
+  guardandoEdicion = false;
+  egresoEditando: Egreso = { detalle: '', responsable: '', beneficiario: '', valor: 0 };
+  erroresEditar: any = {};
+  mostrarResponsableDropdownEditar = false;
   mostrarBeneficiarioDropdownEditar = false;
 
   // Borrar (ingresos y egresos)
   mostrarConfirmarBorrar = false;
-  borrando               = false;
+  borrando = false;
   private itemABorrar: { tipo: 'ingreso' | 'egreso'; id: number } | null = null;
 
   constructor(
@@ -120,11 +120,11 @@ export class CajaPage implements OnInit, OnDestroy {
     private authService: AuthService,
     private http: HttpClient,
     private socketService: SocketService
-  ) {}
+  ) { }
 
   ngOnInit() {
     const user = this.authService.getUsuario();
-    this.usuarioActual  = user?.nombre || user?.username || '';
+    this.usuarioActual = user?.nombre || user?.username || '';
     this.usernameActual = user?.username || '';
     const base = new Date(this.fechaSeleccionada);
     base.setDate(base.getDate() - 3);
@@ -190,19 +190,19 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   get esDiaDeHoy(): boolean {
-  const hoy = new Date();
-  const sel = this.fechaSeleccionada;
-  return (
-    sel.getFullYear() === hoy.getFullYear() &&
-    sel.getMonth()    === hoy.getMonth() &&
-    sel.getDate()     === hoy.getDate()
-  );
-}
+    const hoy = new Date();
+    const sel = this.fechaSeleccionada;
+    return (
+      sel.getFullYear() === hoy.getFullYear() &&
+      sel.getMonth() === hoy.getMonth() &&
+      sel.getDate() === hoy.getDate()
+    );
+  }
 
   // ---- CARGA -------------------------------------------------------
   cargarDatos() {
     this.cargando = true;
-    this.egresos  = [];
+    this.egresos = [];
     this.ingresos = [];
     const fechaStr = this.formatearFecha(this.fechaSeleccionada);
 
@@ -216,29 +216,29 @@ export class CajaPage implements OnInit, OnDestroy {
     if (this.esDiaDeHoy) {
       this.http.get<any>(`${this.API}/ingresos`, { headers: this.getHeaders() }).subscribe({
         next: (data) => {
-          this.fondoInicial    = parseFloat(data.fondo_inicial) || 40;
+          this.fondoInicial = parseFloat(data.fondo_inicial) || 40;
           this.fondoModificado = data.fondo_modificado || false;
-          this.cierreActivoId  = data.cierre_id || 0;
-          this.ingresos        = data.ingresos || [];
+          this.cierreActivoId = data.cierre_id || 0;
+          this.ingresos = data.ingresos || [];
         },
         error: () => { this.ingresos = []; }
       });
     } else {
       this.http.get<any>(`${this.API}/ingresos/fecha/${fechaStr}`, { headers: this.getHeaders() }).subscribe({
         next: (data) => {
-          this.fondoInicial    = parseFloat(data.fondo_inicial) || 40;
+          this.fondoInicial = parseFloat(data.fondo_inicial) || 40;
           this.fondoModificado = data.fondo_modificado || false;
-          this.cierreActivoId  = data.cierre_id || 0;
-          this.ingresos        = data.ingresos || [];
+          this.cierreActivoId = data.cierre_id || 0;
+          this.ingresos = data.ingresos || [];
         },
         error: () => { this.ingresos = []; this.fondoInicial = 40; this.cierreActivoId = 0; }
       });
     }
   }
   esIngresoEditable(ingreso: Ingreso): boolean {
-  if (!this.esDiaDeHoy) return false;
-  return ingreso.cierre_id === this.cierreActivoId;
-}
+    if (!this.esDiaDeHoy) return false;
+    return ingreso.cierre_id === this.cierreActivoId;
+  }
 
   cargarDatosSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
@@ -253,7 +253,7 @@ export class CajaPage implements OnInit, OnDestroy {
           u.username?.toLowerCase() !== 'admin' && u.nombre?.toLowerCase() !== 'admin'
         );
       },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -301,14 +301,14 @@ export class CajaPage implements OnInit, OnDestroy {
   esSemanaActual(): boolean {
     const ultimoDia = new Date(this.semanaActual[this.semanaActual.length - 1]);
     const hoy = new Date();
-    hoy.setHours(0,0,0,0); ultimoDia.setHours(0,0,0,0);
+    hoy.setHours(0, 0, 0, 0); ultimoDia.setHours(0, 0, 0, 0);
     return ultimoDia >= hoy;
   }
 
   seleccionarDia(dia: Date) { this.fechaSeleccionada = new Date(dia); this.cargarDatos(); }
   esDiaSeleccionado(dia: Date): boolean { return dia.toDateString() === this.fechaSeleccionada.toDateString(); }
   esHoy(dia: Date): boolean { return dia.toDateString() === new Date().toDateString(); }
-  abrirDatePicker()  { this.mostrarDatePicker = true; }
+  abrirDatePicker() { this.mostrarDatePicker = true; }
   cerrarDatePicker() { this.mostrarDatePicker = false; }
 
   onDatePickerChange(event: any) {
@@ -333,8 +333,8 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- FONDO INICIAL -----------------------------------------------
   abrirEditarFondo() {
-    this.nuevoFondo   = this.fondoInicial;
-    this.claveAdmin   = '';
+    this.nuevoFondo = this.fondoInicial;
+    this.claveAdmin = '';
     this.erroresFondo = {};
     this.mostrarModalFondo = true;
   }
@@ -352,9 +352,9 @@ export class CajaPage implements OnInit, OnDestroy {
 
     this.http.put<any>(`${this.API}/ingresos/fondo`, payload, { headers: this.getHeaders() }).subscribe({
       next: (res) => {
-        this.fondoInicial    = res.fondo_inicial;
+        this.fondoInicial = res.fondo_inicial;
         this.fondoModificado = true;
-        this.guardandoFondo  = false;
+        this.guardandoFondo = false;
         this.cerrarModalFondo();
       },
       error: (err) => {
@@ -367,7 +367,7 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- MODAL INGRESO -----------------------------------------------
   abrirModalIngreso() {
-    this.nuevoIngreso   = { monto: 0, motivo: '' };
+    this.nuevoIngreso = { monto: 0, motivo: '' };
     this.erroresIngreso = {};
     this.mostrarModalIngreso = true;
   }
@@ -393,7 +393,7 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- EDITAR INGRESO ----------------------------------------------
   abrirEditarIngreso(ingreso: Ingreso) {
-    this.ingresoEditando      = { ...ingreso };
+    this.ingresoEditando = { ...ingreso };
     this.erroresEditarIngreso = {};
     this.mostrarEditarIngreso = true;
   }
@@ -426,14 +426,14 @@ export class CajaPage implements OnInit, OnDestroy {
 
   // ---- MODAL EGRESO ------------------------------------------------
   abrirModalEgreso() {
-    this.nuevoEgreso   = { detalle: '', responsable: this.getResponsablePorDefecto(), beneficiario: '', valor: 0 };
+    this.nuevoEgreso = { detalle: '', responsable: this.getResponsablePorDefecto(), beneficiario: '', valor: 0 };
     this.erroresEgreso = {};
     this.mostrarModalEgreso = true;
   }
 
   cerrarModalEgreso() {
     this.mostrarModalEgreso = false;
-    this.mostrarResponsableDropdown  = false;
+    this.mostrarResponsableDropdown = false;
     this.mostrarBeneficiarioDropdown = false;
     this.erroresEgreso = {};
   }
@@ -452,9 +452,9 @@ export class CajaPage implements OnInit, OnDestroy {
   guardarEgreso() {
     this.erroresEgreso = {};
     let valido = true;
-    if (!this.nuevoEgreso.detalle.trim())   { this.erroresEgreso.detalle      = 'Requerido'; valido = false; }
-    if (!this.nuevoEgreso.responsable)      { this.erroresEgreso.responsable  = 'Requerido'; valido = false; }
-    if (!this.nuevoEgreso.beneficiario)     { this.erroresEgreso.beneficiario = 'Requerido'; valido = false; }
+    if (!this.nuevoEgreso.detalle.trim()) { this.erroresEgreso.detalle = 'Requerido'; valido = false; }
+    if (!this.nuevoEgreso.responsable) { this.erroresEgreso.responsable = 'Requerido'; valido = false; }
+    if (!this.nuevoEgreso.beneficiario) { this.erroresEgreso.beneficiario = 'Requerido'; valido = false; }
     if (!this.nuevoEgreso.valor || this.nuevoEgreso.valor <= 0) { this.erroresEgreso.valor = 'Valor inválido'; valido = false; }
     if (!valido) return;
 
@@ -471,15 +471,15 @@ export class CajaPage implements OnInit, OnDestroy {
   // ---- EDITAR EGRESO -----------------------------------------------
   abrirEditar(egreso: Egreso) {
     this.egresoEditando = { ...egreso };
-    this.erroresEditar  = {};
-    this.mostrarResponsableDropdownEditar  = false;
+    this.erroresEditar = {};
+    this.mostrarResponsableDropdownEditar = false;
     this.mostrarBeneficiarioDropdownEditar = false;
     this.mostrarEditarModal = true;
   }
 
   cerrarEditar() {
     this.mostrarEditarModal = false;
-    this.mostrarResponsableDropdownEditar  = false;
+    this.mostrarResponsableDropdownEditar = false;
     this.mostrarBeneficiarioDropdownEditar = false;
     this.erroresEditar = {};
   }
@@ -492,9 +492,9 @@ export class CajaPage implements OnInit, OnDestroy {
   guardarEdicion() {
     this.erroresEditar = {};
     let valido = true;
-    if (!this.egresoEditando.detalle.trim())  { this.erroresEditar.detalle = 'Requerido'; valido = false; }
-    if (!this.egresoEditando.responsable)     { this.erroresEditar.responsable = 'Requerido'; valido = false; }
-    if (!this.egresoEditando.beneficiario)    { this.erroresEditar.beneficiario = 'Requerido'; valido = false; }
+    if (!this.egresoEditando.detalle.trim()) { this.erroresEditar.detalle = 'Requerido'; valido = false; }
+    if (!this.egresoEditando.responsable) { this.erroresEditar.responsable = 'Requerido'; valido = false; }
+    if (!this.egresoEditando.beneficiario) { this.erroresEditar.beneficiario = 'Requerido'; valido = false; }
     if (!this.egresoEditando.valor || this.egresoEditando.valor <= 0) { this.erroresEditar.valor = 'Valor inválido'; valido = false; }
     if (!valido) return;
 
@@ -547,12 +547,12 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   // ---- MENU --------------------------------------------------------
-  abrirMenu()     { this.menuAbierto = true; }
-  cerrarMenu()    { this.menuAbierto = false; }
-  cerrarSesion()  { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
-  irAClientes()   { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial()  { this.cerrarMenu(); this.router.navigate(['/historial']); }
+  abrirMenu() { this.menuAbierto = true; }
+  cerrarMenu() { this.menuAbierto = false; }
+  cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
+  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
+  irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
   irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-  irACaja()       { this.cerrarMenu(); this.router.navigate(['/caja']); }
+  irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
   irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
 }

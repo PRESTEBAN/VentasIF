@@ -287,9 +287,5 @@ export class NotasPage implements OnInit, OnDestroy {
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
-  irAClientes() { this.cerrarMenu(); this.router.navigate(['/clientes']); }
-  irAHistorial() { this.cerrarMenu(); this.router.navigate(['/historial']); }
-  irAInventario() { this.cerrarMenu(); this.router.navigate(['/inventario']); }
-  irACaja() { this.cerrarMenu(); this.router.navigate(['/caja']); }
-  irANotas() { this.cerrarMenu(); this.router.navigate(['/notas']); }
+
 }
