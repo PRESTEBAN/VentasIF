@@ -88,9 +88,9 @@
             <div class="cliente-saldo">
               <p class="saldo-label">Saldo</p>
               <p class="saldo-valor"
-                [class.saldo-rojo]="(cliente.saldo || 0) > 0"
-                [class.saldo-verde]="(cliente.saldo || 0) === 0">
-                ${{ (cliente.saldo || 0) | number:'1.2-2' }}
+                [class.saldo-rojo]="(cliente.saldo_pendiente || 0) > 0"
+                [class.saldo-verde]="(cliente.saldo_pendiente || 0) === 0">
+                ${{ (cliente.saldo_pendiente || 0) | number:'1.2-2' }}
               </p>
             </div>
             <ion-icon name="chevron-forward-outline" class="cli-arrow"></ion-icon>
@@ -160,6 +160,7 @@
   </ion-modal>
 
   <!-- ===== MODAL DETALLE CLIENTE ===== -->
+  <!-- CAMBIO: se quitó el botón cash-outline (abrirAbono) del toolbar -->
   <ion-modal [isOpen]="mostrarDetalle" (didDismiss)="cerrarDetalle()"
     [breakpoints]="[0, 1]" [initialBreakpoint]="1"
     [handle]="false" [canDismiss]="puedesCerrarDetalle">
@@ -171,7 +172,7 @@
           </ion-buttons>
           <ion-buttons slot="end">
             <ion-button (click)="abrirEditar()" style="--color: white;"><ion-icon name="pencil-outline"></ion-icon></ion-button>
-            <ion-button (click)="abrirAbono()" style="--color: white;"><ion-icon name="cash-outline"></ion-icon></ion-button>
+            <!-- BOTÓN ABONO ELIMINADO DE AQUÍ -->
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -190,9 +191,9 @@
             <div class="detalle-saldo-hero">
               <p class="saldo-hero-label">Saldo pendiente</p>
               <p class="saldo-hero-valor"
-                [class.saldo-hero-rojo]="(clienteDetalle.saldo || 0) > 0"
-                [class.saldo-hero-verde]="(clienteDetalle.saldo || 0) === 0">
-                ${{ (clienteDetalle.saldo || 0) | number:'1.2-2' }}
+                [class.saldo-hero-rojo]="(clienteDetalle.saldo_pendiente || 0) > 0"
+                [class.saldo-hero-verde]="(clienteDetalle.saldo_pendiente || 0) === 0">
+                ${{ (clienteDetalle.saldo_pendiente || 0) | number:'1.2-2' }}
               </p>
             </div>
           </div>
@@ -288,7 +289,7 @@
     </ng-template>
   </ion-modal>
 
-  <!-- ===== MODAL DETALLE ORDEN — REDISEÑADO COMO POPUP CENTRADO ===== -->
+  <!-- ===== MODAL DETALLE ORDEN ===== -->
   <ion-modal
     [isOpen]="mostrarDetalleOrden"
     (didDismiss)="cerrarDetalleOrden()"
@@ -303,7 +304,7 @@
 
         <div class="popup-inner">
 
-          <!-- ── HEADER: número + badge estado ── -->
+          <!-- HEADER: número + badge estado -->
           <div class="popup-header">
             <p class="popup-orden-label">ORDEN</p>
             <h2 class="popup-orden-num">{{ ordenSeleccionada.num_orden }}</h2>
@@ -317,7 +318,7 @@
             </span>
           </div>
 
-          <!-- ── TOTALES ── -->
+          <!-- TOTALES -->
           <div class="popup-totales">
             <div class="total-card total-orden">
               <p class="total-lbl">Total Orden</p>
@@ -333,7 +334,15 @@
             </div>
           </div>
 
-          <!-- ── FORMA DE PAGO ── -->
+          <!-- CAMBIO: BOTÓN REGISTRAR ABONO — solo si hay saldo pendiente -->
+          <div class="popup-seccion" *ngIf="ordenSeleccionada.saldo_orden > 0">
+            <button class="btn-abono-orden" (click)="abrirAbonoDesdeOrden(ordenSeleccionada)">
+              <ion-icon name="cash-outline"></ion-icon>
+              Registrar Abono — Saldo: ${{ ordenSeleccionada.saldo_orden | number:'1.2-2' }}
+            </button>
+          </div>
+
+          <!-- FORMA DE PAGO -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.forma_pago">
             <p class="popup-sec-titulo">
               <ion-icon name="card-outline"></ion-icon>
@@ -349,7 +358,7 @@
             </div>
           </div>
 
-          <!-- ── NOTAS ── -->
+          <!-- NOTAS -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.notas">
             <p class="popup-sec-titulo">
               <ion-icon name="document-text-outline"></ion-icon>
@@ -358,7 +367,7 @@
             <p class="popup-notas-texto">{{ ordenSeleccionada.notas }}</p>
           </div>
 
-          <!-- ── HISTORIAL DE ABONOS ── -->
+          <!-- CAMBIO: HISTORIAL DE ABONOS con botón reimprimir en cada uno -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.abonos && ordenSeleccionada.abonos.length > 0">
             <p class="popup-sec-titulo">
               <ion-icon name="cash-outline"></ion-icon>
@@ -370,7 +379,14 @@
                   <p class="abono-fp-lbl">{{ ab.forma_pago }}</p>
                   <p class="abono-fecha-lbl">{{ ab.fecha | date:'dd MMM yyyy' }}</p>
                 </div>
-                <p class="abono-monto-val">+${{ ab.monto | number:'1.2-2' }}</p>
+                <div class="abono-right">
+                  <p class="abono-monto-val">+${{ ab.monto | number:'1.2-2' }}</p>
+                  <!-- CAMBIO: botón reimprimir abono -->
+                  <button class="btn-reimprimir-abono" (click)="reimprimirAbono(ordenSeleccionada, ab)" [disabled]="imprimiendoAbono">
+                    <ion-icon name="print-outline"></ion-icon>
+                    <span>{{ imprimiendoAbono ? '...' : 'Reimprimir' }}</span>
+                  </button>
+                </div>
               </div>
               <div class="abono-total-row">
                 <p class="abono-total-lbl">Total abonado</p>
@@ -379,11 +395,12 @@
             </div>
           </div>
 
-          <!-- ── SIN INFO ── -->
+          <!-- SIN INFO -->
           <div class="popup-sin-info"
             *ngIf="!ordenSeleccionada.notas
               && (!ordenSeleccionada.abonos || ordenSeleccionada.abonos.length === 0)
-              && !ordenSeleccionada.forma_pago">
+              && !ordenSeleccionada.forma_pago
+              && ordenSeleccionada.saldo_orden <= 0">
             <ion-icon name="information-circle-outline"></ion-icon>
             <p>Sin información adicional</p>
           </div>
@@ -472,16 +489,28 @@
             </div>
             <div>
               <p class="abono-cli-nombre">{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</p>
-              <p class="abono-cli-saldo" [class.saldo-rojo]="(clienteDetalle?.saldo || 0) > 0">
-                Saldo: ${{ (clienteDetalle?.saldo || 0) | number:'1.2-2' }}
+              <p class="abono-cli-saldo" [class.saldo-rojo]="(clienteDetalle?.saldo_pendiente || 0) > 0">
+                Saldo: ${{ (clienteDetalle?.saldo_pendiente || 0) | number:'1.2-2' }}
               </p>
             </div>
           </div>
+
+          <!-- CAMBIO: N° Orden prellenado y readonly cuando viene desde una orden -->
           <div class="form-group">
             <label>N° Orden</label>
-            <input type="number" [(ngModel)]="abonoData.ventaId" placeholder="000000" />
+            <input type="number" [(ngModel)]="abonoData.ventaId" placeholder="000000"
+              [readonly]="abonoOrdenFija"
+              [style.opacity]="abonoOrdenFija ? '0.6' : '1'"
+              [style.cursor]="abonoOrdenFija ? 'not-allowed' : 'text'" />
             <span class="field-error" *ngIf="erroresAbono.ventaId">{{ erroresAbono.ventaId }}</span>
           </div>
+
+          <!-- Saldo de la orden seleccionada -->
+          <div class="abono-saldo-orden" *ngIf="abonoOrdenFija && abonoSaldoOrden > 0">
+            <span class="abono-saldo-lbl">Saldo pendiente de esta orden:</span>
+            <span class="abono-saldo-val saldo-rojo">${{ abonoSaldoOrden | number:'1.2-2' }}</span>
+          </div>
+
           <div class="form-group">
             <label>Valor del Abono</label>
             <div class="valor-wrap">

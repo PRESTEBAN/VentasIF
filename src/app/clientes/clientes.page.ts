@@ -89,6 +89,13 @@ export class ClientesPage implements OnInit, OnDestroy {
   guardandoAbono = false;
   mensajeAbono = '';
 
+  // NUEVO: control para abono desde orden preseleccionada
+  abonoOrdenFija = false;   // true = N° orden readonly
+  abonoSaldoOrden = 0;      // saldo de la orden preseleccionada
+
+  // NUEVO: control impresión abono
+  imprimiendoAbono = false;
+
   mostrarConfirmarEliminar = false;
   eliminando = false;
 
@@ -170,7 +177,7 @@ export class ClientesPage implements OnInit, OnDestroy {
     return lista.sort((a, b) => {
       switch (this.ordenActual) {
         case 'nombre':             return dir * `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`);
-        case 'saldo':              return dir * ((a.saldo || 0) - (b.saldo || 0));
+        case 'saldo':              return dir * ((a.saldo_pendiente || 0) - (b.saldo_pendiente || 0));
         case 'fecha_creacion':     return dir * (new Date(a.fecha_creacion || 0).getTime() - new Date(b.fecha_creacion || 0).getTime());
         case 'fecha_modificacion': return dir * (new Date(a.fecha_modificacion || 0).getTime() - new Date(b.fecha_modificacion || 0).getTime());
         default: return 0;
@@ -221,26 +228,6 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // FIX: agruparPorOrden
-  //
-  // PROBLEMA ANTERIOR:
-  //   • Al procesar filas de abono se sobreescribía valor_total con
-  //     m.valor (que puede ser negativo o ser el monto del abono,
-  //     no el total de la orden).
-  //   • entry.abonos.push usaba +m.valor directamente, pero si la BD
-  //     devuelve el valor del abono como número positivo Y también hay
-  //     una fila de la orden con saldo_generado, el cálculo se mezclaba.
-  //
-  // SOLUCIÓN:
-  //   1. Solo las filas con estado !== 'abono' definen valor_total.
-  //   2. Las filas con estado === 'abono' SOLO agregan al array abonos
-  //      usando Math.abs(m.valor) para garantizar que siempre sea positivo.
-  //   3. El saldo_orden se calcula UNA SOLA VEZ al final:
-  //      saldo_orden = Math.max(0, valor_total - totalAbonado)
-  //   4. Si viene saldo_generado en la fila de la orden, se usa como
-  //      fuente de verdad en lugar de recalcular.
-  // ─────────────────────────────────────────────────────────────
   private agruparPorOrden(movs: Movimiento[]): OrdenAgrupada[] {
     const mapa = new Map<number, OrdenAgrupada>();
 
@@ -249,13 +236,12 @@ export class ClientesPage implements OnInit, OnDestroy {
       const esAbono = m.estado === 'abono';
 
       if (!mapa.has(id)) {
-        // Inicializar entrada solo con datos de la orden (no de abono)
         mapa.set(id, {
           venta_id:    id,
           num_orden:   m.num_orden,
-          estado:      esAbono ? 'pendiente' : m.estado, // si llega abono primero, estado provisional
-          valor_total: esAbono ? 0 : Math.abs(+m.valor), // valor_total solo desde filas de orden
-          saldo_orden: 0,  // se calcula al final
+          estado:      esAbono ? 'pendiente' : m.estado,
+          valor_total: esAbono ? 0 : Math.abs(+m.valor),
+          saldo_orden: 0,
           fecha:       m.fecha,
           forma_pago:  esAbono ? '' : ((m as any).forma_pago ?? ''),
           notas:       esAbono ? '' : ((m as any).notas ?? ''),
@@ -266,14 +252,12 @@ export class ClientesPage implements OnInit, OnDestroy {
       const entry = mapa.get(id)!;
 
       if (esAbono) {
-        // Agregar abono: monto siempre positivo (la BD puede enviarlo negativo)
         entry.abonos.push({
           fecha:      m.fecha,
           forma_pago: (m as any).forma_pago ?? '',
           monto:      Math.abs(+m.valor),
         });
       } else {
-        // Actualizar datos de la orden (puede venir después del abono)
         entry.valor_total = Math.abs(+m.valor);
         entry.estado      = m.estado;
         entry.fecha       = m.fecha;
@@ -283,30 +267,22 @@ export class ClientesPage implements OnInit, OnDestroy {
       }
     }
 
-    // Calcular saldo_orden por separado para CADA orden de forma independiente
     for (const [, entry] of mapa) {
       const totalAbonado = entry.abonos.reduce((sum, a) => sum + a.monto, 0);
-
-      // Si la BD envía saldo_generado en alguna fila, usarlo directamente
-      // (viene mapeado en Movimiento como saldo_acumulado)
       const saldoDesdeDB = (entry as any)._saldo_generado;
 
       if (saldoDesdeDB !== undefined && saldoDesdeDB >= 0) {
-        // Fuente de verdad: saldo_generado de la BD
         entry.saldo_orden = +saldoDesdeDB;
       } else {
-        // Calcular: total de la orden menos lo abonado, mínimo 0
         entry.saldo_orden = Math.max(0, entry.valor_total - totalAbonado);
       }
 
-      // Determinar estado final
       if (entry.estado !== 'cancelado') {
         if (entry.saldo_orden === 0) {
           entry.estado = 'pagado';
         } else if (totalAbonado > 0 && entry.saldo_orden > 0) {
           entry.estado = 'abono';
         }
-        // si totalAbonado === 0 y saldo > 0, queda 'pendiente'
       }
     }
 
@@ -345,6 +321,114 @@ export class ClientesPage implements OnInit, OnDestroy {
       case 'pagado':    return 'Pagado';
       default:          return 'Pendiente';
     }
+  }
+
+  // ── NUEVO: abrir modal abono desde el popup de orden (orden preseleccionada) ──
+  abrirAbonoDesdeOrden(orden: OrdenAgrupada) {
+    this.abonoData = {
+      ventaId:   orden.venta_id,
+      monto:     null,
+      formaPago: 'Efectivo',
+      notas:     ''
+    };
+    this.abonoOrdenFija  = true;
+    this.abonoSaldoOrden = orden.saldo_orden;
+    this.erroresAbono    = {};
+    this.mensajeAbono    = '';
+    this.mostrarAbono    = true;
+  }
+
+  // ── NUEVO: reimprimir un abono específico desde el historial ──────────────────
+  async reimprimirAbono(orden: OrdenAgrupada, abono: { fecha: string; forma_pago: string; monto: number }) {
+    if (!this.clienteDetalle || this.imprimiendoAbono) return;
+    this.imprimiendoAbono = true;
+    try {
+      const c = this.clienteDetalle;
+      const user = this.authService.getUsuario();
+      const totalAbonado = this.totalAbonado(orden);
+      // saldo restante = saldo_orden actual (ya descontados todos los abonos)
+      // saldo anterior a este abono = saldo_orden + abono.monto
+      const saldoAntes = orden.saldo_orden + abono.monto;
+
+      await this.printerService.imprimirReciboAbono({
+        ventaId:          orden.venta_id,
+        clienteNombre:    `${c.nombre} ${c.apellido}`,
+        clienteCedula:    c.cedula_ruc   || '',
+        clienteTelefono:  c.telefono     || '',
+        clienteDireccion: c.direccion    || '',
+        vendedor:         user?.nombre || user?.username || 'Admin',
+        fechaVenta:       orden.fecha    || '',
+        valorTotalVenta:  orden.valor_total,
+        saldoPendiente:   saldoAntes,
+        valorAbono:       abono.monto,
+        saldoRestante:    orden.saldo_orden,
+      });
+    } catch (e: any) {
+      console.warn('[Printer] Error al reimprimir abono:', e.message);
+    } finally {
+      this.imprimiendoAbono = false;
+    }
+  }
+
+  // ── Abrir abono sin orden preseleccionada (ya no se usa desde toolbar) ────────
+  abrirAbono() {
+    this.abonoData = { ventaId: null, monto: null, formaPago: 'Efectivo', notas: '' };
+    this.abonoOrdenFija  = false;
+    this.abonoSaldoOrden = 0;
+    this.erroresAbono    = {};
+    this.mensajeAbono    = '';
+    this.mostrarAbono    = true;
+  }
+
+  cerrarAbono() {
+    this.mostrarAbono    = false;
+    this.abonoOrdenFija  = false;
+    this.abonoSaldoOrden = 0;
+    this.erroresAbono    = {};
+    this.mensajeAbono    = '';
+  }
+
+  guardarAbono() {
+    this.erroresAbono = {}; this.mensajeAbono = '';
+    let valido = true;
+    if (!this.abonoData.ventaId) { this.erroresAbono.ventaId = 'Ingresa el N° de orden'; valido = false; }
+    if (!this.abonoData.monto || this.abonoData.monto <= 0) { this.erroresAbono.monto = 'Ingresa un valor mayor a 0'; valido = false; }
+    if (!valido) return;
+
+    this.guardandoAbono = true;
+    this.clienteService.registrarAbono(
+      this.abonoData.ventaId!,
+      this.clienteDetalle!.id!,
+      this.abonoData.monto!,
+      this.abonoData.formaPago,
+      this.abonoData.notas || undefined
+    ).subscribe({
+      next: (res: any) => {
+        this.guardandoAbono = false;
+        this.mensajeAbono = res.mensaje;
+        this.cargarMovimientos(this.clienteDetalle!.id!);
+        this.cargarClientes();
+        const c = this.clienteDetalle!;
+        const montoAbono = +this.abonoData.monto!;
+        const saldoResta = +(res.saldo_restante ?? 0);
+        const user = this.authService.getUsuario();
+        this.printerService.imprimirReciboAbono({
+          ventaId:          this.abonoData.ventaId!,
+          clienteNombre:    `${c.nombre} ${c.apellido}`,
+          clienteCedula:    c.cedula_ruc  || '',
+          clienteTelefono:  c.telefono    || '',
+          clienteDireccion: c.direccion   || '',
+          vendedor:         user?.nombre || user?.username || 'Admin',
+          fechaVenta:       res.fecha_venta   || '',
+          valorTotalVenta:  +(res.valor_total ?? 0),
+          saldoPendiente:   saldoResta + montoAbono,
+          valorAbono:       montoAbono,
+          saldoRestante:    saldoResta,
+        }).catch(err => console.warn('[Printer] Error al imprimir abono:', err));
+        setTimeout(() => this.cerrarAbono(), 1500);
+      },
+      error: (err) => { this.guardandoAbono = false; this.erroresAbono.general = err.error?.error || 'Error al registrar abono'; }
+    });
   }
 
   abrirEditar() {
@@ -448,55 +532,6 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
-  abrirAbono() {
-    this.abonoData = { ventaId: null, monto: null, formaPago: 'Efectivo', notas: '' };
-    this.erroresAbono = {}; this.mensajeAbono = ''; this.mostrarAbono = true;
-  }
-  cerrarAbono() { this.mostrarAbono = false; this.erroresAbono = {}; this.mensajeAbono = ''; }
-
-  guardarAbono() {
-    this.erroresAbono = {}; this.mensajeAbono = '';
-    let valido = true;
-    if (!this.abonoData.ventaId) { this.erroresAbono.ventaId = 'Ingresa el N° de orden'; valido = false; }
-    if (!this.abonoData.monto || this.abonoData.monto <= 0) { this.erroresAbono.monto = 'Ingresa un valor mayor a 0'; valido = false; }
-    if (!valido) return;
-
-    this.guardandoAbono = true;
-    this.clienteService.registrarAbono(
-      this.abonoData.ventaId!,
-      this.clienteDetalle!.id!,
-      this.abonoData.monto!,
-      this.abonoData.formaPago,
-      this.abonoData.notas || undefined
-    ).subscribe({
-      next: (res: any) => {
-        this.guardandoAbono = false;
-        this.mensajeAbono = res.mensaje;
-        this.cargarMovimientos(this.clienteDetalle!.id!);
-        this.cargarClientes();
-        const c = this.clienteDetalle!;
-        const montoAbono = +this.abonoData.monto!;
-        const saldoResta = +(res.saldo_restante ?? 0);
-        const user = this.authService.getUsuario();
-        this.printerService.imprimirReciboAbono({
-          ventaId:          this.abonoData.ventaId!,
-          clienteNombre:    `${c.nombre} ${c.apellido}`,
-          clienteCedula:    c.cedula_ruc  || '',
-          clienteTelefono:  c.telefono    || '',
-          clienteDireccion: c.direccion   || '',
-          vendedor:         user?.nombre || user?.username || 'Admin',
-          fechaVenta:       res.fecha_venta   || '',
-          valorTotalVenta:  +(res.valor_total ?? 0),
-          saldoPendiente:   saldoResta + montoAbono,
-          valorAbono:       montoAbono,
-          saldoRestante:    saldoResta,
-        }).catch(err => console.warn('[Printer] Error al imprimir abono:', err));
-        setTimeout(() => this.cerrarAbono(), 1500);
-      },
-      error: (err) => { this.guardandoAbono = false; this.erroresAbono.general = err.error?.error || 'Error al registrar abono'; }
-    });
-  }
-
   abrirAgregarCliente() { this.mostrarAgregarCliente = true; }
 
   cerrarAgregarCliente() {
@@ -568,5 +603,4 @@ export class ClientesPage implements OnInit, OnDestroy {
   abrirMenu() { this.menuAbierto = true; }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
-
 }

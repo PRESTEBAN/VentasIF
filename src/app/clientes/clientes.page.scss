@@ -1242,3 +1242,85 @@ $white:         #FFFFFF;
   ion-icon { font-size: 32px; }
   p { font-size: 13px; margin: 0; }
 }
+
+.btn-abono-orden {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
+  transition: opacity 0.15s;
+  ion-icon { font-size: 18px; }
+  &:active { opacity: 0.8; }
+}
+ 
+// Saldo de la orden en el modal de abono
+.abono-saldo-orden {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #FFF5F5;
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+}
+ 
+.abono-saldo-lbl {
+  font-size: 12px;
+  color: #6B4B55;
+  font-weight: 600;
+}
+ 
+.abono-saldo-val {
+  font-size: 16px;
+  font-weight: 800;
+}
+ 
+// Fila de abono — ajuste para incluir el botón reimprimir
+.abono-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid #F0E8E8;
+  &:last-of-type { border-bottom: none; }
+}
+ 
+.abono-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+ 
+// Botón reimprimir abono dentro del historial
+.btn-reimprimir-abono {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #E8C8CE;
+  background: #F9F0F2;
+  color: #590F23;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  ion-icon { font-size: 13px; }
+  &:active { background: #F0E0E4; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+ 
