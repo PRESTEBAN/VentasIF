@@ -154,7 +154,7 @@ export class HistorialPage implements OnInit, OnDestroy {
       });
 
     this.http
-      .get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, {
+      .get<any[]>(`${this.API}/abonos?fecha=${fechaStr}`, {
         headers: this.getHeaders(),
       })
       .subscribe({
@@ -266,7 +266,7 @@ export class HistorialPage implements OnInit, OnDestroy {
       });
 
     this.http
-      .get<any[]>(`${this.API}/abonos/fecha?fecha=${fechaStr}`, {
+      .get<any[]>(`${this.API}/abonos?fecha=${fechaStr}`, {
         headers: this.getHeaders(),
       })
       .subscribe({
