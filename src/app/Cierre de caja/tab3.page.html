@@ -7,11 +7,9 @@
         [abierto]="menuAbierto"
         [paginaActiva]="'tab3'"
         [usuarioActual]="usuarioActual"
-        (cerrar)="menuAbierto = false"
-      >
+        (cerrar)="menuAbierto = false">
       </app-menu-lateral>
 
-      <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -33,138 +31,99 @@
           </div>
         </div>
 
-        <!-- Badge cierre activo -->
-        <div class="cierre-id-badge" *ngIf="cierreActivoId > 0">
-          <ion-icon name="lock-open-outline"></ion-icon>
-          Cierre #{{ cierreActivoId }} en curso
+        <!-- ══ CAJA CERRADA ══ -->
+        <div class="caja-cerrada-container" *ngIf="cajaCerrada && !cargando">
+          <div class="caja-cerrada-card">
+            <div class="caja-cerrada-icono">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+            </div>
+            <h2 class="caja-cerrada-titulo">Caja Cerrada</h2>
+            <p class="caja-cerrada-sub">No hay un período de caja activo.<br/>Presiona el botón para iniciar uno nuevo.</p>
+            <div class="field-error-abrir" *ngIf="errorAbrir">
+              <ion-icon name="warning-outline"></ion-icon>
+              {{ errorAbrir }}
+            </div>
+            <button class="btn-abrir-caja" (click)="abrirCaja()" [disabled]="abriendo">
+              <ion-spinner name="crescent" *ngIf="abriendo" style="width:18px;height:18px;margin-right:8px;"></ion-spinner>
+              <ion-icon name="lock-open-outline" *ngIf="!abriendo"></ion-icon>
+              {{ abriendo ? 'Abriendo...' : 'Abrir Caja' }}
+            </button>
+          </div>
         </div>
 
+        <!-- ══ CARGANDO ══ -->
         <div class="loading-cierre" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando datos...</p>
         </div>
-        <!-- Fondo inicial -->
-        <div
-          class="cierre-id-badge"
-          *ngIf="cierreActivoId > 0 && fondoInicial > 0"
-        >
-          <ion-icon name="cash-outline"></ion-icon>
-          Fondo inicial: ${{ fondoInicial | number:'1.2-2' }}
-        </div>
-        <div *ngIf="!cargando">
+
+        <!-- ══ CAJA ABIERTA — contenido normal ══ -->
+        <ng-container *ngIf="!cajaCerrada && !cargando">
+
+          <div class="cierre-id-badge" *ngIf="cierreActivoId > 0">
+            <ion-icon name="lock-open-outline"></ion-icon>
+            Cierre #{{ cierreActivoId }} en curso
+          </div>
+
+          <div class="cierre-id-badge" *ngIf="cierreActivoId > 0 && fondoInicial > 0">
+            <ion-icon name="cash-outline"></ion-icon>
+            Fondo inicial: ${{ fondoInicial | number:'1.2-2' }}
+          </div>
+
           <!-- CARD 1: Ventas -->
           <div class="cierre-card">
             <div class="card-header-row">
-              <div class="card-icono verde">
-                <ion-icon name="trending-up-outline"></ion-icon>
-              </div>
+              <div class="card-icono verde"><ion-icon name="trending-up-outline"></ion-icon></div>
               <p class="card-titulo">Ingresos del período</p>
               <span class="badge-ventas">{{ ventasRealizadas }} ventas</span>
             </div>
             <div class="fila-dato verde" *ngIf="ingresosAdicionales > 0">
-              <span class="dato-label">
-                <ion-icon
-                  name="trending-up-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Ingresos varios
-              </span>
-              <span class="dato-valor verde-txt"
-                >+${{ ingresosAdicionales | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="trending-up-outline" class="fila-icon"></ion-icon>Ingresos varios</span>
+              <span class="dato-valor verde-txt">+${{ ingresosAdicionales | number:'1.2-2' }}</span>
             </div>
             <div class="fila-dato">
-              <span class="dato-label"
-                ><ion-icon name="cash-outline" class="fila-icon"></ion-icon
-                >Efectivo</span
-              >
-              <span class="dato-valor"
-                >${{ totalEfectivo | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="cash-outline" class="fila-icon"></ion-icon>Efectivo</span>
+              <span class="dato-valor">${{ totalEfectivo | number:'1.2-2' }}</span>
             </div>
             <div class="fila-dato">
-              <span class="dato-label"
-                ><ion-icon
-                  name="swap-horizontal-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Transferencias</span
-              >
-              <span class="dato-valor"
-                >${{ totalTransferencias | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="swap-horizontal-outline" class="fila-icon"></ion-icon>Transferencias</span>
+              <span class="dato-valor">${{ totalTransferencias | number:'1.2-2' }}</span>
             </div>
             <div class="fila-dato">
-              <span class="dato-label"
-                ><ion-icon
-                  name="document-text-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Cheques</span
-              >
-              <span class="dato-valor"
-                >${{ totalCheques | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="document-text-outline" class="fila-icon"></ion-icon>Cheques</span>
+              <span class="dato-valor">${{ totalCheques | number:'1.2-2' }}</span>
             </div>
             <div class="fila-dato rojo">
-              <span class="dato-label"
-                ><ion-icon name="time-outline" class="fila-icon"></ion-icon
-                >Pendientes (crédito)</span
-              >
-              <span class="dato-valor"
-                >${{ totalPendientes | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="time-outline" class="fila-icon"></ion-icon>Pendientes (crédito)</span>
+              <span class="dato-valor">${{ totalPendientes | number:'1.2-2' }}</span>
             </div>
-            <!-- ABONOS — nuevo -->
             <div class="fila-dato azul" *ngIf="totalAbonos > 0">
-              <span class="dato-label"
-                ><ion-icon
-                  name="return-down-back-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Abonos cobrados</span
-              >
-              <span class="dato-valor azul-txt"
-                >+${{ totalAbonos | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="return-down-back-outline" class="fila-icon"></ion-icon>Cobro a clientes</span>
+              <span class="dato-valor azul-txt">+${{ totalAbonos | number:'1.2-2' }}</span>
             </div>
             <div class="fila-separador"></div>
             <div class="fila-dato bold-row">
               <span class="dato-label">Total Ingresos</span>
-              <span class="dato-valor verde-txt"
-                >${{ (totalIngresosVentas + totalAbonos) | number:'1.2-2'
-                }}</span
-              >
+              <span class="dato-valor verde-txt">${{ (totalIngresosVentas + totalAbonos) | number:'1.2-2' }}</span>
             </div>
           </div>
 
           <!-- CARD 2: Egresos -->
           <div class="cierre-card" [class.card-alerta]="egresosExceden">
             <div class="card-header-row">
-              <div class="card-icono rojo">
-                <ion-icon name="trending-down-outline"></ion-icon>
-              </div>
+              <div class="card-icono rojo"><ion-icon name="trending-down-outline"></ion-icon></div>
               <p class="card-titulo">Egresos del período</p>
-              <ion-icon
-                name="warning-outline"
-                class="alerta-icon"
-                *ngIf="egresosExceden"
-              ></ion-icon>
+              <ion-icon name="warning-outline" class="alerta-icon" *ngIf="egresosExceden"></ion-icon>
             </div>
             <div class="fila-dato bold-row">
               <span class="dato-label">Total Egresos</span>
-              <span class="dato-valor rojo-txt"
-                >${{ totalEgresos | number:'1.2-2' }}</span
-              >
+              <span class="dato-valor rojo-txt">${{ totalEgresos | number:'1.2-2' }}</span>
             </div>
             <div class="aviso-exceso" *ngIf="egresosExceden">
               <ion-icon name="warning-outline"></ion-icon>
               <div class="aviso-exceso-texto">
                 <strong>Los egresos superan los ingresos</strong>
-                <span
-                  >No puedes cerrar caja hasta corregirlo. Ve a <b>Egresos</b> y
-                  revisa los registros.</span
-                >
+                <span>No puedes cerrar caja hasta corregirlo. Ve a <b>Egresos</b> y revisa los registros.</span>
               </div>
             </div>
           </div>
@@ -172,101 +131,52 @@
           <!-- TOTAL GENERAL -->
           <div class="total-general-card">
             <p class="total-general-label">TOTAL EN CAJA</p>
-            <p class="total-general-valor">
-              ${{ totalGeneral | number:'1.2-2' }}
-            </p>
+            <p class="total-general-valor">${{ totalGeneral | number:'1.2-2' }}</p>
           </div>
 
           <!-- CARD 3: Conteo físico -->
           <div class="cierre-card card-desglose">
             <div class="card-header-row">
-              <div class="card-icono azul">
-                <ion-icon name="calculator-outline"></ion-icon>
-              </div>
+              <div class="card-icono azul"><ion-icon name="calculator-outline"></ion-icon></div>
               <p class="card-titulo">Conteo físico</p>
             </div>
             <div class="fila-input">
-              <span class="input-label"
-                ><ion-icon name="wallet-outline" class="fila-icon"></ion-icon
-                >Billetes</span
-              >
+              <span class="input-label"><ion-icon name="wallet-outline" class="fila-icon"></ion-icon>Billetes</span>
               <div class="input-wrap">
                 <span class="input-prefix">$</span>
-                <input
-                  type="number"
-                  [(ngModel)]="billetes"
-                  (ngModelChange)="recalcularTotal()"
-                  placeholder="0.00"
-                />
+                <input type="number" [(ngModel)]="billetes" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
               </div>
             </div>
             <div class="fila-input">
-              <span class="input-label"
-                ><ion-icon name="ellipse-outline" class="fila-icon"></ion-icon
-                >Monedas</span
-              >
+              <span class="input-label"><ion-icon name="ellipse-outline" class="fila-icon"></ion-icon>Monedas</span>
               <div class="input-wrap">
                 <span class="input-prefix">$</span>
-                <input
-                  type="number"
-                  [(ngModel)]="monedas"
-                  (ngModelChange)="recalcularTotal()"
-                  placeholder="0.00"
-                />
+                <input type="number" [(ngModel)]="monedas" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
               </div>
             </div>
             <div class="fila-input">
-              <span class="input-label"
-                ><ion-icon
-                  name="phone-portrait-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Transferencias</span
-              >
+              <span class="input-label"><ion-icon name="phone-portrait-outline" class="fila-icon"></ion-icon>Transferencias</span>
               <div class="input-wrap">
                 <span class="input-prefix">$</span>
-                <input
-                  type="number"
-                  [(ngModel)]="transferenciasDesglose"
-                  (ngModelChange)="recalcularTotal()"
-                  placeholder="0.00"
-                />
+                <input type="number" [(ngModel)]="transferenciasDesglose" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
               </div>
             </div>
             <div class="fila-input">
-              <span class="input-label"
-                ><ion-icon
-                  name="document-text-outline"
-                  class="fila-icon"
-                ></ion-icon
-                >Cheques</span
-              >
+              <span class="input-label"><ion-icon name="document-text-outline" class="fila-icon"></ion-icon>Cheques</span>
               <div class="input-wrap">
                 <span class="input-prefix">$</span>
-                <input
-                  type="number"
-                  [(ngModel)]="chequesDesglose"
-                  (ngModelChange)="recalcularTotal()"
-                  placeholder="0.00"
-                />
+                <input type="number" [(ngModel)]="chequesDesglose" (ngModelChange)="recalcularTotal()" placeholder="0.00" />
               </div>
             </div>
             <div class="fila-separador"></div>
             <div class="fila-dato">
-              <span class="dato-label"
-                ><ion-icon name="time-outline" class="fila-icon"></ion-icon
-                >Créditos (pendientes)</span
-              >
-              <span class="dato-valor rojo-txt"
-                >${{ totalPendientes | number:'1.2-2' }}</span
-              >
+              <span class="dato-label"><ion-icon name="time-outline" class="fila-icon"></ion-icon>Créditos (pendientes)</span>
+              <span class="dato-valor rojo-txt">${{ totalPendientes | number:'1.2-2' }}</span>
             </div>
             <div class="fila-separador"></div>
             <div class="fila-dato bold-row">
               <span class="dato-label">Saldo neta</span>
-              <span class="dato-valor azul-txt"
-                >${{ totalDesglose | number:'1.2-2' }}</span
-              >
+              <span class="dato-valor azul-txt">${{ totalDesglose | number:'1.2-2' }}</span>
             </div>
           </div>
 
@@ -275,53 +185,34 @@
             <span>Cierre bloqueado — corrige los egresos primero</span>
           </div>
 
-          <button
-            class="btn-revisar"
-            (click)="revisar()"
-            [disabled]="egresosExceden"
-          >
+          <button class="btn-revisar" (click)="revisar()" [disabled]="egresosExceden">
             <ion-icon name="checkmark-circle-outline"></ion-icon>
             Revisar Cierre
           </button>
-        </div>
+
+        </ng-container>
       </div>
     </div>
   </div>
 
   <!-- ===== MODAL RESULTADO ===== -->
-  <div
-    class="resultado-overlay"
-    *ngIf="mostrarResultado"
-    (click)="cerrarResultado()"
-  >
+  <div class="resultado-overlay" *ngIf="mostrarResultado" (click)="cerrarResultado()">
     <div class="resultado-card" (click)="$event.stopPropagation()">
       <ng-container *ngIf="estadoCierre === 'cuadrado'">
-        <div class="resultado-icono-wrap ok">
-          <ion-icon name="checkmark-outline"></ion-icon>
-        </div>
+        <div class="resultado-icono-wrap ok"><ion-icon name="checkmark-outline"></ion-icon></div>
         <h2 class="resultado-titulo ok">¡CUADRADO!</h2>
         <p class="resultado-sub ok">Todo en orden 🎉</p>
       </ng-container>
 
       <ng-container *ngIf="estadoCierre !== 'cuadrado'">
-        <div class="resultado-icono-wrap error">
-          <ion-icon name="alert-outline"></ion-icon>
-        </div>
+        <div class="resultado-icono-wrap error"><ion-icon name="alert-outline"></ion-icon></div>
         <h2 class="resultado-titulo error">NO CUADRA</h2>
-        <div
-          class="diferencia-badge"
-          [class.sobra]="estadoCierre === 'sobra'"
-          [class.falta]="estadoCierre === 'falta'"
-        >
-          <ion-icon
-            [name]="estadoCierre === 'sobra' ? 'arrow-up-outline' : 'arrow-down-outline'"
-          ></ion-icon>
-          {{ estadoCierre === 'sobra' ? 'Sobran' : 'Faltan' }} ${{ diferencia |
-          number:'1.2-2' }}
+        <div class="diferencia-badge" [class.sobra]="estadoCierre === 'sobra'" [class.falta]="estadoCierre === 'falta'">
+          <ion-icon [name]="estadoCierre === 'sobra' ? 'arrow-up-outline' : 'arrow-down-outline'"></ion-icon>
+          {{ estadoCierre === 'sobra' ? 'Sobran' : 'Faltan' }} ${{ diferencia | number:'1.2-2' }}
         </div>
         <p class="bloqueo-msg">
-          <ion-icon name="lock-closed-outline"></ion-icon> Corrige el conteo
-          para poder finalizar
+          <ion-icon name="lock-closed-outline"></ion-icon> Corrige el conteo para poder finalizar
         </p>
       </ng-container>
 
@@ -336,9 +227,7 @@
         </div>
         <div class="detalle-fila" *ngIf="totalAbonos > 0">
           <span>Abonos incluidos</span>
-          <span class="detalle-val azul-txt"
-            >+${{ totalAbonos | number:'1.2-2' }}</span
-          >
+          <span class="detalle-val azul-txt">+${{ totalAbonos | number:'1.2-2' }}</span>
         </div>
       </div>
 
@@ -350,24 +239,16 @@
         <button class="btn-resultado btn-volver" (click)="cerrarResultado()">
           <ion-icon name="arrow-back-outline"></ion-icon> Volver
         </button>
-        <button
-          class="btn-resultado btn-finalizar"
+        <button class="btn-resultado btn-finalizar"
           [disabled]="estadoCierre !== 'cuadrado' || guardandoCierre"
           [class.disabled]="estadoCierre !== 'cuadrado'"
-          (click)="finalizarDia()"
-        >
-          <ion-spinner
-            name="crescent"
-            *ngIf="guardandoCierre"
-            style="width: 16px; height: 16px; margin-right: 4px"
-          ></ion-spinner>
+          (click)="finalizarDia()">
+          <ion-spinner name="crescent" *ngIf="guardandoCierre" style="width:16px;height:16px;margin-right:4px"></ion-spinner>
           {{ guardandoCierre ? 'Guardando...' : 'Finalizar' }}
-          <ion-icon
-            name="checkmark-outline"
-            *ngIf="!guardandoCierre"
-          ></ion-icon>
+          <ion-icon name="checkmark-outline" *ngIf="!guardandoCierre"></ion-icon>
         </button>
       </div>
     </div>
   </div>
+
 </ion-content>

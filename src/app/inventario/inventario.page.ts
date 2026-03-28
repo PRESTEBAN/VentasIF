@@ -1,9 +1,12 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { Router } from '@angular/router';
 import { InventarioService, ItemInventario } from '../services/inventario';
 import { AuthService } from '../services/auth';
 import { SocketService } from '../services/socket';
 import { Subscription } from 'rxjs';
+
+const LS_ORDEN   = 'inv_orden_bodega';
+const LS_OCULTOS = 'inv_ocultos_bodega';
 
 @Component({
   selector: 'app-inventario',
@@ -13,70 +16,203 @@ import { Subscription } from 'rxjs';
 })
 export class InventarioPage implements OnInit, OnDestroy {
 
-  menuAbierto = false;
+  menuAbierto   = false;
   usuarioActual = '';
 
   tabActivo: 'inventario' | 'productos' = 'inventario';
 
-  items: ItemInventario[] = [];
+  items: ItemInventario[]         = [];
+  itemsVisibles: ItemInventario[] = [];   // ordenados y sin ocultos
+  itemsOcultos: ItemInventario[]  = [];   // los ocultos
+
   cargando = false;
 
-  modoIngreso = false;
+  modoIngreso      = false;
   guardandoIngreso = false;
-  mensajeIngreso = '';
- 
-  modoEditarPrecios = false;
-  guardandoPrecios = false;
-  editPrecios: { [producto_id: number]: { mayor: number; menor: number } } = {};
+  mensajeIngreso   = '';
+
+  modoEditarPrecios  = false;
+  guardandoPrecios   = false;
+  editPrecios: { [id: number]: { mayor: number; menor: number } } = {};
 
   mostrarNuevoProducto = false;
   nuevoProducto = {
     codigo: '', nombre: '', descripcion: '', categoria: '',
-    peso_gramos: null as number | null,
-    unidad_medida: 'unidad',
-    precio_x_mayor: null as number | null,
-    precio_x_menor: null as number | null,
-    stock_inicial: null as number | null, 
+    peso_gramos: null as number | null, unidad_medida: 'unidad',
+    precio_x_mayor: null as number | null, precio_x_menor: null as number | null,
+    stock_inicial: null as number | null,
   };
   erroresNuevo: any = {};
   guardandoNuevo = false;
 
   mostrarConfirmarVaciar = false;
-  vaciandoInventario = false;
+  vaciandoInventario     = false;
+
+  // ── Modo gestión ──────────────────────────────────────────────────────────
+  modoGestion    = false;
+  mostrarOcultos = false;   // panel para restaurar ocultos
+  ocultos        = new Set<number>();
+  ordenPersonalizado: number[] = [];
+
+  // ── Drag & drop ───────────────────────────────────────────────────────────
+  /** índice del item que se está arrastrando */
+  dragIndex: number | null = null;
+  /** índice sobre el que está pasando (target) */
+  dragOverIndex: number | null = null;
+  /** id del timeout para long-press */
+  private longPressTimer: any = null;
+  private readonly LONG_PRESS_MS = 500;
 
   private pollingInterval: any = null;
-  private readonly POLLING_MS = 20000;
+  private readonly POLLING_MS  = 20000;
   private socketSubs: Subscription[] = [];
 
   constructor(
     public router: Router,
     private inventarioService: InventarioService,
     private authService: AuthService,
-    private socketService: SocketService
+    private socketService: SocketService,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit() {
     const user = this.authService.getUsuario();
     this.usuarioActual = user?.nombre || user?.username || '';
+    this.cargarPreferencias();
     this.cargarInventario();
   }
 
-  ionViewWillEnter() {
-    this.cargarInventario();
-    this.iniciarPolling();
-    this.iniciarSocket();
+  ionViewWillEnter() { this.cargarInventario(); this.iniciarPolling(); this.iniciarSocket(); }
+  ionViewWillLeave() { this.detenerPolling(); this.detenerSocket(); }
+  ngOnDestroy()      { this.detenerPolling(); this.detenerSocket(); }
+
+  // ── LocalStorage ─────────────────────────────────────────────────────────
+  cargarPreferencias() {
+    try { const o = localStorage.getItem(LS_ORDEN);   if (o) this.ordenPersonalizado = JSON.parse(o); } catch {}
+    try { const h = localStorage.getItem(LS_OCULTOS); if (h) this.ocultos = new Set(JSON.parse(h)); } catch {}
   }
 
-  ionViewWillLeave() {
-    this.detenerPolling();
-    this.detenerSocket();
+  guardarPreferencias() {
+    localStorage.setItem(LS_ORDEN,   JSON.stringify(this.ordenPersonalizado));
+    localStorage.setItem(LS_OCULTOS, JSON.stringify([...this.ocultos]));
   }
 
-  ngOnDestroy() {
-    this.detenerPolling();
-    this.detenerSocket();
+  // ── Construir listas ──────────────────────────────────────────────────────
+  aplicarOrdenYVisibilidad() {
+    let ordenados: ItemInventario[];
+
+    if (this.ordenPersonalizado.length > 0) {
+      const mapa = new Map(this.items.map(i => [i.producto_id, i]));
+      ordenados = [];
+      this.ordenPersonalizado.forEach(id => { if (mapa.has(id)) { ordenados.push(mapa.get(id)!); mapa.delete(id); } });
+      mapa.forEach(i => ordenados.push(i));
+    } else {
+      ordenados = [...this.items];
+    }
+
+    this.itemsVisibles = ordenados.filter(i => !this.ocultos.has(i.producto_id));
+    this.itemsOcultos  = this.items.filter(i => this.ocultos.has(i.producto_id));
   }
 
+  // ── Modo gestión ──────────────────────────────────────────────────────────
+  toggleModoGestion() {
+    this.modoGestion = !this.modoGestion;
+    this.mostrarOcultos = false;
+    this.dragIndex = null;
+    this.dragOverIndex = null;
+    if (!this.modoGestion) this.guardarPreferencias();
+  }
+
+  ocultarProducto(productoId: number) {
+    this.ocultos.add(productoId);
+    this.ocultos = new Set(this.ocultos);
+    this.dragIndex = null;
+    this.aplicarOrdenYVisibilidad();
+    this.guardarPreferencias();
+  }
+
+  restaurarProducto(productoId: number) {
+    this.ocultos.delete(productoId);
+    this.ocultos = new Set(this.ocultos);
+    this.aplicarOrdenYVisibilidad();
+    this.guardarPreferencias();
+    if (this.ocultos.size === 0) this.mostrarOcultos = false;
+  }
+
+  get totalOcultos(): number { return this.ocultos.size; }
+
+  // ── Long press + drag touch ───────────────────────────────────────────────
+
+  /** El usuario presiona el item */
+  onTouchStart(event: TouchEvent, index: number) {
+    if (!this.modoGestion) return;
+    // Limpiar timer previo
+    this.cancelarLongPress();
+
+    this.longPressTimer = setTimeout(() => {
+      this.ngZone.run(() => {
+        this.dragIndex = index;
+        this.dragOverIndex = index;
+        // Vibrar si está disponible
+        if (navigator.vibrate) navigator.vibrate(40);
+      });
+    }, this.LONG_PRESS_MS);
+  }
+
+  /** El usuario mueve el dedo */
+  onTouchMove(event: TouchEvent, index: number) {
+    // Si se mueve antes del long press, cancelarlo
+    if (this.dragIndex === null) {
+      this.cancelarLongPress();
+      return;
+    }
+    event.preventDefault();
+
+    const touch = event.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!el) return;
+
+    // Buscar el item-card más cercano
+    const card = el.closest('[data-drag-index]') as HTMLElement;
+    if (card) {
+      const targetIndex = parseInt(card.dataset['dragIndex'] || '-1', 10);
+      if (targetIndex >= 0 && targetIndex !== this.dragOverIndex) {
+        this.ngZone.run(() => { this.dragOverIndex = targetIndex; });
+      }
+    }
+  }
+
+  /** El usuario suelta el dedo */
+  onTouchEnd(event: TouchEvent, index: number) {
+    this.cancelarLongPress();
+    if (this.dragIndex === null) return;
+
+    const from = this.dragIndex;
+    const to   = this.dragOverIndex ?? from;
+
+    this.ngZone.run(() => {
+      if (from !== to) {
+        const arr = [...this.itemsVisibles];
+        const [item] = arr.splice(from, 1);
+        arr.splice(to, 0, item);
+        this.itemsVisibles = arr;
+        // Reconstruir orden completo: visibles + ocultos al final
+        this.ordenPersonalizado = [
+          ...arr.map(i => i.producto_id),
+          ...this.itemsOcultos.map(i => i.producto_id),
+        ];
+        this.guardarPreferencias();
+      }
+      this.dragIndex     = null;
+      this.dragOverIndex = null;
+    });
+  }
+
+  private cancelarLongPress() {
+    if (this.longPressTimer) { clearTimeout(this.longPressTimer); this.longPressTimer = null; }
+  }
+
+  // ── Polling / Socket ──────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     if (!this.authService.estaLogueado()) return;
@@ -90,28 +226,25 @@ export class InventarioPage implements OnInit, OnDestroy {
   iniciarSocket() {
     if (!this.authService.estaLogueado()) return;
     this.socketService.connect();
-    const invSub = this.socketService.on<{ accion?: string; producto_id?: number; stock_actual?: number }>('inventario_actualizado').subscribe((data) => {
+    const sub = this.socketService.on<any>('inventario_actualizado').subscribe(data => {
       if (!this.authService.estaLogueado()) { this.detenerSocket(); return; }
-      if (this.modoIngreso || this.modoEditarPrecios) return;
+      if (this.modoIngreso || this.modoEditarPrecios || this.modoGestion) return;
       if (data?.producto_id && data?.stock_actual !== undefined) {
         const idx = this.items.findIndex(i => i.producto_id === data.producto_id);
-        if (idx >= 0) { this.items[idx] = { ...this.items[idx], stock_actual: data.stock_actual }; return; }
+        if (idx >= 0) { this.items[idx] = { ...this.items[idx], stock_actual: data.stock_actual }; this.aplicarOrdenYVisibilidad(); return; }
       }
       this.actualizarSilencioso();
     });
-    this.socketSubs = [invSub];
+    this.socketSubs = [sub];
   }
 
-  detenerSocket() {
-    this.socketSubs.forEach(s => s.unsubscribe());
-    this.socketSubs = [];
-  }
+  detenerSocket() { this.socketSubs.forEach(s => s.unsubscribe()); this.socketSubs = []; }
 
   actualizarSilencioso() {
     if (!this.authService.estaLogueado()) { this.detenerPolling(); return; }
-    if (this.modoIngreso || this.modoEditarPrecios) return;
+    if (this.modoIngreso || this.modoEditarPrecios || this.modoGestion) return;
     this.inventarioService.getBodega().subscribe({
-      next: (data: ItemInventario[]) => { this.items = data.map(i => ({ ...i, ingreso: null })); this.inicializarPrecios(); },
+      next: (data) => { this.items = data.map(i => ({ ...i, ingreso: null })); this.inicializarPrecios(); this.aplicarOrdenYVisibilidad(); },
       error: () => {}
     });
   }
@@ -119,9 +252,10 @@ export class InventarioPage implements OnInit, OnDestroy {
   cargarInventario() {
     this.cargando = true;
     this.inventarioService.getBodega().subscribe({
-      next: (data: ItemInventario[]) => {
+      next: (data) => {
         this.items = data.map(i => ({ ...i, ingreso: null }));
         this.inicializarPrecios();
+        this.aplicarOrdenYVisibilidad();
         this.cargando = false;
       },
       error: () => { this.cargando = false; }
@@ -130,31 +264,27 @@ export class InventarioPage implements OnInit, OnDestroy {
 
   inicializarPrecios() {
     this.editPrecios = {};
-    this.items.forEach(i => {
-      this.editPrecios[i.producto_id] = { mayor: i.precio_x_mayor, menor: i.precio_x_menor };
-    });
+    this.items.forEach(i => { this.editPrecios[i.producto_id] = { mayor: i.precio_x_mayor, menor: i.precio_x_menor }; });
   }
 
   cambiarTab(tab: 'inventario' | 'productos') {
     this.tabActivo = tab;
-    this.modoIngreso = false;
-    this.modoEditarPrecios = false;
-    this.mensajeIngreso = '';
+    this.modoIngreso = false; this.modoEditarPrecios = false;
+    this.modoGestion = false; this.mensajeIngreso = '';
+    this.dragIndex = null; this.dragOverIndex = null;
   }
 
-  activarIngreso() { this.modoIngreso = true; this.mensajeIngreso = ''; this.items = this.items.map(i => ({ ...i, ingreso: null })); }
-  cancelarIngreso() { this.modoIngreso = false; this.items = this.items.map(i => ({ ...i, ingreso: null })); }
-
+  // ── Ingreso stock ─────────────────────────────────────────────────────────
+  activarIngreso()  { this.modoIngreso = true; this.mensajeIngreso = ''; this.items = this.items.map(i => ({ ...i, ingreso: null })); this.aplicarOrdenYVisibilidad(); }
+  cancelarIngreso() { this.modoIngreso = false; this.items = this.items.map(i => ({ ...i, ingreso: null })); this.aplicarOrdenYVisibilidad(); }
   incrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) + 1; }
   decrementar(item: ItemInventario) { item.ingreso = (item.ingreso || 0) - 1; }
 
   guardarIngresos() {
-    const conCambio = this.items.filter(i => i.ingreso !== null && i.ingreso !== 0);
-    if (conCambio.length === 0) { this.mensajeIngreso = 'No hay cambios para guardar'; return; }
-    this.guardandoIngreso = true;
-    this.mensajeIngreso = '';
-    let pendientes = conCambio.length;
-    let errores = 0;
+    const conCambio = this.itemsVisibles.filter(i => i.ingreso !== null && i.ingreso !== 0);
+    if (!conCambio.length) { this.mensajeIngreso = 'No hay cambios para guardar'; return; }
+    this.guardandoIngreso = true; this.mensajeIngreso = '';
+    let pendientes = conCambio.length; let errores = 0;
     conCambio.forEach(item => {
       const cantidad = Math.abs(item.ingreso!);
       const tipo = item.ingreso! > 0 ? 'entrada' : 'salida';
@@ -163,25 +293,20 @@ export class InventarioPage implements OnInit, OnDestroy {
           const idx = this.items.findIndex(i => i.producto_id === item.producto_id);
           if (idx >= 0) { this.items[idx].stock_actual = res.stock_actual; this.items[idx].ingreso = null; }
           pendientes--;
-          if (pendientes === 0) { this.guardandoIngreso = false; this.modoIngreso = false; this.mensajeIngreso = errores > 0 ? `${errores} error(es)` : ''; }
+          if (pendientes === 0) { this.guardandoIngreso = false; this.modoIngreso = false; this.aplicarOrdenYVisibilidad(); }
         },
-        error: () => {
-          errores++; pendientes--;
-          if (pendientes === 0) { this.guardandoIngreso = false; this.mensajeIngreso = `${errores} error(es) al guardar`; }
-        }
+        error: () => { errores++; pendientes--; if (pendientes === 0) { this.guardandoIngreso = false; this.mensajeIngreso = `${errores} error(es)`; } }
       });
     });
   }
 
-  activarEditarPrecios() { this.modoEditarPrecios = true; this.inicializarPrecios(); }
+  // ── Precios ───────────────────────────────────────────────────────────────
+  activarEditarPrecios()  { this.modoEditarPrecios = true; this.inicializarPrecios(); }
   cancelarEditarPrecios() { this.modoEditarPrecios = false; this.inicializarPrecios(); }
 
   guardarPrecios() {
-    const cambios = this.items.filter(i => {
-      const e = this.editPrecios[i.producto_id];
-      return e && (e.mayor !== i.precio_x_mayor || e.menor !== i.precio_x_menor);
-    });
-    if (cambios.length === 0) { this.modoEditarPrecios = false; return; }
+    const cambios = this.items.filter(i => { const e = this.editPrecios[i.producto_id]; return e && (e.mayor !== i.precio_x_mayor || e.menor !== i.precio_x_menor); });
+    if (!cambios.length) { this.modoEditarPrecios = false; return; }
     this.guardandoPrecios = true;
     let pendientes = cambios.length;
     cambios.forEach(item => {
@@ -190,31 +315,26 @@ export class InventarioPage implements OnInit, OnDestroy {
         next: () => {
           const idx = this.items.findIndex(i => i.producto_id === item.producto_id);
           if (idx >= 0) { this.items[idx].precio_x_mayor = e.mayor; this.items[idx].precio_x_menor = e.menor; }
-          pendientes--;
-          if (pendientes === 0) { this.guardandoPrecios = false; this.modoEditarPrecios = false; }
+          pendientes--; if (pendientes === 0) { this.guardandoPrecios = false; this.modoEditarPrecios = false; }
         },
-        error: () => { pendientes--; if (pendientes === 0) { this.guardandoPrecios = false; } }
+        error: () => { pendientes--; if (pendientes === 0) this.guardandoPrecios = false; }
       });
     });
   }
 
+  // ── Nuevo producto ────────────────────────────────────────────────────────
   abrirNuevoProducto() {
-    this.nuevoProducto = { codigo: '', nombre: '', descripcion: '', categoria: '', peso_gramos: null, unidad_medida: 'unidad', precio_x_mayor: null, precio_x_menor: null, stock_inicial: null };
-    this.erroresNuevo = {};
-    this.mostrarNuevoProducto = true;
+    this.nuevoProducto = { codigo:'', nombre:'', descripcion:'', categoria:'', peso_gramos:null, unidad_medida:'unidad', precio_x_mayor:null, precio_x_menor:null, stock_inicial:null };
+    this.erroresNuevo = {}; this.mostrarNuevoProducto = true;
   }
-
   cerrarNuevoProducto() { this.mostrarNuevoProducto = false; this.erroresNuevo = {}; }
 
   guardarNuevoProducto() {
-    this.erroresNuevo = {};
-    let valido = true;
+    this.erroresNuevo = {}; let valido = true;
     if (!this.nuevoProducto.codigo.trim())  { this.erroresNuevo.codigo = 'Código requerido'; valido = false; }
     if (!this.nuevoProducto.nombre.trim())  { this.erroresNuevo.nombre = 'Nombre requerido'; valido = false; }
-    if (!this.nuevoProducto.precio_x_mayor || this.nuevoProducto.precio_x_mayor <= 0)
-      { this.erroresNuevo.precio_x_mayor = 'Precio mayor requerido'; valido = false; }
-    if (!this.nuevoProducto.precio_x_menor || this.nuevoProducto.precio_x_menor <= 0)
-      { this.erroresNuevo.precio_x_menor = 'Precio menor requerido'; valido = false; }
+    if (!this.nuevoProducto.precio_x_mayor || this.nuevoProducto.precio_x_mayor <= 0) { this.erroresNuevo.precio_x_mayor = 'Requerido'; valido = false; }
+    if (!this.nuevoProducto.precio_x_menor || this.nuevoProducto.precio_x_menor <= 0) { this.erroresNuevo.precio_x_menor = 'Requerido'; valido = false; }
     if (!valido) return;
     this.guardandoNuevo = true;
     this.inventarioService.crearProducto({ ...this.nuevoProducto, stock_inicial: this.nuevoProducto.stock_inicial || 0 }).subscribe({
@@ -223,42 +343,29 @@ export class InventarioPage implements OnInit, OnDestroy {
     });
   }
 
-  // ── VACIAR INVENTARIO ─────────────────────────────────────────────────────
+  // ── Vaciar inventario ─────────────────────────────────────────────────────
   confirmarVaciar() { this.mostrarConfirmarVaciar = true; }
   cancelarVaciar()  { this.mostrarConfirmarVaciar = false; }
 
   vaciarInventario() {
     const conStock = this.items.filter(i => i.stock_actual > 0);
-    if (conStock.length === 0) { this.mostrarConfirmarVaciar = false; return; }
+    if (!conStock.length) { this.mostrarConfirmarVaciar = false; return; }
     this.vaciandoInventario = true;
-    let pendientes = conStock.length;
-    let errores = 0;
+    let pendientes = conStock.length; let errores = 0;
     conStock.forEach(item => {
       this.inventarioService.registrarMovimiento(item.producto_id, item.stock_actual, 'salida').subscribe({
         next: (res: any) => {
           const idx = this.items.findIndex(i => i.producto_id === item.producto_id);
-          if (idx >= 0) { this.items[idx].stock_actual = res.stock_actual ?? 0; }
+          if (idx >= 0) this.items[idx].stock_actual = res.stock_actual ?? 0;
           pendientes--;
-          if (pendientes === 0) {
-            this.vaciandoInventario = false;
-            this.mostrarConfirmarVaciar = false;
-            if (errores > 0) this.mensajeIngreso = `${errores} producto(s) no pudieron vaciarse`;
-          }
+          if (pendientes === 0) { this.vaciandoInventario = false; this.mostrarConfirmarVaciar = false; this.aplicarOrdenYVisibilidad(); if (errores > 0) this.mensajeIngreso = `${errores} error(es) al vaciar`; }
         },
-        error: () => {
-          errores++; pendientes--;
-          if (pendientes === 0) {
-            this.vaciandoInventario = false;
-            this.mostrarConfirmarVaciar = false;
-            this.mensajeIngreso = `${errores} error(es) al vaciar inventario`;
-          }
-        }
+        error: () => { errores++; pendientes--; if (pendientes === 0) { this.vaciandoInventario = false; this.mostrarConfirmarVaciar = false; this.mensajeIngreso = `${errores} error(es)`; } }
       });
     });
   }
 
-  abrirMenu()     { this.menuAbierto = true; }
-  cerrarMenu()    { this.menuAbierto = false; }
-  cerrarSesion()  { this.authService.logout(); this.router.navigate(['/login']); }
-
+  abrirMenu()    { this.menuAbierto = true; }
+  cerrarMenu()   { this.menuAbierto = false; }
+  cerrarSesion() { this.authService.logout(); this.router.navigate(['/login']); }
 }

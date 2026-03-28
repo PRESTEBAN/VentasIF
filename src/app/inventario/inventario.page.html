@@ -3,14 +3,12 @@
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
 
-
       <app-menu-lateral
         [abierto]="menuAbierto"
         [paginaActiva]="'inventario'"
         [usuarioActual]="usuarioActual"
         (cerrar)="menuAbierto = false"
-      >
-      </app-menu-lateral>
+      ></app-menu-lateral>
 
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
@@ -21,12 +19,24 @@
         </div>
         <div class="header-actions">
           <ng-container *ngIf="tabActivo === 'inventario'">
-            <div class="header-icon-btn header-icon-btn-danger" (click)="confirmarVaciar()" title="Vaciar inventario">
-              <ion-icon name="trash-outline"></ion-icon>
+
+            <!-- Botón modo gestión -->
+            <div class="header-icon-btn"
+              [class.header-icon-btn-active]="modoGestion"
+              (click)="toggleModoGestion()"
+              title="Gestionar orden y visibilidad">
+              <ion-icon [name]="modoGestion ? 'checkmark-done-outline' : 'options-outline'"></ion-icon>
             </div>
-            <div class="header-icon-btn" (click)="activarIngreso()" *ngIf="!modoIngreso">
-              <ion-icon name="add-outline"></ion-icon>
-            </div>
+
+            <ng-container *ngIf="!modoGestion">
+              <div class="header-icon-btn header-icon-btn-danger" (click)="confirmarVaciar()">
+                <ion-icon name="trash-outline"></ion-icon>
+              </div>
+              <div class="header-icon-btn" (click)="activarIngreso()" *ngIf="!modoIngreso">
+                <ion-icon name="add-outline"></ion-icon>
+              </div>
+            </ng-container>
+
           </ng-container>
           <ng-container *ngIf="tabActivo === 'productos'">
             <div class="header-icon-btn" (click)="activarEditarPrecios()" *ngIf="!modoEditarPrecios">
@@ -51,9 +61,33 @@
           <p>Cargando...</p>
         </div>
 
+        <!-- ── TAB INVENTARIO ── -->
         <div *ngIf="!cargando && tabActivo === 'inventario'">
 
-          <div class="accion-bar" *ngIf="modoIngreso">
+          <!-- Banner modo gestión -->
+          <div class="banner-gestion" *ngIf="modoGestion">
+            <div class="banner-gestion-info">
+              <ion-icon name="hand-left-outline"></ion-icon>
+              <span>Mantén pulsado un producto para moverlo</span>
+            </div>
+            <button class="banner-ocultos-btn" *ngIf="totalOcultos > 0" (click)="mostrarOcultos = !mostrarOcultos">
+              <ion-icon name="eye-off-outline"></ion-icon>
+              {{ totalOcultos }} oculto{{ totalOcultos !== 1 ? 's' : '' }}
+            </button>
+          </div>
+
+          <!-- Panel de ocultos (restaurar) -->
+          <div class="panel-ocultos" *ngIf="modoGestion && mostrarOcultos && itemsOcultos.length > 0">
+            <p class="panel-ocultos-titulo">Productos ocultos — toca para restaurar</p>
+            <div class="oculto-item" *ngFor="let item of itemsOcultos" (click)="restaurarProducto(item.producto_id)">
+              <ion-icon name="eye-outline" class="oculto-restaurar-icon"></ion-icon>
+              <span class="oculto-nombre">{{ item.nombre }}</span>
+              <span class="oculto-stock">{{ item.stock_actual }}</span>
+            </div>
+          </div>
+
+          <!-- Barra acción ingreso -->
+          <div class="accion-bar" *ngIf="modoIngreso && !modoGestion">
             <span class="accion-txt">+ agregar · − restar stock</span>
             <div class="accion-btns">
               <button class="btn-cancelar-sm" (click)="cancelarIngreso()">Cancelar</button>
@@ -65,15 +99,33 @@
           </div>
           <p class="msg-error" *ngIf="mensajeIngreso">{{ mensajeIngreso }}</p>
 
+          <!-- ── LISTA ── -->
           <div class="items-lista">
-            <div class="item-card" *ngFor="let item of items"
-              [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
+            <div class="item-card"
+              *ngFor="let item of itemsVisibles; let i = index"
+              [attr.data-drag-index]="i"
+              [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0"
+              [class.item-dragging]="dragIndex === i"
+              [class.item-drag-over]="dragOverIndex === i && dragIndex !== null && dragIndex !== i"
+              [class.item-shake]="dragIndex === i"
+              (touchstart)="onTouchStart($event, i)"
+              (touchmove)="onTouchMove($event, i)"
+              (touchend)="onTouchEnd($event, i)">
+
+              <!-- Handle visual (solo en modo gestión) -->
+              <div class="drag-handle" *ngIf="modoGestion">
+                <ion-icon name="reorder-three-outline"></ion-icon>
+              </div>
+
               <span class="item-nombre">{{ item.nombre }}</span>
+
               <span class="stock-badge"
                 [class.badge-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0">
                 {{ item.stock_actual }}
               </span>
-              <div class="stepper-wrap" *ngIf="modoIngreso">
+
+              <!-- Stepper (modo ingreso) -->
+              <div class="stepper-wrap" *ngIf="modoIngreso && !modoGestion">
                 <button class="step-btn" (click)="decrementar(item)">−</button>
                 <input type="number" class="step-input"
                   [class.negativo]="(item.ingreso || 0) < 0"
@@ -81,12 +133,28 @@
                   [(ngModel)]="item.ingreso" placeholder="0" />
                 <button class="step-btn" (click)="incrementar(item)">+</button>
               </div>
+
+              <!-- Botón ocultar (modo gestión, no arrastrando) -->
+              <button class="btn-ocultar"
+                *ngIf="modoGestion && dragIndex === null"
+                (click)="ocultarProducto(item.producto_id)"
+                title="Ocultar">
+                <ion-icon name="eye-off-outline"></ion-icon>
+              </button>
+
             </div>
           </div>
+
+          <!-- Hint de ocultos en modo normal -->
+          <div class="ocultos-hint" *ngIf="!modoGestion && totalOcultos > 0 && !modoIngreso">
+            <ion-icon name="eye-off-outline"></ion-icon>
+            <span>{{ totalOcultos }} oculto{{ totalOcultos !== 1 ? 's' : '' }} — pulsa <strong>⚙</strong> para gestionar</span>
+          </div>
+
         </div>
 
+        <!-- ── TAB PRODUCTOS ── -->
         <div *ngIf="!cargando && tabActivo === 'productos'">
-
           <div class="accion-bar" *ngIf="modoEditarPrecios">
             <span class="accion-txt">Edita los precios directamente</span>
             <div class="accion-btns">
@@ -206,7 +274,7 @@
 
 </ion-content>
 
-<!-- ===== MODAL CONFIRMAR VACIAR INVENTARIO ===== -->
+<!-- ===== MODAL CONFIRMAR VACIAR ===== -->
 <div class="print-overlay" *ngIf="mostrarConfirmarVaciar">
   <div class="print-card" (click)="$event.stopPropagation()">
     <div class="print-icono-wrap" style="background: #FFEBEE;">

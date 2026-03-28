@@ -635,3 +635,127 @@
 .coinc-arrow {
   font-size: 16px; color: #CCC; flex-shrink: 0;
 }
+
+.prod-dragging {
+  z-index: 100;
+  position: relative;
+  background: #FFF0F5 !important;
+  border-color: #590F23 !important;
+  box-shadow: 0 10px 28px rgba(89,15,35,0.28) !important;
+  transform: scale(1.06) !important;
+  animation: shakeProd 0.35s ease infinite !important;
+}
+ 
+.prod-drag-over {
+  border-color: #2E7D32 !important;
+  background: #F1F8E9 !important;
+  transform: scale(0.95) !important;
+  transition: all 0.12s;
+  box-shadow: inset 0 0 0 2px #2E7D32 !important;
+}
+ 
+@keyframes shakeProd {
+  0%   { transform: scale(1.06) rotate(-1.5deg); }
+  25%  { transform: scale(1.06) rotate(1.5deg); }
+  50%  { transform: scale(1.06) rotate(-1.5deg); }
+  75%  { transform: scale(1.06) rotate(1.5deg); }
+  100% { transform: scale(1.06) rotate(-1.5deg); }
+}
+ 
+// Hint ocultos en modo normal
+.ocultos-hint-prod {
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 10px 0 4px;
+  font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 500;
+  ion-icon { font-size: 13px; flex-shrink: 0; }
+  strong { color: rgba(255,255,255,0.85); }
+}
+
+.header-right-btns {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.header-gestion-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  transition: background 0.15s;
+  ion-icon { font-size: 22px; color: #590F23; }
+  &:active { background: #F0E6DA; }
+  &.header-gestion-activo ion-icon { color: #2E7D32; }
+}
+
+// Banner modo gestión productos
+.banner-gestion-prod {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #E8F5E9; border: 1px solid #A5D6A7;
+  border-radius: 12px; padding: 10px 14px;
+  margin-bottom: 12px; gap: 8px;
+}
+
+.banner-gestion-info {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11px; font-weight: 600; color: #1B5E20;
+  ion-icon { font-size: 15px; flex-shrink: 0; }
+}
+
+.banner-ocultos-btn-prod {
+  display: flex; align-items: center; gap: 5px;
+  background: #C62828; color: #fff;
+  border: none; border-radius: 20px;
+  padding: 5px 12px; font-size: 11px; font-weight: 700;
+  cursor: pointer; font-family: inherit; flex-shrink: 0;
+  ion-icon { font-size: 13px; }
+  &:active { opacity: 0.8; }
+}
+
+// Panel ocultos productos
+.panel-ocultos-prod {
+  background: #FFF8E1; border: 1px solid #FFD54F;
+  border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+}
+
+.panel-ocultos-titulo-prod {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: #F57F17;
+  padding: 10px 14px 6px; margin: 0;
+}
+
+.oculto-prod-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-top: 1px solid #FFE082;
+  cursor: pointer;
+  &:active { background: #FFF3CD; }
+}
+
+.oculto-prod-icon   { font-size: 18px; color: #2E7D32; flex-shrink: 0; }
+.oculto-prod-nombre { flex: 1; font-size: 12px; font-weight: 600; color: #5D4037; }
+.oculto-prod-precio { font-size: 12px; font-weight: 700; color: #590F23; flex-shrink: 0; }
+
+// Card modo gestión
+.producto-card-gestion {
+  position: relative; cursor: grab;
+  border: 1.5px solid #E0E0E0 !important;
+  background: #FAFAFA !important;
+  user-select: none; -webkit-user-select: none;
+}
+
+.prod-gestion-overlay {
+  position: absolute; top: 4px; right: 4px; z-index: 5;
+}
+
+.btn-ocultar-prod {
+  width: 26px; height: 26px; border-radius: 8px;
+  border: 1px solid #E0E0E0; background: rgba(255,255,255,0.9);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #9E9E9E;
+  ion-icon { font-size: 15px; }
+  &:active { background: #FFEBEE; color: #C62828; border-color: #FFCDD2; }
+}

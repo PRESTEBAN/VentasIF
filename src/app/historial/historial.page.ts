@@ -12,9 +12,9 @@ export interface VentaHistorial {
   clienteApellido: string;
   clienteNegocio: string | null;
   clienteCedula: string;
-  clienteTelefono: string; // ← nuevo
-  clienteDireccion: string; // ← nuevo
-  vendedor: string; // ← nuevo
+  clienteTelefono: string;
+  clienteDireccion: string;
+  vendedor: string;
   tipoCliente?: string;
   estado: 'Entregado' | 'Pendiente';
   total: number;
@@ -23,8 +23,8 @@ export interface VentaHistorial {
   iva: number;
   fecha: string;
   formaPago: string;
-  montoRecibido: number; // ← nuevo
-  vuelto: number; // ← nuevo
+  montoRecibido: number;
+  vuelto: number;
   items: VentaItem[];
   saldoGenerado: number;
 }
@@ -32,8 +32,8 @@ export interface VentaHistorial {
 export interface VentaItem {
   nombre: string;
   cantidad: number;
-  precio_unitario: number; // ← nuevo
-  descuento: number; // ← nuevo
+  precio_unitario: number;
+  descuento: number;
   subtotal: number;
 }
 
@@ -48,6 +48,9 @@ export interface AbonoHistorial {
   fecha: string;
   notas: string | null;
 }
+
+// Formas de pago que cuentan como "contado" (efectivo + cheques)
+const FORMAS_CONTADO = ['efectivo', 'cheques', 'cheque'];
 
 @Component({
   selector: 'app-historial',
@@ -110,17 +113,52 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.detenerPolling();
   }
 
-  // ── GETTERS RESUMEN ──
-  get totalVentasPagadas(): number {
+  // ── Helpers forma de pago ──────────────────────────────────────────────────
+  private esContado(formaPago: string): boolean {
+    return FORMAS_CONTADO.includes((formaPago || '').toLowerCase().trim());
+  }
+
+  private esTransferencia(formaPago: string): boolean {
+    return (formaPago || '').toLowerCase().trim() === 'transferencia';
+  }
+
+  // ── GETTERS RESUMEN ────────────────────────────────────────────────────────
+
+  /** Ventas al contado (efectivo + cheques), solo las pagadas (saldo = 0) */
+  get totalVentasContado(): number {
     return this.ventas
-      .filter(v => v.saldoGenerado === 0)
+      .filter(v => v.saldoGenerado === 0 && this.esContado(v.formaPago))
       .reduce((acc, v) => acc + v.total, 0);
   }
 
-  get totalAbonos(): number {
-    return this.abonos.reduce((acc, a) => acc + a.monto, 0);
+  /** Ventas con transferencia, solo las pagadas (saldo = 0) */
+  get totalVentasTransferencia(): number {
+    return this.ventas
+      .filter(v => v.saldoGenerado === 0 && this.esTransferencia(v.formaPago))
+      .reduce((acc, v) => acc + v.total, 0);
   }
 
+  /** Cobros a clientes al contado (efectivo + cheques) */
+  get totalAbonosContado(): number {
+    return this.abonos
+      .filter(a => this.esContado(a.formaPago))
+      .reduce((acc, a) => acc + a.monto, 0);
+  }
+
+  /** Cobros a clientes con transferencia */
+  get totalAbonosTransferencia(): number {
+    return this.abonos
+      .filter(a => this.esTransferencia(a.formaPago))
+      .reduce((acc, a) => acc + a.monto, 0);
+  }
+
+  /** Total cobrado en el día (contado + transferencia de ventas y abonos) */
+  get totalCobradoDia(): number {
+    return this.totalVentasContado + this.totalVentasTransferencia
+         + this.totalAbonosContado + this.totalAbonosTransferencia;
+  }
+
+  // ── Polling ────────────────────────────────────────────────────────────────
   iniciarPolling() {
     this.detenerPolling();
     this.pollingInterval = setInterval(() => {
@@ -180,6 +218,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     return new HttpHeaders({ Authorization: `Bearer ${token}` });
   }
 
+  // ── Semana / fecha ─────────────────────────────────────────────────────────
   generarSemana(fecha: Date) {
     const dias: Date[] = [];
     for (let i = -3; i <= 3; i++) {
@@ -226,12 +265,8 @@ export class HistorialPage implements OnInit, OnDestroy {
     return dia.toDateString() === new Date().toDateString();
   }
 
-  abrirDatePicker() {
-    this.mostrarDatePicker = true;
-  }
-  cerrarDatePicker() {
-    this.mostrarDatePicker = false;
-  }
+  abrirDatePicker()  { this.mostrarDatePicker = true;  }
+  cerrarDatePicker() { this.mostrarDatePicker = false; }
 
   onDatePickerChange(event: any) {
     const valor = event.target.value;
@@ -244,6 +279,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.cerrarDatePicker();
   }
 
+  // ── Carga ──────────────────────────────────────────────────────────────────
   cargarVentas() {
     this.cargando = true;
     this.ventas = [];
@@ -304,11 +340,9 @@ export class HistorialPage implements OnInit, OnDestroy {
 
     const tipoRaw = v.tipo_cliente || v.tipo || v.cliente_tipo || '';
     const tipoCliente =
-      tipoRaw === 'particular'
-        ? 'Particular'
-        : tipoRaw === 'negocio'
-        ? 'Negocio'
-        : tipoRaw || '—';
+      tipoRaw === 'particular' ? 'Particular'
+      : tipoRaw === 'negocio'  ? 'Negocio'
+      : tipoRaw || '—';
 
     return {
       id: ventaId,
@@ -317,9 +351,9 @@ export class HistorialPage implements OnInit, OnDestroy {
       clienteApellido: apellido,
       clienteNegocio: v.nombre_negocio || null,
       clienteCedula: v.cedula || '',
-      clienteTelefono: v.telefono || '', // ← nuevo
-      clienteDireccion: v.direccion || '', // ← nuevo
-      vendedor: v.vendedor || '', // ← nuevo
+      clienteTelefono: v.telefono || '',
+      clienteDireccion: v.direccion || '',
+      vendedor: v.vendedor || '',
       tipoCliente,
       estado,
       saldoGenerado: parseFloat(v.saldo_generado) || 0,
@@ -329,17 +363,18 @@ export class HistorialPage implements OnInit, OnDestroy {
       iva: parseFloat(v.iva) || 0,
       fecha: v.fecha || v.created_at || '',
       formaPago: v.tipo_pago || v.forma_pago || '',
-      montoRecibido: parseFloat(v.monto_recibido) || 0, // ← nuevo
-      vuelto: parseFloat(v.vuelto) || 0, // ← nuevo
+      montoRecibido: parseFloat(v.monto_recibido) || 0,
+      vuelto: parseFloat(v.vuelto) || 0,
       items: rawItems.map((item: any) => ({
         nombre: item.nombre || item.producto || item.producto_nombre || '',
         cantidad: item.cantidad || 0,
-        precio_unitario: parseFloat(item.precio_unitario) || 0, // ← nuevo
-        descuento: parseFloat(item.descuento) || 0, // ← nuevo
+        precio_unitario: parseFloat(item.precio_unitario) || 0,
+        descuento: parseFloat(item.descuento) || 0,
         subtotal: parseFloat(item.subtotal) || 0,
       })),
     };
   }
+
   formatearFecha(fecha: Date): string {
     const d = fecha.getDate().toString().padStart(2, '0');
     const m = (fecha.getMonth() + 1).toString().padStart(2, '0');
@@ -347,6 +382,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     return `${a}-${m}-${d}`;
   }
 
+  // ── Detalle venta ──────────────────────────────────────────────────────────
   verVenta(venta: VentaHistorial) {
     if (this.modoEliminacion) {
       this.toggleSeleccion(venta.id);
@@ -360,15 +396,10 @@ export class HistorialPage implements OnInit, OnDestroy {
         const modalContent = document.querySelector(
           'ion-modal .detalle-modal-content'
         );
-        if (!modalContent) {
-          resolve(true);
-          return;
-        }
+        if (!modalContent) { resolve(true); return; }
         (modalContent as any)
           .getScrollElement()
-          .then((el: HTMLElement) => {
-            resolve(el.scrollTop < 10);
-          })
+          .then((el: HTMLElement) => resolve(el.scrollTop < 10))
           .catch(() => resolve(true));
       });
     this.mostrarDetalle = true;
@@ -382,9 +413,7 @@ export class HistorialPage implements OnInit, OnDestroy {
           this.ventaDetalle = this.mapearVenta(data);
           this.cargandoDetalle = false;
         },
-        error: () => {
-          this.cargandoDetalle = false;
-        },
+        error: () => { this.cargandoDetalle = false; },
       });
   }
 
@@ -393,19 +422,15 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.ventaDetalle = null;
   }
 
+  // ── Modo eliminación ───────────────────────────────────────────────────────
   toggleModoEliminacion() {
     this.modoEliminacion = !this.modoEliminacion;
-    if (!this.modoEliminacion) {
-      this.ventasSeleccionadas.clear();
-    }
+    if (!this.modoEliminacion) this.ventasSeleccionadas.clear();
   }
 
   toggleSeleccion(id: number) {
-    if (this.ventasSeleccionadas.has(id)) {
-      this.ventasSeleccionadas.delete(id);
-    } else {
-      this.ventasSeleccionadas.add(id);
-    }
+    if (this.ventasSeleccionadas.has(id)) this.ventasSeleccionadas.delete(id);
+    else this.ventasSeleccionadas.add(id);
   }
 
   estaSeleccionada(id: number): boolean {
@@ -414,17 +439,12 @@ export class HistorialPage implements OnInit, OnDestroy {
 
   async confirmarEliminacion() {
     if (this.ventasSeleccionadas.size === 0) return;
-
     const alert = await this.alertCtrl.create({
       header: 'Eliminar ventas',
       message: `¿Estás seguro de eliminar ${this.ventasSeleccionadas.size} venta(s)? Esta acción no se puede deshacer.`,
       cssClass: 'alert-personalizado',
       buttons: [
-        {
-          text: 'Eliminar',
-          role: 'destructive',
-          handler: () => this.eliminarSeleccionadas(),
-        },
+        { text: 'Eliminar', role: 'destructive', handler: () => this.eliminarSeleccionadas() },
         { text: 'Cancelar', role: 'cancel' },
       ],
     });
@@ -434,7 +454,6 @@ export class HistorialPage implements OnInit, OnDestroy {
   eliminarSeleccionadas() {
     this.eliminando = true;
     const ids = Array.from(this.ventasSeleccionadas);
-
     const eliminarUno = (index: number) => {
       if (index >= ids.length) {
         this.eliminando = false;
@@ -444,55 +463,48 @@ export class HistorialPage implements OnInit, OnDestroy {
         return;
       }
       this.http
-        .delete(`${this.API}/ventas-ruta/${ids[index]}`, {
-          headers: this.getHeaders(),
-        })
+        .delete(`${this.API}/ventas-ruta/${ids[index]}`, { headers: this.getHeaders() })
         .subscribe({
           next: () => eliminarUno(index + 1),
           error: () => eliminarUno(index + 1),
         });
     };
-
     eliminarUno(0);
   }
 
+  // ── Reimprimir ─────────────────────────────────────────────────────────────
   async reimprimirOrden() {
     if (!this.ventaDetalle || this.imprimiendo) return;
-
     this.imprimiendo = true;
     try {
       const datos: DatosRecibo = {
-        ventaId: this.ventaDetalle.id,
-        clienteNombre:
-          `${this.ventaDetalle.clienteNombre} ${this.ventaDetalle.clienteApellido}`.trim(),
-        clienteCedula: this.ventaDetalle.clienteCedula,
-        clienteTelefono: this.ventaDetalle.clienteTelefono,
+        ventaId:          this.ventaDetalle.id,
+        clienteNombre:    `${this.ventaDetalle.clienteNombre} ${this.ventaDetalle.clienteApellido}`.trim(),
+        clienteCedula:    this.ventaDetalle.clienteCedula,
+        clienteTelefono:  this.ventaDetalle.clienteTelefono,
         clienteDireccion: this.ventaDetalle.clienteDireccion,
-        vendedor: this.ventaDetalle.vendedor,
+        vendedor:         this.ventaDetalle.vendedor,
         items: this.ventaDetalle.items.map((item) => ({
-          nombre: item.nombre,
-          cantidad: item.cantidad,
+          nombre:          item.nombre,
+          cantidad:        item.cantidad,
           precio_unitario: item.precio_unitario,
-          descuento: item.descuento,
-          subtotal: item.subtotal,
+          descuento:       item.descuento,
+          subtotal:        item.subtotal,
         })),
-        subtotal: this.ventaDetalle.subtotal,
-        descuento: this.ventaDetalle.descuento,
-        iva: this.ventaDetalle.iva,
-        ivaPercent: this.ventaDetalle.iva > 0 ? 15 : 0,
-        total: this.ventaDetalle.total,
-        formaPago: this.ventaDetalle.formaPago,
+        subtotal:      this.ventaDetalle.subtotal,
+        descuento:     this.ventaDetalle.descuento,
+        iva:           this.ventaDetalle.iva,
+        ivaPercent:    this.ventaDetalle.iva > 0 ? 15 : 0,
+        total:         this.ventaDetalle.total,
+        formaPago:     this.ventaDetalle.formaPago,
         montoRecibido: this.ventaDetalle.montoRecibido,
-        vuelto: this.ventaDetalle.vuelto,
+        vuelto:        this.ventaDetalle.vuelto,
       };
-
       await this.printerService.imprimirRecibo(datos);
     } catch (err: any) {
       const alert = await this.alertCtrl.create({
         header: 'Error de impresión',
-        message:
-          err?.message ||
-          'No se pudo imprimir. Verifica que la impresora esté conectada.',
+        message: err?.message || 'No se pudo imprimir. Verifica que la impresora esté conectada.',
         buttons: ['OK'],
       });
       await alert.present();
@@ -500,12 +512,9 @@ export class HistorialPage implements OnInit, OnDestroy {
       this.imprimiendo = false;
     }
   }
-  abrirMenu() {
-    this.menuAbierto = true;
-  }
-  cerrarMenu() {
-    this.menuAbierto = false;
-  }
+
+  abrirMenu()  { this.menuAbierto = true;  }
+  cerrarMenu() { this.menuAbierto = false; }
 
   cerrarSesion() {
     this.authService.logout();

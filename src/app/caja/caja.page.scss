@@ -595,3 +595,118 @@
   border-radius: 30px;
   flex: unset;
 }
+
+.metodo-btns {
+  display: flex;
+  gap: 8px;
+ 
+  button {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 6px;
+    border: 1.5px solid #EDE0D0;
+    border-radius: 12px;
+    background: #F9F4EE;
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+ 
+    ion-icon { font-size: 20px; color: #AAA; }
+ 
+    &:active { transform: scale(0.96); }
+ 
+    &.metodo-activo {
+      border-color: #590F23;
+      background: #FDF0F3;
+      color: #590F23;
+      ion-icon { color: #590F23; }
+    }
+  }
+}
+ 
+// Pill de método en las cards
+.metodo-pill {
+  background: #F0F4FF;
+  color: #3B5BDB;
+  border: 1px solid #BAC8FF !important;
+ 
+  ion-icon { color: #3B5BDB !important; }
+}
+
+
+.modal-card-tall { max-height: 88vh; overflow-y: auto; }
+
+.retencion-seccion {
+  background: #F0F4FF; border: 1.5px solid #BAC8FF;
+  border-radius: 14px; padding: 14px; margin-bottom: 14px;
+}
+
+.retencion-titulo {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; color: #3B5BDB;
+  text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;
+  ion-icon { font-size: 15px; }
+}
+
+.retencion-search-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+
+.retencion-input-wrap {
+  flex: 1; display: flex; align-items: center;
+  border: 1.5px solid #BAC8FF; border-radius: 10px; background: #fff; overflow: hidden;
+  &:focus-within { border-color: #3B5BDB; }
+  input { flex: 1; border: none; background: transparent; padding: 10px 12px 10px 4px; font-size: 14px; color: #333; outline: none; &::placeholder { color: #C0C8FF; } }
+}
+
+.retencion-prefix { padding: 10px 0 10px 12px; font-size: 15px; font-weight: 700; color: #3B5BDB; }
+
+.retencion-buscar-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 10px 14px; border: none; border-radius: 10px;
+  background: #3B5BDB; color: #fff; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit; flex-shrink: 0;
+  ion-icon { font-size: 15px; }
+  &:active { opacity: 0.85; }
+}
+
+.retencion-ordenes { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.retencion-orden-item { background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #E0E7FF; }
+.retencion-orden-loading { display: flex; align-items: center; gap: 8px; padding: 12px; font-size: 12px; color: #888; }
+.retencion-orden-error { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #FFF0F0; border-radius: 10px; font-size: 12px; color: #C62828; ion-icon { font-size: 16px; flex-shrink: 0; } span { flex: 1; } }
+.retencion-orden-ok { display: flex; align-items: center; gap: 10px; padding: 10px 12px; }
+.retencion-orden-info { flex: 1; min-width: 0; }
+.retencion-orden-num { font-size: 13px; font-weight: 700; color: #3B5BDB; margin: 0; }
+.retencion-orden-cliente { font-size: 11px; color: #888; margin: 1px 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.retencion-orden-total { font-size: 11px; color: #555; font-weight: 600; margin: 2px 0 0 0; }
+.retencion-orden-monto { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; label { font-size: 9px; font-weight: 700; color: #AAA; text-transform: uppercase; } }
+.retencion-valor-wrap { width: 90px !important; border-color: #BAC8FF !important; &:focus-within { border-color: #3B5BDB !important; } .valor-prefix { color: #3B5BDB !important; font-size: 13px !important; padding: 7px 0 7px 8px !important; } input { padding: 7px 8px 7px 2px !important; font-size: 13px !important; } }
+.retencion-quitar-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #E0E0E0; background: #F5F5F5; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; color: #9E9E9E; ion-icon { font-size: 16px; } &:active { background: #FFEBEE; color: #C62828; border-color: #FFCDD2; } }
+
+.retencion-total-box { display: flex; align-items: center; justify-content: space-between; background: #3B5BDB; border-radius: 10px; padding: 10px 14px; margin-top: 4px; }
+.retencion-total-lbl { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.85); }
+.retencion-total-val { font-size: 18px; font-weight: 900; color: #fff; }
+
+.metodo-btns {
+  display: flex; gap: 8px;
+  button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 6px; border: 1.5px solid #EDE0D0; border-radius: 12px; background: #F9F4EE; font-size: 11px; font-weight: 600; color: #888; cursor: pointer; font-family: inherit; transition: all 0.15s; -webkit-appearance: none; ion-icon { font-size: 20px; color: #AAA; } &:active { transform: scale(0.96); } &.metodo-activo { border-color: #590F23; background: #FDF0F3; color: #590F23; ion-icon { color: #590F23; } } }
+}
+
+.metodo-pill { background: #F0F4FF; color: #3B5BDB; border: 1px solid #BAC8FF !important; ion-icon { color: #3B5BDB !important; } }
+
+.retencion-valor-wrap input {
+  color: #333 !important;
+  background: #fff !important;
+  -webkit-text-fill-color: #333 !important;
+}
+
+.retencion-valor-wrap input::selection {
+  background: #BAC8FF;
+  color: #1A237E;
+  -webkit-text-fill-color: #1A237E;
+}

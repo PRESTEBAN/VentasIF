@@ -3,16 +3,13 @@
     <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
     <div class="content-wrapper">
 
-      <!-- MENU LATERAL -->
       <app-menu-lateral
         [abierto]="menuAbierto"
         [paginaActiva]="'clientes'"
         [usuarioActual]="usuarioActual"
         (cerrar)="menuAbierto = false"
-      >
-      </app-menu-lateral>
+      ></app-menu-lateral>
 
-      <!-- HEADER -->
       <div class="header-card">
         <div class="menu-btn" (click)="abrirMenu()">
           <span></span><span></span><span></span>
@@ -30,14 +27,12 @@
         </div>
       </div>
 
-      <!-- MAIN -->
       <div class="main-content">
         <div class="clientes-header">
           <h1 class="page-title">Clientes</h1>
           <p class="clientes-count" *ngIf="!cargando">{{ clientesFiltrados.length }} cliente{{ clientesFiltrados.length !== 1 ? 's' : '' }}</p>
         </div>
 
-        <!-- BUSCADOR -->
         <div class="toolbar-row">
           <div class="search-bar">
             <ion-icon name="search-outline"></ion-icon>
@@ -51,7 +46,6 @@
           </div>
         </div>
 
-        <!-- MENÚ ORDEN -->
         <div class="orden-menu" *ngIf="mostrarOrdenMenu">
           <p class="orden-titulo">Ordenar por</p>
           <div class="orden-opciones">
@@ -64,13 +58,11 @@
           </div>
         </div>
 
-        <!-- LOADING -->
         <div class="loading-clientes" *ngIf="cargando">
           <ion-spinner name="crescent"></ion-spinner>
           <p>Cargando clientes...</p>
         </div>
 
-        <!-- LISTA -->
         <div class="clientes-lista" *ngIf="!cargando">
           <div class="sin-clientes" *ngIf="clientesFiltrados.length === 0">
             <ion-icon name="people-outline"></ion-icon>
@@ -160,7 +152,6 @@
   </ion-modal>
 
   <!-- ===== MODAL DETALLE CLIENTE ===== -->
-  <!-- CAMBIO: se quitó el botón cash-outline (abrirAbono) del toolbar -->
   <ion-modal [isOpen]="mostrarDetalle" (didDismiss)="cerrarDetalle()"
     [breakpoints]="[0, 1]" [initialBreakpoint]="1"
     [handle]="false" [canDismiss]="puedesCerrarDetalle">
@@ -168,11 +159,22 @@
       <ion-header>
         <ion-toolbar style="--background: #590F23; --color: white;">
           <ion-buttons slot="start">
-            <ion-button (click)="cerrarDetalle()" style="--color: white;"><ion-icon name="close-outline"></ion-icon></ion-button>
+            <ion-button (click)="cerrarDetalle()" style="--color: white;">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
           </ion-buttons>
           <ion-buttons slot="end">
-            <ion-button (click)="abrirEditar()" style="--color: white;"><ion-icon name="pencil-outline"></ion-icon></ion-button>
-            <!-- BOTÓN ABONO ELIMINADO DE AQUÍ -->
+            <!-- Botón cobro múltiple — solo si hay órdenes pendientes -->
+            <ion-button
+              *ngIf="ordenesPendientes.length > 0"
+              (click)="abrirCobroMultiple()"
+              style="--color: white;"
+              title="Cobro múltiple">
+              <ion-icon name="wallet-outline"></ion-icon>
+            </ion-button>
+            <ion-button (click)="abrirEditar()" style="--color: white;">
+              <ion-icon name="pencil-outline"></ion-icon>
+            </ion-button>
           </ion-buttons>
         </ion-toolbar>
       </ion-header>
@@ -199,7 +201,6 @@
           </div>
 
           <div class="detalle-cards">
-            <!-- CONTACTO -->
             <div class="detalle-card">
               <p class="detalle-card-titulo">Contacto</p>
               <div class="info-fila">
@@ -224,7 +225,6 @@
               </div>
             </div>
 
-            <!-- FINANCIERO -->
             <div class="detalle-card" *ngIf="(clienteDetalle.limite_credito || 0) > 0 || clienteDetalle.ultima_compra">
               <p class="detalle-card-titulo">Financiero</p>
               <div class="fin-item" *ngIf="(clienteDetalle.limite_credito || 0) > 0">
@@ -241,11 +241,9 @@
               </div>
             </div>
 
-            <!-- MOVIMIENTOS -->
             <div class="detalle-card">
               <p class="detalle-card-titulo">Movimientos</p>
               <div class="loading-mov" *ngIf="cargandoMovimientos"><ion-spinner name="crescent"></ion-spinner></div>
-
               <div class="movimientos-tabla" *ngIf="!cargandoMovimientos && ordenesAgrupadas.length > 0">
                 <div class="mov-head">
                   <span>Orden</span>
@@ -278,7 +276,6 @@
                   <span class="col-right mov-fecha">{{ orden.fecha | date:'dd/MM/yy' }}</span>
                 </div>
               </div>
-
               <div class="sin-movimientos" *ngIf="!cargandoMovimientos && ordenesAgrupadas.length === 0">
                 <p>Sin movimientos registrados</p>
               </div>
@@ -289,22 +286,126 @@
     </ng-template>
   </ion-modal>
 
+  <!-- ===== MODAL COBRO MÚLTIPLE ===== -->
+  <ion-modal [isOpen]="mostrarCobroMultiple" (didDismiss)="cerrarCobroMultiple()"
+    [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar style="--background: #1B5E20; --color: white;">
+          <ion-title style="color:white; font-size:16px; font-weight:700;">Cobro de Órdenes</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarCobroMultiple()" style="--color: white;">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="modal-form-content">
+        <div class="modal-body cobro-multiple-body">
+
+          <!-- Hero cliente -->
+          <div class="abono-cliente-hero" style="margin-bottom:18px;">
+            <div class="abono-avatar">
+              <span>{{ clienteDetalle?.nombre?.charAt(0) }}{{ clienteDetalle?.apellido?.charAt(0) }}</span>
+            </div>
+            <div>
+              <p class="abono-cli-nombre">{{ clienteDetalle?.nombre }} {{ clienteDetalle?.apellido }}</p>
+              <p class="abono-cli-saldo saldo-rojo" *ngIf="(clienteDetalle?.saldo_pendiente || 0) > 0">
+                Saldo total: ${{ (clienteDetalle?.saldo_pendiente || 0) | number:'1.2-2' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Encabezado lista + seleccionar todo -->
+          <div class="cobro-multiple-header">
+            <p class="cobro-multiple-titulo">Órdenes pendientes</p>
+            <button class="btn-sel-todas" (click)="seleccionarTodasPendientes()">
+              {{ ordenesSeleccionadas.size === ordenesPendientes.length && ordenesPendientes.length > 0 ? 'Deseleccionar todo' : 'Seleccionar todo' }}
+            </button>
+          </div>
+
+          <!-- Lista de órdenes pendientes -->
+          <div class="cobro-ordenes-lista">
+            <div class="cobro-orden-item"
+              *ngFor="let orden of ordenesPendientes"
+              [class.cobro-orden-sel]="ordenesSeleccionadas.has(orden.venta_id)"
+              (click)="toggleOrdenCobroMultiple(orden.venta_id)">
+
+              <!-- Checkbox visual -->
+              <div class="cobro-check" [class.cobro-check-on]="ordenesSeleccionadas.has(orden.venta_id)">
+                <ion-icon name="checkmark-outline" *ngIf="ordenesSeleccionadas.has(orden.venta_id)"></ion-icon>
+              </div>
+
+              <!-- Info orden -->
+              <div class="cobro-orden-info">
+                <p class="cobro-orden-num">{{ orden.num_orden }}</p>
+                <p class="cobro-orden-fecha">{{ orden.fecha | date:'dd/MM/yyyy' }}</p>
+              </div>
+
+              <!-- Saldo -->
+              <div class="cobro-orden-saldo">
+                <p class="cobro-saldo-total">Total: ${{ orden.valor_total | number:'1.2-2' }}</p>
+                <p class="cobro-saldo-val saldo-rojo">Saldo: ${{ orden.saldo_orden | number:'1.2-2' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total seleccionado -->
+          <div class="cobro-total-box" [class.cobro-total-activo]="totalCobroMultiple > 0">
+            <div class="cobro-total-row">
+              <span class="cobro-total-lbl">{{ ordenesSeleccionadas.size }} orden{{ ordenesSeleccionadas.size !== 1 ? 'es' : '' }} seleccionada{{ ordenesSeleccionadas.size !== 1 ? 's' : '' }}</span>
+              <span class="cobro-total-val">${{ totalCobroMultiple | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- Forma de pago -->
+          <div class="form-group" style="margin-top:16px;">
+            <label>Forma de Pago</label>
+            <div class="abono-pago-btns">
+              <button *ngFor="let fp of ['Efectivo','Transferencia','Cheques']"
+                [class.pago-active]="cobroMultipleFormaPago === fp"
+                (click)="cobroMultipleFormaPago = fp">
+                <ion-icon [name]="fp === 'Efectivo' ? 'cash-outline' : fp === 'Transferencia' ? 'phone-portrait-outline' : 'document-outline'"></ion-icon>
+                {{ fp }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Notas -->
+          <div class="form-group">
+            <label>Notas <span style="font-weight:400;color:#888">(opcional)</span></label>
+            <textarea [(ngModel)]="cobroMultipleNotas" placeholder="Observaciones del cobro..."
+              class="abono-notas" rows="2"></textarea>
+          </div>
+
+          <!-- Error / éxito -->
+          <div class="field-error" *ngIf="erroresCobroMultiple" style="margin-bottom:8px;">
+            ⚠️ {{ erroresCobroMultiple }}
+          </div>
+          <p class="abono-exito" *ngIf="mensajeCobroMultiple">{{ mensajeCobroMultiple }}</p>
+
+          <!-- Botón confirmar -->
+          <button class="btn-cobro-multiple-confirm"
+            (click)="guardarCobroMultiple()"
+            [disabled]="guardandoCobroMultiple || ordenesSeleccionadas.size === 0">
+            <ion-spinner name="crescent" *ngIf="guardandoCobroMultiple" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
+            <ion-icon name="checkmark-circle-outline" *ngIf="!guardandoCobroMultiple"></ion-icon>
+            {{ guardandoCobroMultiple ? 'Registrando cobros...' : 'Confirmar cobro — $' + (totalCobroMultiple | number:'1.2-2') }}
+          </button>
+
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
   <!-- ===== MODAL DETALLE ORDEN ===== -->
-  <ion-modal
-    [isOpen]="mostrarDetalleOrden"
-    (didDismiss)="cerrarDetalleOrden()"
-    cssClass="modal-orden-popup">
+  <ion-modal [isOpen]="mostrarDetalleOrden" (didDismiss)="cerrarDetalleOrden()" cssClass="modal-orden-popup">
     <ng-template>
       <ion-content class="orden-popup-content" *ngIf="ordenSeleccionada">
-
-        <!-- Botón cerrar flotante -->
         <button class="popup-close-btn" (click)="cerrarDetalleOrden()">
           <ion-icon name="close-outline"></ion-icon>
         </button>
-
         <div class="popup-inner">
-
-          <!-- HEADER: número + badge estado -->
           <div class="popup-header">
             <p class="popup-orden-label">ORDEN</p>
             <h2 class="popup-orden-num">{{ ordenSeleccionada.num_orden }}</h2>
@@ -318,7 +419,6 @@
             </span>
           </div>
 
-          <!-- TOTALES -->
           <div class="popup-totales">
             <div class="total-card total-orden">
               <p class="total-lbl">Total Orden</p>
@@ -334,45 +434,28 @@
             </div>
           </div>
 
-          <!-- CAMBIO: BOTÓN REGISTRAR ABONO — solo si hay saldo pendiente -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.saldo_orden > 0">
             <button class="btn-abono-orden" (click)="abrirAbonoDesdeOrden(ordenSeleccionada)">
               <ion-icon name="cash-outline"></ion-icon>
-              Registrar Abono — Saldo: ${{ ordenSeleccionada.saldo_orden | number:'1.2-2' }}
+              Registrar Cobro — Saldo: ${{ ordenSeleccionada.saldo_orden | number:'1.2-2' }}
             </button>
           </div>
 
-          <!-- FORMA DE PAGO -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.forma_pago">
-            <p class="popup-sec-titulo">
-              <ion-icon name="card-outline"></ion-icon>
-              Forma de Pago
-            </p>
+            <p class="popup-sec-titulo"><ion-icon name="card-outline"></ion-icon> Forma de Pago</p>
             <div class="popup-fp-chip">
-              <ion-icon
-                [name]="ordenSeleccionada.forma_pago === 'Efectivo' ? 'cash-outline'
-                      : ordenSeleccionada.forma_pago === 'Transferencia' ? 'phone-portrait-outline'
-                      : 'document-outline'">
-              </ion-icon>
+              <ion-icon [name]="ordenSeleccionada.forma_pago === 'Efectivo' ? 'cash-outline' : ordenSeleccionada.forma_pago === 'Transferencia' ? 'phone-portrait-outline' : 'document-outline'"></ion-icon>
               {{ ordenSeleccionada.forma_pago }}
             </div>
           </div>
 
-          <!-- NOTAS -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.notas">
-            <p class="popup-sec-titulo">
-              <ion-icon name="document-text-outline"></ion-icon>
-              Notas
-            </p>
+            <p class="popup-sec-titulo"><ion-icon name="document-text-outline"></ion-icon> Notas</p>
             <p class="popup-notas-texto">{{ ordenSeleccionada.notas }}</p>
           </div>
 
-          <!-- CAMBIO: HISTORIAL DE ABONOS con botón reimprimir en cada uno -->
           <div class="popup-seccion" *ngIf="ordenSeleccionada.abonos && ordenSeleccionada.abonos.length > 0">
-            <p class="popup-sec-titulo">
-              <ion-icon name="cash-outline"></ion-icon>
-              Historial de Abonos
-            </p>
+            <p class="popup-sec-titulo"><ion-icon name="cash-outline"></ion-icon> Historial de Cobros</p>
             <div class="abonos-lista">
               <div class="abono-item" *ngFor="let ab of ordenSeleccionada.abonos">
                 <div class="abono-left">
@@ -381,7 +464,6 @@
                 </div>
                 <div class="abono-right">
                   <p class="abono-monto-val">+${{ ab.monto | number:'1.2-2' }}</p>
-                  <!-- CAMBIO: botón reimprimir abono -->
                   <button class="btn-reimprimir-abono" (click)="reimprimirAbono(ordenSeleccionada, ab)" [disabled]="imprimiendoAbono">
                     <ion-icon name="print-outline"></ion-icon>
                     <span>{{ imprimiendoAbono ? '...' : 'Reimprimir' }}</span>
@@ -395,16 +477,11 @@
             </div>
           </div>
 
-          <!-- SIN INFO -->
           <div class="popup-sin-info"
-            *ngIf="!ordenSeleccionada.notas
-              && (!ordenSeleccionada.abonos || ordenSeleccionada.abonos.length === 0)
-              && !ordenSeleccionada.forma_pago
-              && ordenSeleccionada.saldo_orden <= 0">
+            *ngIf="!ordenSeleccionada.notas && (!ordenSeleccionada.abonos || ordenSeleccionada.abonos.length === 0) && !ordenSeleccionada.forma_pago && ordenSeleccionada.saldo_orden <= 0">
             <ion-icon name="information-circle-outline"></ion-icon>
             <p>Sin información adicional</p>
           </div>
-
         </div>
       </ion-content>
     </ng-template>
@@ -447,15 +524,15 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-group half"><label>Nombre*</label><input type="text" [(ngModel)]="editCliente.nombre" placeholder="nombre" /><span class="field-error" *ngIf="erroresEditar.nombre">{{ erroresEditar.nombre }}</span></div>
-            <div class="form-group half"><label>Apellido*</label><input type="text" [(ngModel)]="editCliente.apellido" placeholder="apellido" /><span class="field-error" *ngIf="erroresEditar.apellido">{{ erroresEditar.apellido }}</span></div>
+            <div class="form-group half"><label>Nombre*</label><input type="text" [(ngModel)]="editCliente.nombre" /><span class="field-error" *ngIf="erroresEditar.nombre">{{ erroresEditar.nombre }}</span></div>
+            <div class="form-group half"><label>Apellido*</label><input type="text" [(ngModel)]="editCliente.apellido" /><span class="field-error" *ngIf="erroresEditar.apellido">{{ erroresEditar.apellido }}</span></div>
           </div>
-          <div class="form-group"><label>Nombre de Negocio</label><input type="text" [(ngModel)]="editCliente.negocio" placeholder="nombre del negocio" /></div>
-          <div class="form-group"><label>E-mail</label><input type="email" [(ngModel)]="editCliente.email" placeholder="E-mail" /><span class="field-error" *ngIf="erroresEditar.email">{{ erroresEditar.email }}</span></div>
-          <div class="form-group"><label>Dirección*</label><input type="text" [(ngModel)]="editCliente.direccion" placeholder="dirección" /><span class="field-error" *ngIf="erroresEditar.direccion">{{ erroresEditar.direccion }}</span></div>
+          <div class="form-group"><label>Nombre de Negocio</label><input type="text" [(ngModel)]="editCliente.negocio" /></div>
+          <div class="form-group"><label>E-mail</label><input type="email" [(ngModel)]="editCliente.email" /><span class="field-error" *ngIf="erroresEditar.email">{{ erroresEditar.email }}</span></div>
+          <div class="form-group"><label>Dirección*</label><input type="text" [(ngModel)]="editCliente.direccion" /><span class="field-error" *ngIf="erroresEditar.direccion">{{ erroresEditar.direccion }}</span></div>
           <div class="form-row">
-            <div class="form-group half"><label>Sector</label><input type="text" [(ngModel)]="editCliente.sector" placeholder="sector" /></div>
-            <div class="form-group half"><label>Teléfono*</label><input type="tel" [(ngModel)]="editCliente.telefono" placeholder="celular" /><span class="field-error" *ngIf="erroresEditar.telefono">{{ erroresEditar.telefono }}</span></div>
+            <div class="form-group half"><label>Sector</label><input type="text" [(ngModel)]="editCliente.sector" /></div>
+            <div class="form-group half"><label>Teléfono*</label><input type="tel" [(ngModel)]="editCliente.telefono" /><span class="field-error" *ngIf="erroresEditar.telefono">{{ erroresEditar.telefono }}</span></div>
           </div>
           <span class="field-error" *ngIf="erroresEditar.general">{{ erroresEditar.general }}</span>
           <button class="btn-nativo" (click)="guardarEdicion()" [disabled]="guardandoEdicion">
@@ -468,12 +545,12 @@
     </ng-template>
   </ion-modal>
 
-  <!-- ===== MODAL ABONO ===== -->
+  <!-- ===== MODAL ABONO INDIVIDUAL ===== -->
   <ion-modal [isOpen]="mostrarAbono" (didDismiss)="cerrarAbono()" [breakpoints]="[0, 1]" [initialBreakpoint]="1" [handle]="false">
     <ng-template>
       <ion-header>
         <ion-toolbar style="--background: #590f23; --color: white">
-          <ion-title style="color: white; font-size: 16px; font-weight: 700;">Registrar Abono</ion-title>
+          <ion-title style="color:white;font-size:16px;font-weight:700;">Registrar Cobro</ion-title>
           <ion-buttons slot="end">
             <ion-button (click)="cerrarAbono()" style="--color: white">
               <ion-icon name="close-outline"></ion-icon>
@@ -494,8 +571,6 @@
               </p>
             </div>
           </div>
-
-          <!-- CAMBIO: N° Orden prellenado y readonly cuando viene desde una orden -->
           <div class="form-group">
             <label>N° Orden</label>
             <input type="number" [(ngModel)]="abonoData.ventaId" placeholder="000000"
@@ -504,15 +579,12 @@
               [style.cursor]="abonoOrdenFija ? 'not-allowed' : 'text'" />
             <span class="field-error" *ngIf="erroresAbono.ventaId">{{ erroresAbono.ventaId }}</span>
           </div>
-
-          <!-- Saldo de la orden seleccionada -->
           <div class="abono-saldo-orden" *ngIf="abonoOrdenFija && abonoSaldoOrden > 0">
             <span class="abono-saldo-lbl">Saldo pendiente de esta orden:</span>
             <span class="abono-saldo-val saldo-rojo">${{ abonoSaldoOrden | number:'1.2-2' }}</span>
           </div>
-
           <div class="form-group">
-            <label>Valor del Abono</label>
+            <label>Valor del Cobro</label>
             <div class="valor-wrap">
               <span class="valor-prefix">$</span>
               <input type="number" [(ngModel)]="abonoData.monto" placeholder="0.00" step="0.01" />
@@ -532,14 +604,13 @@
           </div>
           <div class="form-group">
             <label>Notas <span style="font-weight:400;color:#C4A882">(opcional)</span></label>
-            <textarea [(ngModel)]="abonoData.notas" placeholder="Ej: Pago parcial convenido..."
-              class="abono-notas" rows="2"></textarea>
+            <textarea [(ngModel)]="abonoData.notas" class="abono-notas" rows="2"></textarea>
           </div>
           <span class="field-error" *ngIf="erroresAbono.general">{{ erroresAbono.general }}</span>
           <p class="abono-exito" *ngIf="mensajeAbono">✓ {{ mensajeAbono }}</p>
           <button class="btn-nativo" (click)="guardarAbono()" [disabled]="guardandoAbono">
             <ion-spinner name="crescent" *ngIf="guardandoAbono" style="width:18px;height:18px;margin-right:6px;"></ion-spinner>
-            {{ guardandoAbono ? 'Registrando...' : 'Guardar Abono' }}
+            {{ guardandoAbono ? 'Registrando...' : 'Guardar Cobro' }}
           </button>
         </div>
       </ion-content>

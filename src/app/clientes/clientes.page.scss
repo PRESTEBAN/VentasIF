@@ -1323,4 +1323,111 @@ $white:         #FFFFFF;
   &:active { background: #F0E0E4; }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
+
+.cobro-multiple-body { gap: 0; }
  
+.cobro-multiple-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+ 
+.cobro-multiple-titulo {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: $text-mid;
+  margin: 0;
+}
+ 
+.btn-sel-todas {
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-decoration: underline;
+  font-family: inherit;
+}
+ 
+.cobro-ordenes-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-height: 35vh;
+  overflow-y: auto;
+}
+ 
+.cobro-orden-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid #E8D8DC;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  &:active { transform: scale(0.98); }
+  &.cobro-orden-sel { border-color: #059669; background: #F0FDF4; }
+}
+ 
+.cobro-check {
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  border: 2px solid #D0B0B8;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  ion-icon { font-size: 15px; color: #fff; }
+  &.cobro-check-on { background: #059669; border-color: #059669; }
+}
+ 
+.cobro-orden-info { flex: 1; min-width: 0; }
+.cobro-orden-num  { font-size: 13px; font-weight: 700; color: $text-dark; margin: 0 0 2px; }
+.cobro-orden-fecha { font-size: 11px; color: $text-soft; margin: 0; }
+ 
+.cobro-orden-saldo { text-align: right; flex-shrink: 0; }
+.cobro-saldo-total { font-size: 11px; color: $text-soft; margin: 0 0 2px; }
+.cobro-saldo-val   { font-size: 14px; font-weight: 800; margin: 0; }
+ 
+.cobro-total-box {
+  background: #F5F5F5;
+  border-radius: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid #E0E0E0;
+  transition: all 0.2s;
+  &.cobro-total-activo { background: #F0FDF4; border-color: #A7F3D0; }
+}
+ 
+.cobro-total-row { display: flex; align-items: center; justify-content: space-between; }
+.cobro-total-lbl { font-size: 13px; font-weight: 600; color: $text-mid; }
+.cobro-total-val { font-size: 22px; font-weight: 900; color: #059669; }
+ 
+.btn-cobro-multiple-confirm {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 8px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.30);
+  transition: opacity 0.2s;
+  ion-icon { font-size: 20px; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+  &:active:not(:disabled) { opacity: 0.85; }
+}
+ 
+// Botón wallet en toolbar del detalle
+ion-toolbar .cobro-multiple-btn { --color: rgba(255,255,255,0.9); }

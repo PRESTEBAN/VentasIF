@@ -78,6 +78,7 @@ export class ClientesPage implements OnInit, OnDestroy {
   erroresEditar: any = {};
   guardandoEdicion = false;
 
+  // ── Abono individual ──────────────────────────────────────────────────────
   mostrarAbono = false;
   abonoData = {
     ventaId: null as number | null,
@@ -88,14 +89,33 @@ export class ClientesPage implements OnInit, OnDestroy {
   erroresAbono: any = {};
   guardandoAbono = false;
   mensajeAbono = '';
-
-  // NUEVO: control para abono desde orden preseleccionada
-  abonoOrdenFija = false;   // true = N° orden readonly
-  abonoSaldoOrden = 0;      // saldo de la orden preseleccionada
-
-  // NUEVO: control impresión abono
+  abonoOrdenFija = false;
+  abonoSaldoOrden = 0;
   imprimiendoAbono = false;
 
+  // ── Cobro múltiple ────────────────────────────────────────────────────────
+  mostrarCobroMultiple = false;
+  /** ids de órdenes seleccionadas en el modal de cobro múltiple */
+  ordenesSeleccionadas = new Set<number>();
+  cobroMultipleFormaPago = 'Efectivo';
+  cobroMultipleNotas = '';
+  guardandoCobroMultiple = false;
+  mensajeCobroMultiple = '';
+  erroresCobroMultiple = '';
+
+  /** Órdenes con saldo > 0 disponibles para cobrar */
+  get ordenesPendientes(): OrdenAgrupada[] {
+    return this.ordenesAgrupadas.filter(o => o.saldo_orden > 0 && o.estado !== 'cancelado');
+  }
+
+  /** Suma de saldos de las órdenes seleccionadas */
+  get totalCobroMultiple(): number {
+    return this.ordenesPendientes
+      .filter(o => this.ordenesSeleccionadas.has(o.venta_id))
+      .reduce((s, o) => s + o.saldo_orden, 0);
+  }
+
+  // ── Eliminar ──────────────────────────────────────────────────────────────
   mostrarConfirmarEliminar = false;
   eliminando = false;
 
@@ -270,19 +290,14 @@ export class ClientesPage implements OnInit, OnDestroy {
     for (const [, entry] of mapa) {
       const totalAbonado = entry.abonos.reduce((sum, a) => sum + a.monto, 0);
       const saldoDesdeDB = (entry as any)._saldo_generado;
-
       if (saldoDesdeDB !== undefined && saldoDesdeDB >= 0) {
         entry.saldo_orden = +saldoDesdeDB;
       } else {
         entry.saldo_orden = Math.max(0, entry.valor_total - totalAbonado);
       }
-
       if (entry.estado !== 'cancelado') {
-        if (entry.saldo_orden === 0) {
-          entry.estado = 'pagado';
-        } else if (totalAbonado > 0 && entry.saldo_orden > 0) {
-          entry.estado = 'abono';
-        }
+        if (entry.saldo_orden === 0) entry.estado = 'pagado';
+        else if (entry.abonos.length > 0 && entry.saldo_orden > 0) entry.estado = 'abono';
       }
     }
 
@@ -323,14 +338,9 @@ export class ClientesPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── NUEVO: abrir modal abono desde el popup de orden (orden preseleccionada) ──
+  // ── Abono desde popup de orden ────────────────────────────────────────────
   abrirAbonoDesdeOrden(orden: OrdenAgrupada) {
-    this.abonoData = {
-      ventaId:   orden.venta_id,
-      monto:     null,
-      formaPago: 'Efectivo',
-      notas:     ''
-    };
+    this.abonoData = { ventaId: orden.venta_id, monto: null, formaPago: 'Efectivo', notas: '' };
     this.abonoOrdenFija  = true;
     this.abonoSaldoOrden = orden.saldo_orden;
     this.erroresAbono    = {};
@@ -338,30 +348,24 @@ export class ClientesPage implements OnInit, OnDestroy {
     this.mostrarAbono    = true;
   }
 
-  // ── NUEVO: reimprimir un abono específico desde el historial ──────────────────
   async reimprimirAbono(orden: OrdenAgrupada, abono: { fecha: string; forma_pago: string; monto: number }) {
     if (!this.clienteDetalle || this.imprimiendoAbono) return;
     this.imprimiendoAbono = true;
     try {
-      const c = this.clienteDetalle;
+      const c    = this.clienteDetalle;
       const user = this.authService.getUsuario();
-      const totalAbonado = this.totalAbonado(orden);
-      // saldo restante = saldo_orden actual (ya descontados todos los abonos)
-      // saldo anterior a este abono = saldo_orden + abono.monto
-      const saldoAntes = orden.saldo_orden + abono.monto;
-
       await this.printerService.imprimirReciboAbono({
-        ventaId:          orden.venta_id,
-        clienteNombre:    `${c.nombre} ${c.apellido}`,
-        clienteCedula:    c.cedula_ruc   || '',
-        clienteTelefono:  c.telefono     || '',
-        clienteDireccion: c.direccion    || '',
-        vendedor:         user?.nombre || user?.username || 'Admin',
-        fechaVenta:       orden.fecha    || '',
-        valorTotalVenta:  orden.valor_total,
-        saldoPendiente:   saldoAntes,
-        valorAbono:       abono.monto,
-        saldoRestante:    orden.saldo_orden,
+        ventaId:         orden.venta_id,
+        clienteNombre:   `${c.nombre} ${c.apellido}`,
+        clienteCedula:   c.cedula_ruc   || '',
+        clienteTelefono: c.telefono     || '',
+        clienteDireccion:c.direccion    || '',
+        vendedor:        user?.nombre || user?.username || 'Admin',
+        fechaVenta:      orden.fecha    || '',
+        valorTotalVenta: orden.valor_total,
+        saldoPendiente:  orden.saldo_orden + abono.monto,
+        valorAbono:      abono.monto,
+        saldoRestante:   orden.saldo_orden,
       });
     } catch (e: any) {
       console.warn('[Printer] Error al reimprimir abono:', e.message);
@@ -370,7 +374,6 @@ export class ClientesPage implements OnInit, OnDestroy {
     }
   }
 
-  // ── Abrir abono sin orden preseleccionada (ya no se usa desde toolbar) ────────
   abrirAbono() {
     this.abonoData = { ventaId: null, monto: null, formaPago: 'Efectivo', notas: '' };
     this.abonoOrdenFija  = false;
@@ -408,22 +411,20 @@ export class ClientesPage implements OnInit, OnDestroy {
         this.mensajeAbono = res.mensaje;
         this.cargarMovimientos(this.clienteDetalle!.id!);
         this.cargarClientes();
-        const c = this.clienteDetalle!;
-        const montoAbono = +this.abonoData.monto!;
-        const saldoResta = +(res.saldo_restante ?? 0);
+        const c    = this.clienteDetalle!;
         const user = this.authService.getUsuario();
         this.printerService.imprimirReciboAbono({
-          ventaId:          this.abonoData.ventaId!,
-          clienteNombre:    `${c.nombre} ${c.apellido}`,
-          clienteCedula:    c.cedula_ruc  || '',
-          clienteTelefono:  c.telefono    || '',
-          clienteDireccion: c.direccion   || '',
-          vendedor:         user?.nombre || user?.username || 'Admin',
-          fechaVenta:       res.fecha_venta   || '',
-          valorTotalVenta:  +(res.valor_total ?? 0),
-          saldoPendiente:   saldoResta + montoAbono,
-          valorAbono:       montoAbono,
-          saldoRestante:    saldoResta,
+          ventaId:         this.abonoData.ventaId!,
+          clienteNombre:   `${c.nombre} ${c.apellido}`,
+          clienteCedula:   c.cedula_ruc  || '',
+          clienteTelefono: c.telefono    || '',
+          clienteDireccion:c.direccion   || '',
+          vendedor:        user?.nombre || user?.username || 'Admin',
+          fechaVenta:      res.fecha_venta   || '',
+          valorTotalVenta: +(res.valor_total ?? 0),
+          saldoPendiente:  +(res.saldo_restante ?? 0) + +this.abonoData.monto!,
+          valorAbono:      +this.abonoData.monto!,
+          saldoRestante:   +(res.saldo_restante ?? 0),
         }).catch(err => console.warn('[Printer] Error al imprimir abono:', err));
         setTimeout(() => this.cerrarAbono(), 1500);
       },
@@ -431,6 +432,97 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── COBRO MÚLTIPLE ────────────────────────────────────────────────────────
+  abrirCobroMultiple() {
+    this.ordenesSeleccionadas     = new Set();
+    this.cobroMultipleFormaPago   = 'Efectivo';
+    this.cobroMultipleNotas       = '';
+    this.mensajeCobroMultiple     = '';
+    this.erroresCobroMultiple     = '';
+    this.guardandoCobroMultiple   = false;
+    this.mostrarCobroMultiple     = true;
+  }
+
+  cerrarCobroMultiple() {
+    this.mostrarCobroMultiple = false;
+    this.ordenesSeleccionadas.clear();
+    this.mensajeCobroMultiple   = '';
+    this.erroresCobroMultiple   = '';
+  }
+
+  toggleOrdenCobroMultiple(ventaId: number) {
+    if (this.ordenesSeleccionadas.has(ventaId)) this.ordenesSeleccionadas.delete(ventaId);
+    else this.ordenesSeleccionadas.add(ventaId);
+    // forzar detección de cambio en el Set
+    this.ordenesSeleccionadas = new Set(this.ordenesSeleccionadas);
+  }
+
+  seleccionarTodasPendientes() {
+    if (this.ordenesSeleccionadas.size === this.ordenesPendientes.length) {
+      this.ordenesSeleccionadas = new Set();
+    } else {
+      this.ordenesSeleccionadas = new Set(this.ordenesPendientes.map(o => o.venta_id));
+    }
+  }
+
+  async guardarCobroMultiple() {
+    this.erroresCobroMultiple = '';
+    this.mensajeCobroMultiple = '';
+
+    if (this.ordenesSeleccionadas.size === 0) {
+      this.erroresCobroMultiple = 'Selecciona al menos una orden';
+      return;
+    }
+
+    this.guardandoCobroMultiple = true;
+    const ordenesACobrar = this.ordenesPendientes.filter(o => this.ordenesSeleccionadas.has(o.venta_id));
+    const c    = this.clienteDetalle!;
+    const user = this.authService.getUsuario();
+    let errores = 0;
+
+    for (const orden of ordenesACobrar) {
+      try {
+        await this.clienteService.registrarAbono(
+          orden.venta_id,
+          c.id!,
+          orden.saldo_orden,
+          this.cobroMultipleFormaPago,
+          this.cobroMultipleNotas || undefined
+        ).toPromise();
+
+        // Imprimir recibo por cada orden cobrada
+        await this.printerService.imprimirReciboAbono({
+          ventaId:         orden.venta_id,
+          clienteNombre:   `${c.nombre} ${c.apellido}`,
+          clienteCedula:   c.cedula_ruc   || '',
+          clienteTelefono: c.telefono     || '',
+          clienteDireccion:c.direccion    || '',
+          vendedor:        user?.nombre || user?.username || 'Admin',
+          fechaVenta:      orden.fecha    || '',
+          valorTotalVenta: orden.valor_total,
+          saldoPendiente:  orden.saldo_orden,
+          valorAbono:      orden.saldo_orden,
+          saldoRestante:   0,
+        }).catch(() => {});
+      } catch {
+        errores++;
+      }
+    }
+
+    this.guardandoCobroMultiple = false;
+
+    if (errores > 0) {
+      this.erroresCobroMultiple = `${errores} orden(es) no se pudieron cobrar`;
+    } else {
+      const n = ordenesACobrar.length;
+      this.mensajeCobroMultiple = `✓ ${n} orden${n > 1 ? 'es cobradas' : ' cobrada'} correctamente`;
+      this.cargarMovimientos(c.id!);
+      this.cargarClientes();
+      setTimeout(() => this.cerrarCobroMultiple(), 1800);
+    }
+  }
+
+  // ── Editar ────────────────────────────────────────────────────────────────
   abrirEditar() {
     if (!this.clienteDetalle) return;
     const c = this.clienteDetalle;
@@ -600,7 +692,7 @@ export class ClientesPage implements OnInit, OnDestroy {
     });
   }
 
-  abrirMenu() { this.menuAbierto = true; }
+  abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
 }
