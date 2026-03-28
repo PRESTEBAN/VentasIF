@@ -104,15 +104,26 @@
         <!-- ── BANNER MODO GESTIÓN ── -->
         <div class="banner-gestion-prod" *ngIf="modoGestionProductos && !cargandoProductos">
           <div class="banner-gestion-info">
-            <ion-icon name="hand-left-outline"></ion-icon>
-            <span>Mantén pulsado para mover · toca 👁 para ocultar</span>
+            <ng-container *ngIf="seleccionadoProdIndex === null">
+              <ion-icon name="swap-vertical-outline"></ion-icon>
+              <span>Toca un producto para seleccionarlo, luego toca otro para intercambiar</span>
+            </ng-container>
+            <ng-container *ngIf="seleccionadoProdIndex !== null">
+              <ion-icon name="checkmark-circle-outline" style="color:#2E7D32"></ion-icon>
+              <span><strong>{{ productosVisibles[seleccionadoProdIndex]?.nombre }}</strong> — toca otro para intercambiar</span>
+            </ng-container>
           </div>
-          <button class="banner-ocultos-btn-prod"
-            *ngIf="totalProductosOcultos > 0"
-            (click)="mostrarPanelOcultosProductos = !mostrarPanelOcultosProductos">
-            <ion-icon name="eye-off-outline"></ion-icon>
-            {{ totalProductosOcultos }} oculto{{ totalProductosOcultos !== 1 ? 's' : '' }}
-          </button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="banner-cancelar-btn-prod" *ngIf="seleccionadoProdIndex !== null" (click)="cancelarSeleccionProd()">
+              <ion-icon name="close-outline"></ion-icon>
+            </button>
+            <button class="banner-ocultos-btn-prod"
+              *ngIf="totalProductosOcultos > 0"
+              (click)="mostrarPanelOcultosProductos = !mostrarPanelOcultosProductos">
+              <ion-icon name="eye-off-outline"></ion-icon>
+              {{ totalProductosOcultos }} oculto{{ totalProductosOcultos !== 1 ? 's' : '' }}
+            </button>
+          </div>
         </div>
 
         <!-- ── PANEL PRODUCTOS OCULTOS ── -->
@@ -129,21 +140,30 @@
         <div class="productos-grid" *ngIf="!cargandoProductos && modoGestionProductos">
           <div class="producto-card producto-card-gestion"
             *ngFor="let producto of productosVisibles; let i = index"
-            [attr.data-prod-index]="i"
-            [class.prod-dragging]="dragProductoIndex === i"
-            [class.prod-drag-over]="dragProductoOverIndex === i && dragProductoIndex !== null && dragProductoIndex !== i"
-            [class.prod-shake]="dragProductoIndex === i"
-            (touchstart)="onTouchStartProducto($event, i)"
-            (touchmove)="onTouchMoveProducto($event, i)"
-            (touchend)="onTouchEndProducto($event, i)">
+            [class.prod-seleccionado]="seleccionadoProdIndex === i"
+            [class.prod-destino]="seleccionadoProdIndex !== null && seleccionadoProdIndex !== i"
+            (click)="onTapProductoGestion(i)">
 
             <div class="prod-gestion-overlay">
-              <!-- Botón ocultar (solo cuando no se está arrastrando) -->
               <button class="btn-ocultar-prod"
-                *ngIf="dragProductoIndex === null"
-                (click)="ocultarProductoGestion(producto.id!)">
+                *ngIf="seleccionadoProdIndex === null"
+                (click)="$event.stopPropagation(); ocultarProductoGestion(producto.id!)">
                 <ion-icon name="eye-off-outline"></ion-icon>
               </button>
+            </div>
+
+            <!-- Indicador visual -->
+            <div style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);">
+              <ion-icon
+                *ngIf="seleccionadoProdIndex === i"
+                name="checkmark-circle"
+                style="font-size:16px;color:#2E7D32;">
+              </ion-icon>
+              <ion-icon
+                *ngIf="seleccionadoProdIndex !== null && seleccionadoProdIndex !== i"
+                name="swap-horizontal-outline"
+                style="font-size:13px;color:#590F23;opacity:0.6;">
+              </ion-icon>
             </div>
 
             <div class="producto-img-placeholder">
@@ -157,7 +177,6 @@
                 <span class="stock-label">stock</span>
               </div>
             </div>
-
           </div>
         </div>
 

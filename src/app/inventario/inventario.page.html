@@ -19,15 +19,12 @@
         </div>
         <div class="header-actions">
           <ng-container *ngIf="tabActivo === 'inventario'">
-
-            <!-- Botón modo gestión -->
             <div class="header-icon-btn"
               [class.header-icon-btn-active]="modoGestion"
               (click)="toggleModoGestion()"
               title="Gestionar orden y visibilidad">
               <ion-icon [name]="modoGestion ? 'checkmark-done-outline' : 'options-outline'"></ion-icon>
             </div>
-
             <ng-container *ngIf="!modoGestion">
               <div class="header-icon-btn header-icon-btn-danger" (click)="confirmarVaciar()">
                 <ion-icon name="trash-outline"></ion-icon>
@@ -36,7 +33,6 @@
                 <ion-icon name="add-outline"></ion-icon>
               </div>
             </ng-container>
-
           </ng-container>
           <ng-container *ngIf="tabActivo === 'productos'">
             <div class="header-icon-btn" (click)="activarEditarPrecios()" *ngIf="!modoEditarPrecios">
@@ -67,16 +63,27 @@
           <!-- Banner modo gestión -->
           <div class="banner-gestion" *ngIf="modoGestion">
             <div class="banner-gestion-info">
-              <ion-icon name="hand-left-outline"></ion-icon>
-              <span>Mantén pulsado un producto para moverlo</span>
+              <ng-container *ngIf="seleccionadoIndex === null">
+                <ion-icon name="swap-vertical-outline"></ion-icon>
+                <span>Toca un producto para seleccionarlo, luego toca otro para intercambiar</span>
+              </ng-container>
+              <ng-container *ngIf="seleccionadoIndex !== null">
+                <ion-icon name="checkmark-circle-outline" style="color:#2E7D32"></ion-icon>
+                <span><strong>{{ itemsVisibles[seleccionadoIndex]?.nombre }}</strong> seleccionado — toca otro para intercambiar</span>
+              </ng-container>
             </div>
-            <button class="banner-ocultos-btn" *ngIf="totalOcultos > 0" (click)="mostrarOcultos = !mostrarOcultos">
-              <ion-icon name="eye-off-outline"></ion-icon>
-              {{ totalOcultos }} oculto{{ totalOcultos !== 1 ? 's' : '' }}
-            </button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="banner-cancelar-btn" *ngIf="seleccionadoIndex !== null" (click)="cancelarSeleccion()">
+                <ion-icon name="close-outline"></ion-icon>
+              </button>
+              <button class="banner-ocultos-btn" *ngIf="totalOcultos > 0" (click)="mostrarOcultos = !mostrarOcultos">
+                <ion-icon name="eye-off-outline"></ion-icon>
+                {{ totalOcultos }} oculto{{ totalOcultos !== 1 ? 's' : '' }}
+              </button>
+            </div>
           </div>
 
-          <!-- Panel de ocultos (restaurar) -->
+          <!-- Panel de ocultos -->
           <div class="panel-ocultos" *ngIf="modoGestion && mostrarOcultos && itemsOcultos.length > 0">
             <p class="panel-ocultos-titulo">Productos ocultos — toca para restaurar</p>
             <div class="oculto-item" *ngFor="let item of itemsOcultos" (click)="restaurarProducto(item.producto_id)">
@@ -103,18 +110,17 @@
           <div class="items-lista">
             <div class="item-card"
               *ngFor="let item of itemsVisibles; let i = index"
-              [attr.data-drag-index]="i"
               [class.stock-bajo]="item.stock_actual <= item.stock_minimo && item.stock_minimo > 0"
-              [class.item-dragging]="dragIndex === i"
-              [class.item-drag-over]="dragOverIndex === i && dragIndex !== null && dragIndex !== i"
-              [class.item-shake]="dragIndex === i"
-              (touchstart)="onTouchStart($event, i)"
-              (touchmove)="onTouchMove($event, i)"
-              (touchend)="onTouchEnd($event, i)">
+              [class.item-seleccionado]="modoGestion && seleccionadoIndex === i"
+              [class.item-destino]="modoGestion && seleccionadoIndex !== null && seleccionadoIndex !== i"
+              (click)="onTapProducto(i)">
 
-              <!-- Handle visual (solo en modo gestión) -->
-              <div class="drag-handle" *ngIf="modoGestion">
-                <ion-icon name="reorder-three-outline"></ion-icon>
+              <!-- Indicador selección (modo gestión) -->
+              <div class="gestion-indicador" *ngIf="modoGestion">
+                <ion-icon
+                  [name]="seleccionadoIndex === i ? 'checkmark-circle' : (seleccionadoIndex !== null ? 'swap-horizontal-outline' : 'swap-vertical-outline')"
+                  [style.color]="seleccionadoIndex === i ? '#2E7D32' : (seleccionadoIndex !== null ? '#590F23' : '#BDBDBD')">
+                </ion-icon>
               </div>
 
               <span class="item-nombre">{{ item.nombre }}</span>
@@ -125,7 +131,7 @@
               </span>
 
               <!-- Stepper (modo ingreso) -->
-              <div class="stepper-wrap" *ngIf="modoIngreso && !modoGestion">
+              <div class="stepper-wrap" *ngIf="modoIngreso && !modoGestion" (click)="$event.stopPropagation()">
                 <button class="step-btn" (click)="decrementar(item)">−</button>
                 <input type="number" class="step-input"
                   [class.negativo]="(item.ingreso || 0) < 0"
@@ -134,10 +140,10 @@
                 <button class="step-btn" (click)="incrementar(item)">+</button>
               </div>
 
-              <!-- Botón ocultar (modo gestión, no arrastrando) -->
+              <!-- Botón ocultar (modo gestión, nada seleccionado) -->
               <button class="btn-ocultar"
-                *ngIf="modoGestion && dragIndex === null"
-                (click)="ocultarProducto(item.producto_id)"
+                *ngIf="modoGestion && seleccionadoIndex === null"
+                (click)="$event.stopPropagation(); ocultarProducto(item.producto_id)"
                 title="Ocultar">
                 <ion-icon name="eye-off-outline"></ion-icon>
               </button>

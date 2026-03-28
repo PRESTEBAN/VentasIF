@@ -22,8 +22,8 @@ export class InventarioPage implements OnInit, OnDestroy {
   tabActivo: 'inventario' | 'productos' = 'inventario';
 
   items: ItemInventario[]         = [];
-  itemsVisibles: ItemInventario[] = [];   // ordenados y sin ocultos
-  itemsOcultos: ItemInventario[]  = [];   // los ocultos
+  itemsVisibles: ItemInventario[] = [];
+  itemsOcultos: ItemInventario[]  = [];
 
   cargando = false;
 
@@ -50,18 +50,13 @@ export class InventarioPage implements OnInit, OnDestroy {
 
   // ── Modo gestión ──────────────────────────────────────────────────────────
   modoGestion    = false;
-  mostrarOcultos = false;   // panel para restaurar ocultos
+  mostrarOcultos = false;
   ocultos        = new Set<number>();
   ordenPersonalizado: number[] = [];
 
-  // ── Drag & drop ───────────────────────────────────────────────────────────
-  /** índice del item que se está arrastrando */
-  dragIndex: number | null = null;
-  /** índice sobre el que está pasando (target) */
-  dragOverIndex: number | null = null;
-  /** id del timeout para long-press */
-  private longPressTimer: any = null;
-  private readonly LONG_PRESS_MS = 500;
+  // ── Selección para intercambio ────────────────────────────────────────────
+  /** índice del item seleccionado para intercambiar (null = ninguno) */
+  seleccionadoIndex: number | null = null;
 
   private pollingInterval: any = null;
   private readonly POLLING_MS  = 20000;
@@ -86,7 +81,7 @@ export class InventarioPage implements OnInit, OnDestroy {
   ionViewWillLeave() { this.detenerPolling(); this.detenerSocket(); }
   ngOnDestroy()      { this.detenerPolling(); this.detenerSocket(); }
 
-  // ── LocalStorage ─────────────────────────────────────────────────────────
+  // ── LocalStorage ──────────────────────────────────────────────────────────
   cargarPreferencias() {
     try { const o = localStorage.getItem(LS_ORDEN);   if (o) this.ordenPersonalizado = JSON.parse(o); } catch {}
     try { const h = localStorage.getItem(LS_OCULTOS); if (h) this.ocultos = new Set(JSON.parse(h)); } catch {}
@@ -100,7 +95,6 @@ export class InventarioPage implements OnInit, OnDestroy {
   // ── Construir listas ──────────────────────────────────────────────────────
   aplicarOrdenYVisibilidad() {
     let ordenados: ItemInventario[];
-
     if (this.ordenPersonalizado.length > 0) {
       const mapa = new Map(this.items.map(i => [i.producto_id, i]));
       ordenados = [];
@@ -109,7 +103,6 @@ export class InventarioPage implements OnInit, OnDestroy {
     } else {
       ordenados = [...this.items];
     }
-
     this.itemsVisibles = ordenados.filter(i => !this.ocultos.has(i.producto_id));
     this.itemsOcultos  = this.items.filter(i => this.ocultos.has(i.producto_id));
   }
@@ -118,15 +111,14 @@ export class InventarioPage implements OnInit, OnDestroy {
   toggleModoGestion() {
     this.modoGestion = !this.modoGestion;
     this.mostrarOcultos = false;
-    this.dragIndex = null;
-    this.dragOverIndex = null;
+    this.seleccionadoIndex = null;
     if (!this.modoGestion) this.guardarPreferencias();
   }
 
   ocultarProducto(productoId: number) {
     this.ocultos.add(productoId);
     this.ocultos = new Set(this.ocultos);
-    this.dragIndex = null;
+    this.seleccionadoIndex = null;
     this.aplicarOrdenYVisibilidad();
     this.guardarPreferencias();
   }
@@ -141,75 +133,44 @@ export class InventarioPage implements OnInit, OnDestroy {
 
   get totalOcultos(): number { return this.ocultos.size; }
 
-  // ── Long press + drag touch ───────────────────────────────────────────────
-
-  /** El usuario presiona el item */
-  onTouchStart(event: TouchEvent, index: number) {
+  // ── Lógica de intercambio por tap ─────────────────────────────────────────
+  onTapProducto(index: number) {
     if (!this.modoGestion) return;
-    // Limpiar timer previo
-    this.cancelarLongPress();
 
-    this.longPressTimer = setTimeout(() => {
-      this.ngZone.run(() => {
-        this.dragIndex = index;
-        this.dragOverIndex = index;
-        // Vibrar si está disponible
-        if (navigator.vibrate) navigator.vibrate(40);
-      });
-    }, this.LONG_PRESS_MS);
-  }
-
-  /** El usuario mueve el dedo */
-  onTouchMove(event: TouchEvent, index: number) {
-    // Si se mueve antes del long press, cancelarlo
-    if (this.dragIndex === null) {
-      this.cancelarLongPress();
+    // Ninguno seleccionado → seleccionar este
+    if (this.seleccionadoIndex === null) {
+      this.seleccionadoIndex = index;
       return;
     }
-    event.preventDefault();
 
-    const touch = event.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el) return;
-
-    // Buscar el item-card más cercano
-    const card = el.closest('[data-drag-index]') as HTMLElement;
-    if (card) {
-      const targetIndex = parseInt(card.dataset['dragIndex'] || '-1', 10);
-      if (targetIndex >= 0 && targetIndex !== this.dragOverIndex) {
-        this.ngZone.run(() => { this.dragOverIndex = targetIndex; });
-      }
+    // Tap en el mismo → deseleccionar
+    if (this.seleccionadoIndex === index) {
+      this.seleccionadoIndex = null;
+      return;
     }
+
+    // Tap en otro → intercambiar posiciones
+    const from = this.seleccionadoIndex;
+    const to   = index;
+
+    const arr = [...this.itemsVisibles];
+    const temp = arr[from];
+    arr[from] = arr[to];
+    arr[to]   = temp;
+
+    this.itemsVisibles = arr;
+
+    // Actualizar orden completo
+    this.ordenPersonalizado = [
+      ...arr.map(i => i.producto_id),
+      ...this.itemsOcultos.map(i => i.producto_id),
+    ];
+    this.guardarPreferencias();
+    this.seleccionadoIndex = null;
   }
 
-  /** El usuario suelta el dedo */
-  onTouchEnd(event: TouchEvent, index: number) {
-    this.cancelarLongPress();
-    if (this.dragIndex === null) return;
-
-    const from = this.dragIndex;
-    const to   = this.dragOverIndex ?? from;
-
-    this.ngZone.run(() => {
-      if (from !== to) {
-        const arr = [...this.itemsVisibles];
-        const [item] = arr.splice(from, 1);
-        arr.splice(to, 0, item);
-        this.itemsVisibles = arr;
-        // Reconstruir orden completo: visibles + ocultos al final
-        this.ordenPersonalizado = [
-          ...arr.map(i => i.producto_id),
-          ...this.itemsOcultos.map(i => i.producto_id),
-        ];
-        this.guardarPreferencias();
-      }
-      this.dragIndex     = null;
-      this.dragOverIndex = null;
-    });
-  }
-
-  private cancelarLongPress() {
-    if (this.longPressTimer) { clearTimeout(this.longPressTimer); this.longPressTimer = null; }
+  cancelarSeleccion() {
+    this.seleccionadoIndex = null;
   }
 
   // ── Polling / Socket ──────────────────────────────────────────────────────
@@ -271,7 +232,7 @@ export class InventarioPage implements OnInit, OnDestroy {
     this.tabActivo = tab;
     this.modoIngreso = false; this.modoEditarPrecios = false;
     this.modoGestion = false; this.mensajeIngreso = '';
-    this.dragIndex = null; this.dragOverIndex = null;
+    this.seleccionadoIndex = null;
   }
 
   // ── Ingreso stock ─────────────────────────────────────────────────────────

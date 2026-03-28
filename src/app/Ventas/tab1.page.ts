@@ -53,11 +53,8 @@ export class Tab1Page implements OnInit, OnDestroy {
   formaPago = 'Efectivo';
   montoRecibido: number = 0;
 
-  /** Todos los productos cargados del backend (con stock) */
   productos: Producto[] = [];
-  /** Productos visibles y ordenados para mostrar en el grid */
   productosVisibles: Producto[] = [];
-  /** Productos ocultos */
   productosOcultosList: Producto[] = [];
 
   cargandoProductos = false;
@@ -72,11 +69,8 @@ export class Tab1Page implements OnInit, OnDestroy {
   productosOcultosSet  = new Set<number>();
   productosOrden: number[] = [];
 
-  // ── Drag & drop grid ──────────────────────────────────────────────────────
-  dragProductoIndex: number | null = null;
-  dragProductoOverIndex: number | null = null;
-  private longPressTimerProd: any = null;
-  private readonly LONG_PRESS_MS = 500;
+  // ── Selección para intercambio (reemplaza drag & drop) ───────────────────
+  seleccionadoProdIndex: number | null = null;
 
   private carritoSub!: Subscription;
   private socketSubs: Subscription[] = [];
@@ -144,23 +138,22 @@ export class Tab1Page implements OnInit, OnDestroy {
     } else {
       ordenados = [...this.productos];
     }
-    this.productosVisibles     = ordenados.filter(p => !this.productosOcultosSet.has(p.id!));
-    this.productosOcultosList  = this.productos.filter(p => this.productosOcultosSet.has(p.id!));
+    this.productosVisibles    = ordenados.filter(p => !this.productosOcultosSet.has(p.id!));
+    this.productosOcultosList = this.productos.filter(p => this.productosOcultosSet.has(p.id!));
   }
 
   // ── Modo gestión ──────────────────────────────────────────────────────────
   toggleModoGestionProductos() {
     this.modoGestionProductos = !this.modoGestionProductos;
     this.mostrarPanelOcultosProductos = false;
-    this.dragProductoIndex = null;
-    this.dragProductoOverIndex = null;
+    this.seleccionadoProdIndex = null;
     if (!this.modoGestionProductos) this.guardarPreferenciasProductos();
   }
 
   ocultarProductoGestion(productoId: number) {
     this.productosOcultosSet.add(productoId);
     this.productosOcultosSet = new Set(this.productosOcultosSet);
-    this.dragProductoIndex = null;
+    this.seleccionadoProdIndex = null;
     this.aplicarOrdenYVisibilidadProductos();
     this.guardarPreferenciasProductos();
   }
@@ -175,59 +168,40 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   get totalProductosOcultos(): number { return this.productosOcultosSet.size; }
 
-  // ── Drag & drop grid (touch) ──────────────────────────────────────────────
-  onTouchStartProducto(event: TouchEvent, index: number) {
+  // ── Intercambio por tap ───────────────────────────────────────────────────
+  onTapProductoGestion(index: number) {
     if (!this.modoGestionProductos) return;
-    this.cancelarLongPressProducto();
-    this.longPressTimerProd = setTimeout(() => {
-      this.ngZone.run(() => {
-        this.dragProductoIndex     = index;
-        this.dragProductoOverIndex = index;
-        if (navigator.vibrate) navigator.vibrate(40);
-      });
-    }, this.LONG_PRESS_MS);
-  }
 
-  onTouchMoveProducto(event: TouchEvent, index: number) {
-    if (this.dragProductoIndex === null) { this.cancelarLongPressProducto(); return; }
-    event.preventDefault();
-    const touch = event.touches[0];
-    const el = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!el) return;
-    const card = el.closest('[data-prod-index]') as HTMLElement;
-    if (card) {
-      const ti = parseInt(card.dataset['prodIndex'] || '-1', 10);
-      if (ti >= 0 && ti !== this.dragProductoOverIndex) {
-        this.ngZone.run(() => { this.dragProductoOverIndex = ti; });
-      }
+    // Ninguno seleccionado → seleccionar
+    if (this.seleccionadoProdIndex === null) {
+      this.seleccionadoProdIndex = index;
+      return;
     }
+
+    // Mismo → deseleccionar
+    if (this.seleccionadoProdIndex === index) {
+      this.seleccionadoProdIndex = null;
+      return;
+    }
+
+    // Otro → intercambiar
+    const from = this.seleccionadoProdIndex;
+    const to   = index;
+    const arr  = [...this.productosVisibles];
+    const temp = arr[from];
+    arr[from]  = arr[to];
+    arr[to]    = temp;
+
+    this.productosVisibles = arr;
+    this.productosOrden = [
+      ...arr.map(p => p.id!),
+      ...this.productosOcultosList.map(p => p.id!),
+    ];
+    this.guardarPreferenciasProductos();
+    this.seleccionadoProdIndex = null;
   }
 
-  onTouchEndProducto(event: TouchEvent, index: number) {
-    this.cancelarLongPressProducto();
-    if (this.dragProductoIndex === null) return;
-    const from = this.dragProductoIndex;
-    const to   = this.dragProductoOverIndex ?? from;
-    this.ngZone.run(() => {
-      if (from !== to) {
-        const arr = [...this.productosVisibles];
-        const [item] = arr.splice(from, 1);
-        arr.splice(to, 0, item);
-        this.productosVisibles = arr;
-        this.productosOrden = [
-          ...arr.map(p => p.id!),
-          ...this.productosOcultosList.map(p => p.id!),
-        ];
-        this.guardarPreferenciasProductos();
-      }
-      this.dragProductoIndex     = null;
-      this.dragProductoOverIndex = null;
-    });
-  }
-
-  private cancelarLongPressProducto() {
-    if (this.longPressTimerProd) { clearTimeout(this.longPressTimerProd); this.longPressTimerProd = null; }
-  }
+  cancelarSeleccionProd() { this.seleccionadoProdIndex = null; }
 
   // ── Polling / Socket ──────────────────────────────────────────────────────
   iniciarPolling() {
@@ -462,7 +436,7 @@ export class Tab1Page implements OnInit, OnDestroy {
 
   // ── Producto tap en grid ──────────────────────────────────────────────────
   async abrirProducto(producto: Producto) {
-    if (this.modoGestionProductos) return; // en modo gestión no abrir productos
+    if (this.modoGestionProductos) return;
     if (!this.clienteSeleccionado) return;
     if ((producto.stock ?? 0) <= 0) {
       const toast = await this.toastCtrl.create({ message: 'Sin stock disponible', duration: 2000, position: 'bottom', color: 'danger' });
