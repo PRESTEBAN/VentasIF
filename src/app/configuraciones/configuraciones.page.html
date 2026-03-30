@@ -1,0 +1,334 @@
+<ion-content [fullscreen]="true" class="cfg-content">
+  <div class="background-container">
+    <img src="assets/fondo_tab1.png" class="cacao-bg" alt="" />
+    <div class="content-wrapper">
+
+      <app-menu-lateral
+        [abierto]="menuAbierto"
+        [paginaActiva]="'configuraciones'"
+        [usuarioActual]="usuarioActual"
+        (cerrar)="menuAbierto = false">
+      </app-menu-lateral>
+
+      <div class="header-card">
+        <div class="menu-btn" (click)="abrirMenu()">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="header-logo">
+          <img src="assets/LOGO_IF.jpg" alt="Logo" />
+        </div>
+        <div style="width:32px;"></div>
+      </div>
+
+      <div class="main-content">
+        <div class="page-header">
+          <h1 class="page-title">Configuraciones</h1>
+        </div>
+
+        <!-- ══ IMPRESORA ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="print-outline"></ion-icon>
+          <span>Impresora Bluetooth</span>
+        </div>
+
+        <div class="cfg-card">
+          <div class="estado-impresora" [class.conectada]="printerService.dispositivoConectado">
+            <div class="estado-dot" [class.dot-verde]="printerService.dispositivoConectado" [class.dot-gris]="!printerService.dispositivoConectado"></div>
+            <div class="estado-info">
+              <p class="estado-label">{{ printerService.dispositivoConectado ? 'Conectada' : 'Sin conexión' }}</p>
+              <p class="estado-sub">{{ printerService.dispositivoConectado ? printerService.dispositivoConectado.name : 'Ninguna impresora conectada' }}</p>
+            </div>
+            <button class="btn-desconectar" *ngIf="printerService.dispositivoConectado" (click)="desconectarImpresora()">
+              <ion-icon name="close-circle-outline"></ion-icon>
+            </button>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <div class="cfg-acciones">
+            <button class="btn-cfg btn-primario" (click)="escanearImpresoras()" [disabled]="escaneandoBT">
+              <ion-spinner name="crescent" *ngIf="escaneandoBT" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+              <ion-icon name="bluetooth-outline" *ngIf="!escaneandoBT"></ion-icon>
+              {{ escaneandoBT ? 'Buscando...' : 'Buscar impresoras' }}
+            </button>
+            <button class="btn-cfg btn-secundario" (click)="imprimirPrueba()" [disabled]="!printerService.dispositivoConectado">
+              <ion-icon name="document-text-outline"></ion-icon>
+              Imprimir prueba
+            </button>
+          </div>
+
+          <div class="bt-lista" *ngIf="mostrarListaBT">
+            <p class="bt-lista-titulo">Dispositivos pareados</p>
+            <div class="bt-item" *ngFor="let d of dispositivosBT" (click)="conectarImpresora(d)">
+              <ion-icon name="print-outline" class="bt-icono"></ion-icon>
+              <div class="bt-info">
+                <p class="bt-nombre">{{ d.name || 'Desconocido' }}</p>
+                <p class="bt-mac">{{ d.address }}</p>
+              </div>
+              <ion-spinner name="crescent" *ngIf="conectandoBT === d.address" style="width:18px;height:18px;"></ion-spinner>
+              <ion-icon name="checkmark-circle" *ngIf="printerService.dispositivoConectado?.id === d.address" style="color:#2E7D32;font-size:20px;"></ion-icon>
+              <ion-icon name="chevron-forward-outline" *ngIf="conectandoBT !== d.address && printerService.dispositivoConectado?.id !== d.address" style="color:#CCC;font-size:16px;"></ion-icon>
+            </div>
+            <p class="bt-vacio" *ngIf="!escaneandoBT && dispositivosBT.length === 0">
+              No hay dispositivos pareados. Ve a Ajustes Bluetooth del teléfono y paréa la impresora primero.
+            </p>
+          </div>
+        </div>
+
+        <!-- ══ PREFERENCIAS DE VENTAS ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="cart-outline"></ion-icon>
+          <span>Preferencias de ventas</span>
+        </div>
+
+        <div class="cfg-card">
+
+          <!-- IVA por defecto -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">IVA por defecto (%)</p>
+              <p class="pref-desc">Se aplica automáticamente al abrir el carrito</p>
+            </div>
+            <div class="pref-input-wrap">
+              <input type="number" class="pref-input" [(ngModel)]="prefs.ivaDefecto" min="0" max="100" placeholder="0" />
+              <span class="pref-suffix">%</span>
+            </div>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <!-- Precio menor primero -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Seleccionar precio menor primero</p>
+              <p class="pref-desc">Al agregar un producto, preselecciona precio x menor</p>
+            </div>
+            <div class="toggle-wrap" [class.toggle-on]="prefs.mostrarPrecioMenorPrimero" (click)="prefs.mostrarPrecioMenorPrimero = !prefs.mostrarPrecioMenorPrimero">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <!-- Confirmar antes de finalizar -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Confirmar al finalizar venta</p>
+              <p class="pref-desc">Pide confirmación antes de registrar el pedido</p>
+            </div>
+            <div class="toggle-wrap" [class.toggle-on]="prefs.confirmarFinalizarVenta" (click)="prefs.confirmarFinalizarVenta = !prefs.confirmarFinalizarVenta">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <!-- Mostrar stock en grid -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Mostrar stock en grid de productos</p>
+              <p class="pref-desc">Muestra el número de unidades disponibles en cada tarjeta</p>
+            </div>
+            <div class="toggle-wrap" [class.toggle-on]="prefs.mostrarStockGrid" (click)="prefs.mostrarStockGrid = !prefs.mostrarStockGrid">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <!-- Vibración al vender -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Vibración al agregar producto</p>
+              <p class="pref-desc">Vibra el teléfono al añadir un item al carrito</p>
+            </div>
+            <div class="toggle-wrap" [class.toggle-on]="prefs.vibracionAlVender" (click)="prefs.vibracionAlVender = !prefs.vibracionAlVender">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ══ PREFERENCIAS DE CAJA ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="wallet-outline"></ion-icon>
+          <span>Preferencias de caja</span>
+        </div>
+
+        <div class="cfg-card">
+
+          <!-- Fondo inicial -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Fondo inicial de caja ($)</p>
+              <p class="pref-desc">Monto con el que se abre cada cierre de caja</p>
+            </div>
+            <div class="pref-input-wrap">
+              <span class="pref-prefix">$</span>
+              <input type="number" class="pref-input" [(ngModel)]="prefs.fondoInicialCaja" min="0" placeholder="40" />
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ══ PREFERENCIAS DE IMPRESORA ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="options-outline"></ion-icon>
+          <span>Opciones de impresión</span>
+        </div>
+
+        <div class="cfg-card">
+
+          <!-- Auto-reconectar -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Auto-reconectar al iniciar</p>
+              <p class="pref-desc">Intenta conectar la última impresora al abrir la app</p>
+            </div>
+            <div class="toggle-wrap" [class.toggle-on]="prefs.autoReconectarImpresora" (click)="prefs.autoReconectarImpresora = !prefs.autoReconectarImpresora">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <!-- Tamaño fuente -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Tamaño de fuente del recibo</p>
+              <p class="pref-desc">Normal (32 cols) o Grande (texto más legible)</p>
+            </div>
+            <div class="segmented-wrap">
+              <button class="seg-btn" [class.seg-activo]="prefs.tamanoFuenteImpresora === 'normal'" (click)="prefs.tamanoFuenteImpresora = 'normal'">Normal</button>
+              <button class="seg-btn" [class.seg-activo]="prefs.tamanoFuenteImpresora === 'grande'" (click)="prefs.tamanoFuenteImpresora = 'grande'">Grande</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ══ BOTONES GUARDAR ══ -->
+        <div class="cfg-card" style="display:flex;gap:8px;">
+          <button class="btn-cfg btn-secundario" style="flex:1;" (click)="resetearPrefs()">
+            <ion-icon name="refresh-outline"></ion-icon>
+            Restablecer
+          </button>
+          <button class="btn-cfg btn-primario" style="flex:2;" (click)="guardarPrefs()" [disabled]="guardandoPrefs">
+            <ion-spinner name="crescent" *ngIf="guardandoPrefs" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+            <ion-icon name="save-outline" *ngIf="!guardandoPrefs"></ion-icon>
+            {{ guardandoPrefs ? 'Guardando...' : 'Guardar preferencias' }}
+          </button>
+        </div>
+
+        <!-- ══ PERMISOS ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="shield-checkmark-outline"></ion-icon>
+          <span>Permisos de la App</span>
+        </div>
+
+        <div class="cfg-card">
+
+          <div class="permiso-fila">
+            <div class="permiso-icono-wrap" style="background:#E3F2FD;">
+              <ion-icon name="notifications-outline" style="color:#1565C0;"></ion-icon>
+            </div>
+            <div class="permiso-info">
+              <p class="permiso-nombre">Notificaciones push</p>
+              <p class="permiso-estado" [style.color]="getColorPermiso(permisoNotificaciones)">
+                {{ esNativo ? getLabelPermiso(permisoNotificaciones) : 'Solo en APK' }}
+              </p>
+            </div>
+            <button class="btn-permiso" (click)="solicitarPermisoNotificaciones()">
+              {{ permisoNotificaciones === 'concedido' ? 'Re-solicitar' : 'Activar' }}
+            </button>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <div class="permiso-fila">
+            <div class="permiso-icono-wrap" style="background:#E8F5E9;">
+              <ion-icon name="bluetooth-outline" style="color:#2E7D32;"></ion-icon>
+            </div>
+            <div class="permiso-info">
+              <p class="permiso-nombre">Bluetooth / Impresora</p>
+              <p class="permiso-estado" [style.color]="getColorPermiso(permisoBluetooth)">
+                {{ esNativo ? getLabelPermiso(permisoBluetooth) : 'Solo en APK' }}
+              </p>
+            </div>
+            <button class="btn-permiso" (click)="solicitarPermisoBluetooth()">
+              {{ permisoBluetooth === 'concedido' ? 'Re-solicitar' : 'Activar' }}
+            </button>
+          </div>
+
+          <div class="cfg-divider"></div>
+
+          <div class="permiso-fila">
+            <div class="permiso-icono-wrap" style="background:#FFF3E0;">
+              <ion-icon name="location-outline" style="color:#E65100;"></ion-icon>
+            </div>
+            <div class="permiso-info">
+              <p class="permiso-nombre">Ubicación</p>
+              <p class="permiso-estado" [style.color]="getColorPermiso(permisoUbicacion)">
+                {{ esNativo ? getLabelPermiso(permisoUbicacion) : 'Solo en APK' }}
+              </p>
+              <p class="permiso-nota">Requerida para Bluetooth en Android</p>
+            </div>
+            <button class="btn-permiso" (click)="solicitarPermisoBluetooth()">
+              {{ permisoUbicacion === 'concedido' ? 'Re-solicitar' : 'Activar' }}
+            </button>
+          </div>
+
+          <div *ngIf="!esNativo" style="margin-top:10px;">
+            <div class="info-web">
+              <ion-icon name="information-circle-outline"></ion-icon>
+              <p>En el navegador los permisos no aplican. Instala el APK en el dispositivo Android para gestionarlos.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ══ DISPOSITIVO ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="phone-portrait-outline"></ion-icon>
+          <span>Información del dispositivo</span>
+        </div>
+
+        <div class="cfg-card">
+          <div class="info-fila">
+            <span class="info-label">Plataforma</span>
+            <span class="info-valor">{{ plataforma || 'Web' }}</span>
+          </div>
+          <div class="cfg-divider"></div>
+          <div class="info-fila">
+            <span class="info-label">Nativo</span>
+            <span class="info-valor">{{ esNativo ? 'Sí' : 'No (Web)' }}</span>
+          </div>
+          <div class="cfg-divider"></div>
+          <div class="info-fila">
+            <span class="info-label">Versión App</span>
+            <span class="info-valor">{{ versionApp }}</span>
+          </div>
+          <div class="cfg-divider"></div>
+          <div class="info-fila">
+            <span class="info-label">Usuario activo</span>
+            <span class="info-valor">{{ usuarioActual }}</span>
+          </div>
+        </div>
+
+        <!-- ══ SESIÓN ══ -->
+        <div class="seccion-titulo">
+          <ion-icon name="log-out-outline"></ion-icon>
+          <span>Sesión</span>
+        </div>
+
+        <div class="cfg-card">
+          <button class="btn-cfg btn-danger" (click)="cerrarSesion()">
+            <ion-icon name="log-out-outline"></ion-icon>
+            Cerrar sesión
+          </button>
+        </div>
+
+        <div style="height:40px;"></div>
+      </div>
+    </div>
+  </div>
+</ion-content>
