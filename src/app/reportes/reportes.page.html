@@ -89,33 +89,45 @@
               <span>Cuadre en Efectivo</span>
             </div>
 
-            <div class="det-fila">
+            <!-- Ventas en efectivo — colapsable -->
+            <div class="det-fila" style="cursor:pointer" (click)="mostrarSubVentas = !mostrarSubVentas">
               <span class="det-fila-label"><ion-icon name="cart-outline"></ion-icon>Ventas en efectivo</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.efectivo_ventas) + n(cierreDetalle.cheques_ventas) | number:'1.2-2' }}</span>
+              <span style="display:flex;align-items:center;gap:8px">
+                <span class="det-fila-val">${{ n(cierreDetalle.efectivo_ventas) + n(cierreDetalle.cheques_ventas) | number:'1.2-2' }}</span>
+                <ion-icon [name]="mostrarSubVentas ? 'chevron-up-outline' : 'chevron-down-outline'" style="font-size:14px;color:#AAA"></ion-icon>
+              </span>
             </div>
-            <div class="det-fila det-sub-fila">
-              <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Efectivo</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.efectivo_ventas) | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila det-sub-fila">
-              <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Cheques</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.cheques_ventas) | number:'1.2-2' }}</span>
-            </div>
+            <ng-container *ngIf="mostrarSubVentas">
+              <div class="det-fila det-sub-fila">
+                <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Efectivo</span>
+                <span class="det-fila-val">${{ n(cierreDetalle.efectivo_ventas) | number:'1.2-2' }}</span>
+              </div>
+              <div class="det-fila det-sub-fila">
+                <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Cheques</span>
+                <span class="det-fila-val">${{ n(cierreDetalle.cheques_ventas) | number:'1.2-2' }}</span>
+              </div>
+            </ng-container>
 
             <div class="det-separador"></div>
 
-            <div class="det-fila">
+            <!-- Cobros en efectivo — colapsable -->
+            <div class="det-fila" style="cursor:pointer" (click)="mostrarSubCobros = !mostrarSubCobros">
               <span class="det-fila-label"><ion-icon name="return-down-back-outline"></ion-icon>Cobros en efectivo</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.abonos_efectivo) + n(cierreDetalle.abonos_cheques) | number:'1.2-2' }}</span>
+              <span style="display:flex;align-items:center;gap:8px">
+                <span class="det-fila-val">${{ n(cierreDetalle.abonos_efectivo) + n(cierreDetalle.abonos_cheques) | number:'1.2-2' }}</span>
+                <ion-icon [name]="mostrarSubCobros ? 'chevron-up-outline' : 'chevron-down-outline'" style="font-size:14px;color:#AAA"></ion-icon>
+              </span>
             </div>
-            <div class="det-fila det-sub-fila">
-              <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Efectivo</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.abonos_efectivo) | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila det-sub-fila">
-              <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Cheques</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.abonos_cheques) | number:'1.2-2' }}</span>
-            </div>
+            <ng-container *ngIf="mostrarSubCobros">
+              <div class="det-fila det-sub-fila">
+                <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Efectivo</span>
+                <span class="det-fila-val">${{ n(cierreDetalle.abonos_efectivo) | number:'1.2-2' }}</span>
+              </div>
+              <div class="det-fila det-sub-fila">
+                <span class="det-fila-label"><ion-icon name="remove-outline"></ion-icon>Cheques</span>
+                <span class="det-fila-val">${{ n(cierreDetalle.abonos_cheques) | number:'1.2-2' }}</span>
+              </div>
+            </ng-container>
 
             <div class="det-separador"></div>
 
@@ -202,7 +214,7 @@
           <div class="det-total-card">
             <p class="det-total-label">TOTAL GENERAL</p>
             <p class="det-total-val">${{ totalGeneral(cierreDetalle) | number:'1.2-2' }}</p>
-            <p class="det-total-sub">Efectivo contado + Transferencias contadas</p>
+            <p class="det-total-sub">Efectivo contado + Transferencias</p>
           </div>
 
           <!-- ══ CARD 4: CONTEO FÍSICO ══ -->
@@ -220,14 +232,18 @@
               <span class="det-fila-label"><ion-icon name="ellipse-outline"></ion-icon>Monedas</span>
               <span class="det-fila-val">${{ n(cierreDetalle.efectivo_monedas) | number:'1.2-2' }}</span>
             </div>
+            <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="document-outline"></ion-icon>Cheques</span>
+              <span class="det-fila-val">${{ n(cierreDetalle.total_cheques) | number:'1.2-2' }}</span>
+            </div>
             <div class="det-separador"></div>
             <div class="det-fila bold-fila">
               <span class="det-fila-label">Total efectivo contado</span>
-              <span class="det-fila-val">${{ n(cierreDetalle.efectivo_billetes) + n(cierreDetalle.efectivo_monedas) | number:'1.2-2' }}</span>
+              <span class="det-fila-val">${{ n(cierreDetalle.efectivo_billetes) + n(cierreDetalle.efectivo_monedas) + n(cierreDetalle.total_cheques) | number:'1.2-2' }}</span>
             </div>
             <div class="det-separador"></div>
             <div class="det-fila">
-              <span class="det-fila-label"><ion-icon name="phone-portrait-outline"></ion-icon>Transferencias contadas</span>
+              <span class="det-fila-label"><ion-icon name="phone-portrait-outline"></ion-icon>Transferencias</span>
               <span class="det-fila-val">${{ n(cierreDetalle.total_transferencias) | number:'1.2-2' }}</span>
             </div>
             <div class="det-separador"></div>

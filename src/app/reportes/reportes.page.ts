@@ -71,6 +71,10 @@ export class ReportesPage implements OnInit {
   cierreDetalle: CierreDetalle | null = null;
   cargandoDetalle = false;
 
+  // Colapsables
+  mostrarSubVentas = false;
+  mostrarSubCobros = false;
+
   constructor(public router: Router, private http: HttpClient, private authService: AuthService) {}
 
   ngOnInit() {
@@ -119,6 +123,8 @@ export class ReportesPage implements OnInit {
     this.cargandoDetalle = true;
     this.mostrarDetalle = true;
     this.cierreDetalle = null;
+    this.mostrarSubVentas = false;
+    this.mostrarSubCobros = false;
     this.http.get<CierreDetalle>(`${this.API}/cierres/${cierre.id}`, { headers: this.getHeaders() }).subscribe({
       next: (data) => { this.cierreDetalle = data; this.cargandoDetalle = false; },
       error: () => { this.cargandoDetalle = false; }
