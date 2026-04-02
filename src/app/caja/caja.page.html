@@ -348,7 +348,7 @@
       <div class="retencion-seccion" *ngIf="nuevoEgreso.beneficiario === 'Retencion'">
         <p class="retencion-titulo">
           <ion-icon name="shield-outline"></ion-icon>
-          Retención 2% — Órdenes
+          Retención {{ getPorcentajeRetencion() }}% — Órdenes
         </p>
 
         <!-- Input buscar orden -->
