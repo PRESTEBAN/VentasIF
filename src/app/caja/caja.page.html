@@ -149,6 +149,14 @@
                       <ion-icon [name]="getMetodoIcon(egreso.metodo_pago || '')"></ion-icon>
                       {{ getMetodoLabel(egreso.metodo_pago || '') }}
                     </span>
+                    <!-- Pills de órdenes para retención -->
+                    <ng-container *ngIf="esEgresoRetencion(egreso)">
+                      <span class="meta-pill pill-orden"
+                        *ngFor="let o of getOrdenesDeRetencion(egreso.detalle)">
+                        <ion-icon name="receipt-outline"></ion-icon>
+                        {{ o.orden }}<span *ngIf="o.cliente"> · {{ o.cliente }}</span>
+                      </span>
+                    </ng-container>
                   </div>
                 </div>
                 <span class="item-valor egreso-valor">${{ egreso.valor | number:'1.2-2' }}</span>

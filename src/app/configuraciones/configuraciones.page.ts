@@ -17,6 +17,7 @@ export interface AppPrefs {
   vibracionAlVender: boolean;
   tamanoFuenteImpresora: 'normal' | 'grande';
   mostrarPrecioMenorPrimero: boolean;
+  porcentajeRetencion: number;
 }
 
 const PREFS_DEFAULT: AppPrefs = {
@@ -28,6 +29,7 @@ const PREFS_DEFAULT: AppPrefs = {
   vibracionAlVender: true,
   tamanoFuenteImpresora: 'normal',
   mostrarPrecioMenorPrimero: false,
+  porcentajeRetencion: 2,
 };
 
 @Component({

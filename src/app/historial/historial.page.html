@@ -7,8 +7,7 @@
         [abierto]="menuAbierto"
         [paginaActiva]="'historial'"
         [usuarioActual]="usuarioActual"
-        (cerrar)="menuAbierto = false"
-      >
+        (cerrar)="menuAbierto = false">
       </app-menu-lateral>
 
       <div class="header-card">
@@ -18,14 +17,15 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
-        <div
-          class="delete-btn"
-          (click)="toggleModoEliminacion()"
-          [class.delete-btn-active]="modoEliminacion"
-        >
-          <ion-icon
-            [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"
-          ></ion-icon>
+        <div class="header-actions">
+          <!-- Botón buscar por orden -->
+          <div class="action-btn" (click)="abrirBusqueda()">
+            <ion-icon name="search-outline"></ion-icon>
+          </div>
+          <!-- Botón eliminar -->
+          <div class="action-btn delete-btn" (click)="toggleModoEliminacion()" [class.delete-btn-active]="modoEliminacion">
+            <ion-icon [name]="modoEliminacion ? 'close-outline' : 'trash-outline'"></ion-icon>
+          </div>
         </div>
       </div>
 
@@ -34,28 +34,22 @@
           <h1 class="page-title">Historial de ventas</h1>
         </div>
 
+        <!-- CALENDARIO (igual que caja) -->
         <div class="semana-selector">
           <button class="nav-btn" (click)="semanaAnterior()">
             <ion-icon name="chevron-back-outline"></ion-icon>
           </button>
           <div class="dias-scroll">
-            <div
-              class="dia-item"
-              *ngFor="let dia of semanaActual"
+            <div class="dia-item" *ngFor="let dia of semanaActual"
               [class.dia-activo]="esDiaSeleccionado(dia)"
               [class.dia-hoy]="esHoy(dia)"
-              (click)="seleccionarDia(dia)"
-            >
+              (click)="seleccionarDia(dia)">
               <span class="dia-mes">{{ dia | date:'MMM':'':'es' }}</span>
               <span class="dia-numero">{{ dia | date:'d' }}</span>
               <span class="dia-semana">{{ dia | date:'EEE':'':'es' | slice:0:3 | titlecase }}</span>
             </div>
           </div>
-          <button
-            class="nav-btn"
-            (click)="semanaSiguiente()"
-            [disabled]="esSemanaActual()"
-          >
+          <button class="nav-btn" (click)="semanaSiguiente()" [disabled]="esSemanaActual()">
             <ion-icon name="chevron-forward-outline"></ion-icon>
           </button>
         </div>
@@ -66,19 +60,10 @@
           <ion-icon name="chevron-down-outline"></ion-icon>
         </div>
 
-        <div
-          class="datepicker-overlay"
-          *ngIf="mostrarDatePicker"
-          (click)="cerrarDatePicker()"
-        >
+        <div class="datepicker-overlay" *ngIf="mostrarDatePicker" (click)="cerrarDatePicker()">
           <div class="datepicker-card" (click)="$event.stopPropagation()">
             <p class="dp-titulo">Seleccionar fecha</p>
-            <input
-              type="date"
-              class="dp-input"
-              [value]="fechaSeleccionada | date:'yyyy-MM-dd'"
-              (change)="onDatePickerChange($event)"
-            />
+            <input type="date" class="dp-input" [value]="fechaSeleccionada | date:'yyyy-MM-dd'" (change)="onDatePickerChange($event)" />
             <button class="dp-btn" (click)="cerrarDatePicker()">Cerrar</button>
           </div>
         </div>
@@ -88,11 +73,7 @@
             <ion-icon name="checkmark-circle-outline"></ion-icon>
             {{ ventasSeleccionadas.size }} seleccionada(s)
           </span>
-          <button
-            class="btn-eliminar-confirm"
-            (click)="confirmarEliminacion()"
-            [disabled]="ventasSeleccionadas.size === 0 || eliminando"
-          >
+          <button class="btn-eliminar-confirm" (click)="confirmarEliminacion()" [disabled]="ventasSeleccionadas.size === 0 || eliminando">
             <ion-spinner name="crescent" *ngIf="eliminando" style="width:16px;height:16px;margin-right:4px"></ion-spinner>
             <ion-icon name="trash-outline" *ngIf="!eliminando"></ion-icon>
             {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
@@ -111,37 +92,24 @@
             <p>No hay ventas para este día</p>
           </div>
 
-          <!-- ── VENTAS ── -->
-          <div
-            class="venta-card"
-            *ngFor="let venta of ventas"
+          <!-- VENTAS -->
+          <div class="venta-card" *ngFor="let venta of ventas"
             (click)="verVenta(venta)"
-            [class.venta-seleccionada]="estaSeleccionada(venta.id)"
-          >
+            [class.venta-seleccionada]="estaSeleccionada(venta.id)">
             <div class="venta-check" *ngIf="modoEliminacion">
-              <ion-icon
-                [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'"
-                [class.checked]="estaSeleccionada(venta.id)"
-              ></ion-icon>
+              <ion-icon [name]="estaSeleccionada(venta.id) ? 'checkmark-circle' : 'ellipse-outline'" [class.checked]="estaSeleccionada(venta.id)"></ion-icon>
             </div>
-
             <div class="venta-avatar">
               <ion-icon name="person-circle-outline"></ion-icon>
             </div>
-
             <div class="venta-info">
               <p class="venta-nombre">{{ venta.clienteNombre }} {{ venta.clienteApellido }}</p>
               <p class="venta-orden">#{{ venta.ordenId }}</p>
               <p class="venta-negocio">{{ venta.clienteNegocio || '—' }}</p>
               <p class="venta-cedula">{{ venta.clienteCedula }}</p>
             </div>
-
             <div class="venta-derecha">
-              <p class="venta-estado"
-                [class.estado-entregado]="venta.estado === 'Entregado'"
-                [class.estado-pendiente]="venta.estado === 'Pendiente'">
-                {{ venta.estado }}
-              </p>
+              <p class="venta-estado" [class.estado-entregado]="venta.estado === 'Entregado'" [class.estado-pendiente]="venta.estado === 'Pendiente'">{{ venta.estado }}</p>
               <p class="venta-total">${{ venta.total | number:'1.2-2' }}</p>
               <div class="pago-row">
                 <span class="pago-pill pago-cancelado" *ngIf="venta.saldoGenerado === 0">PAG</span>
@@ -152,11 +120,10 @@
                 <span class="metodo-nombre metodo-cheque-pill"        *ngIf="venta.formaPago === 'cheques'">Ch</span>
               </div>
             </div>
-
             <ion-icon name="chevron-forward-outline" class="venta-arrow" *ngIf="!modoEliminacion"></ion-icon>
           </div>
 
-          <!-- ── ABONOS ── -->
+          <!-- ABONOS -->
           <div class="seccion-abonos" *ngIf="abonos.length > 0">
             <p class="seccion-titulo">
               <ion-icon name="cash-outline"></ion-icon>
@@ -165,9 +132,7 @@
           </div>
 
           <div class="abono-card" *ngFor="let abono of abonos">
-            <div class="abono-avatar">
-              <ion-icon name="cash-outline"></ion-icon>
-            </div>
+            <div class="abono-avatar"><ion-icon name="cash-outline"></ion-icon></div>
             <div class="venta-info">
               <p class="venta-nombre">{{ abono.clienteNombre }}</p>
               <p class="venta-orden">Abono → Orden #{{ abono.ventaId }}</p>
@@ -181,54 +146,62 @@
             </div>
           </div>
 
-          <!-- ── RESUMEN DEL DÍA ── -->
+          <!-- RESUMEN -->
           <div class="resumen-dia" *ngIf="ventas.length > 0 || abonos.length > 0">
-
-            <!-- Ventas al contado (efectivo + cheques) -->
             <div class="resumen-fila" *ngIf="totalVentasContado > 0">
-              <span class="resumen-label">
-                <ion-icon name="cash-outline" class="resumen-icon"></ion-icon>
-                Ventas al contado
-              </span>
+              <span class="resumen-label"><ion-icon name="cash-outline" class="resumen-icon"></ion-icon>Ventas al contado</span>
               <span class="resumen-valor">${{ totalVentasContado | number:'1.2-2' }}</span>
             </div>
-
-            <!-- Ventas con transferencia -->
             <div class="resumen-fila" *ngIf="totalVentasTransferencia > 0">
-              <span class="resumen-label">
-                <ion-icon name="phone-portrait-outline" class="resumen-icon"></ion-icon>
-                Ventas con transferencia
-              </span>
+              <span class="resumen-label"><ion-icon name="phone-portrait-outline" class="resumen-icon"></ion-icon>Ventas con transferencia</span>
               <span class="resumen-valor">${{ totalVentasTransferencia | number:'1.2-2' }}</span>
             </div>
-
-            <!-- Cobros al contado (abonos efectivo + cheques) -->
             <div class="resumen-fila" *ngIf="totalAbonosContado > 0">
-              <span class="resumen-label">
-                <ion-icon name="cash-outline" class="resumen-icon"></ion-icon>
-                Cobros al contado
-              </span>
+              <span class="resumen-label"><ion-icon name="cash-outline" class="resumen-icon"></ion-icon>Cobros al contado</span>
               <span class="resumen-valor">${{ totalAbonosContado | number:'1.2-2' }}</span>
             </div>
-
-            <!-- Cobros con transferencia (abonos transferencia) -->
             <div class="resumen-fila" *ngIf="totalAbonosTransferencia > 0">
-              <span class="resumen-label">
-                <ion-icon name="phone-portrait-outline" class="resumen-icon"></ion-icon>
-                Cobros con transferencia
-              </span>
+              <span class="resumen-label"><ion-icon name="phone-portrait-outline" class="resumen-icon"></ion-icon>Cobros con transferencia</span>
               <span class="resumen-valor">${{ totalAbonosTransferencia | number:'1.2-2' }}</span>
             </div>
-
-            <!-- Total cobrado -->
             <div class="resumen-total">
               <span class="resumen-total-lbl">Total cobrado</span>
               <span class="resumen-total-val">${{ totalCobradoDia | number:'1.2-2' }}</span>
             </div>
-
           </div>
 
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL BUSCAR POR ORDEN -->
+  <div class="modal-overlay" *ngIf="mostrarBusqueda" (click)="cerrarBusqueda()">
+    <div class="busqueda-card" (click)="$event.stopPropagation()">
+      <div class="busqueda-header">
+        <div class="busqueda-icono"><ion-icon name="search-outline"></ion-icon></div>
+        <h2 class="busqueda-titulo">Buscar por orden</h2>
+      </div>
+      <div class="busqueda-input-wrap">
+        <span class="busqueda-prefix">#</span>
+        <input
+          type="number"
+          [(ngModel)]="inputBusquedaOrden"
+          placeholder="Número de orden"
+          (keyup.enter)="buscarPorOrden()"
+          autofocus />
+      </div>
+      <p class="busqueda-error" *ngIf="errorBusqueda">
+        <ion-icon name="warning-outline"></ion-icon>
+        {{ errorBusqueda }}
+      </p>
+      <div class="busqueda-btns">
+        <button class="btn-cancelar-busqueda" (click)="cerrarBusqueda()">Cancelar</button>
+        <button class="btn-buscar" (click)="buscarPorOrden()" [disabled]="buscandoOrden">
+          <ion-spinner name="crescent" *ngIf="buscandoOrden" style="width:16px;height:16px;margin-right:6px;"></ion-spinner>
+          <ion-icon name="search-outline" *ngIf="!buscandoOrden"></ion-icon>
+          {{ buscandoOrden ? 'Buscando...' : 'Buscar' }}
+        </button>
       </div>
     </div>
   </div>
@@ -240,8 +213,7 @@
     [breakpoints]="[0, 1]"
     [initialBreakpoint]="1"
     [handle]="false"
-    [canDismiss]="puedesCerrarDetalle"
-  >
+    [canDismiss]="puedesCerrarDetalle">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -263,20 +235,15 @@
           <div class="detalle-avatar">
             <ion-icon name="person-circle-outline"></ion-icon>
           </div>
-
-          <h2 class="detalle-nombre">
-            {{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}
-          </h2>
+          <h2 class="detalle-nombre">{{ ventaDetalle.clienteNombre }} {{ ventaDetalle.clienteApellido }}</h2>
           <p class="detalle-orden">#{{ ventaDetalle.ordenId }}</p>
           <p class="detalle-negocio">{{ ventaDetalle.clienteNegocio || '—' }}</p>
           <p class="detalle-cedula">{{ ventaDetalle.clienteCedula }}</p>
           <p class="detalle-tipo">{{ ventaDetalle.tipoCliente || 'Negocio' }}</p>
-
           <div class="detalle-pago-row">
             <span class="pago-label">Tipo de pago:</span>
             <span class="pago-badge">{{ ventaDetalle.formaPago }}</span>
           </div>
-
           <table class="detalle-tabla">
             <thead>
               <tr>
@@ -296,26 +263,12 @@
               </tr>
             </tbody>
           </table>
-
           <div class="detalle-totales">
-            <div class="total-fila">
-              <span class="total-lbl">SubTotal:</span>
-              <span class="total-val">$ {{ ventaDetalle.subtotal | number:'1.2-2' }}</span>
-            </div>
-            <div class="total-fila">
-              <span class="total-lbl">desc:</span>
-              <span class="total-val">$ {{ ventaDetalle.descuento | number:'1.2-2' }}</span>
-            </div>
-            <div class="total-fila">
-              <span class="total-lbl">Iva:</span>
-              <span class="total-val">$ {{ ventaDetalle.iva | number:'1.2-2' }}</span>
-            </div>
-            <div class="total-fila total-final">
-              <span class="total-lbl">Total:</span>
-              <span class="total-val">$ {{ ventaDetalle.total | number:'1.2-2' }}</span>
-            </div>
+            <div class="total-fila"><span class="total-lbl">SubTotal:</span><span class="total-val">$ {{ ventaDetalle.subtotal | number:'1.2-2' }}</span></div>
+            <div class="total-fila"><span class="total-lbl">desc:</span><span class="total-val">$ {{ ventaDetalle.descuento | number:'1.2-2' }}</span></div>
+            <div class="total-fila"><span class="total-lbl">Iva:</span><span class="total-val">$ {{ ventaDetalle.iva | number:'1.2-2' }}</span></div>
+            <div class="total-fila total-final"><span class="total-lbl">Total:</span><span class="total-val">$ {{ ventaDetalle.total | number:'1.2-2' }}</span></div>
           </div>
-
           <div class="reimprimir-container">
             <button class="btn-reimprimir" (click)="reimprimirOrden()" [disabled]="imprimiendo">
               <ion-spinner name="crescent" *ngIf="imprimiendo" style="width:18px;height:18px"></ion-spinner>

@@ -17,7 +17,9 @@
         <div class="header-logo">
           <img src="assets/LOGO_IF.jpg" alt="Logo" />
         </div>
-        <div style="width:36px"></div>
+        <div class="reload-btn" (click)="cargarCierres()">
+          <ion-icon name="refresh-outline"></ion-icon>
+        </div>
       </div>
 
       <div class="main-content">
@@ -44,10 +46,7 @@
               <span class="grupo-count">{{ grupo.cierres.length }} cierre(s)</span>
             </div>
 
-            <div
-              class="cierre-card"
-              *ngFor="let cierre of grupo.cierres"
-              (click)="verDetalle(cierre)">
+            <div class="cierre-card" *ngFor="let cierre of grupo.cierres" (click)="verDetalle(cierre)">
               <div class="cierre-icono">
                 <ion-icon name="lock-closed-outline"></ion-icon>
               </div>
@@ -67,7 +66,7 @@
     </div>
   </div>
 
-  <!-- MODAL DETALLE CIERRE -->
+  <!-- ══ MODAL DETALLE CIERRE ══ -->
   <ion-modal
     [isOpen]="mostrarDetalle"
     (didDismiss)="cerrarDetalle()"
@@ -107,98 +106,119 @@
             </div>
           </div>
 
-          <!-- VENTAS -->
+          <!-- ══ INGRESOS DEL PERÍODO (igual que tab3) ══ -->
           <div class="det-seccion">
-            <p class="det-seccion-titulo">
-              <ion-icon name="cart-outline"></ion-icon> Ventas
-            </p>
-            <div class="det-fila">
-              <span>Órdenes realizadas</span>
-              <span>{{ cierreDetalle.total_ordenes }}</span>
+            <div class="det-seccion-titulo">
+              <div class="det-icono verde"><ion-icon name="trending-up-outline"></ion-icon></div>
+              <span>Ingresos del período</span>
+              <span class="det-badge">{{ cierreDetalle.total_ordenes }} ventas</span>
+            </div>
+
+            <div class="det-fila verde-row" *ngIf="tieneIngresosVarios(cierreDetalle)">
+              <span class="det-fila-label"><ion-icon name="trending-up-outline"></ion-icon>Ingresos varios</span>
+              <span class="det-fila-val verde-txt">+${{ cierreDetalle.ingresos_adicionales | number:'1.2-2' }}</span>
             </div>
             <div class="det-fila">
-              <span>Efectivo</span>
-              <span>${{ cierreDetalle.efectivo_ventas | number:'1.2-2' }}</span>
+              <span class="det-fila-label"><ion-icon name="cash-outline"></ion-icon>Efectivo</span>
+              <span class="det-fila-val">${{ cierreDetalle.efectivo_ventas | number:'1.2-2' }}</span>
             </div>
             <div class="det-fila">
-              <span>Transferencias</span>
-              <span>${{ cierreDetalle.transferencia_ventas | number:'1.2-2' }}</span>
+              <span class="det-fila-label"><ion-icon name="swap-horizontal-outline"></ion-icon>Transferencias</span>
+              <span class="det-fila-val">${{ cierreDetalle.transferencia_ventas | number:'1.2-2' }}</span>
             </div>
             <div class="det-fila">
-              <span>Cheques</span>
-              <span>${{ cierreDetalle.cheques_ventas | number:'1.2-2' }}</span>
+              <span class="det-fila-label"><ion-icon name="document-text-outline"></ion-icon>Cheques</span>
+              <span class="det-fila-val">${{ cierreDetalle.cheques_ventas | number:'1.2-2' }}</span>
             </div>
-            <div class="det-fila det-fila-dest">
-              <span>Créditos (pendientes)</span>
-              <span>${{ cierreDetalle.creditos_ventas | number:'1.2-2' }}</span>
+            <div class="det-fila rojo-row">
+              <span class="det-fila-label"><ion-icon name="time-outline"></ion-icon>Pendientes (crédito)</span>
+              <span class="det-fila-val rojo-txt">${{ cierreDetalle.creditos_ventas | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-fila azul-row" *ngIf="tieneAbonos(cierreDetalle)">
+              <span class="det-fila-label"><ion-icon name="return-down-back-outline"></ion-icon>Cobro a clientes</span>
+              <span class="det-fila-val azul-txt">+${{ cierreDetalle.abonos_total | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-separador"></div>
+            <div class="det-fila bold-fila">
+              <span class="det-fila-label">Total Ingresos</span>
+              <span class="det-fila-val verde-txt">${{ getTotalIngresos(cierreDetalle) | number:'1.2-2' }}</span>
             </div>
           </div>
 
-          <!-- ABONOS E INGRESOS -->
+          <!-- ══ EGRESOS ══ -->
           <div class="det-seccion">
-            <p class="det-seccion-titulo">
-              <ion-icon name="cash-outline"></ion-icon> Ingresos adicionales
-            </p>
-            <div class="det-fila">
-              <span>Abonos recibidos</span>
-              <span>${{ cierreDetalle.abonos_total | number:'1.2-2' }}</span>
+            <div class="det-seccion-titulo">
+              <div class="det-icono rojo"><ion-icon name="trending-down-outline"></ion-icon></div>
+              <span>Egresos del período</span>
+            </div>
+            <div class="det-fila bold-fila">
+              <span class="det-fila-label">Total Egresos</span>
+              <span class="det-fila-val rojo-txt">${{ cierreDetalle.egresos_total | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- ══ TOTAL EN CAJA ══ -->
+          <div class="det-total-card">
+            <p class="det-total-label">TOTAL EN CAJA</p>
+            <p class="det-total-val">${{ cierreDetalle.saldo_neto | number:'1.2-2' }}</p>
+          </div>
+
+          <!-- ══ CONTEO FÍSICO ══ -->
+          <div class="det-seccion">
+            <div class="det-seccion-titulo">
+              <div class="det-icono azul"><ion-icon name="calculator-outline"></ion-icon></div>
+              <span>Conteo físico</span>
             </div>
             <div class="det-fila">
-              <span>Ingresos varios</span>
-              <span>${{ cierreDetalle.ingresos_adicionales | number:'1.2-2' }}</span>
+              <span class="det-fila-label"><ion-icon name="wallet-outline"></ion-icon>Billetes</span>
+              <span class="det-fila-val">${{ cierreDetalle.efectivo_billetes | number:'1.2-2' }}</span>
             </div>
             <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="ellipse-outline"></ion-icon>Monedas</span>
+              <span class="det-fila-val">${{ cierreDetalle.efectivo_monedas | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="phone-portrait-outline"></ion-icon>Transferencias</span>
+              <span class="det-fila-val">${{ cierreDetalle.total_transferencias | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="document-text-outline"></ion-icon>Cheques</span>
+              <span class="det-fila-val">${{ cierreDetalle.total_cheques | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-separador"></div>
+            <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="time-outline"></ion-icon>Créditos (pendientes)</span>
+              <span class="det-fila-val rojo-txt">${{ cierreDetalle.creditos_ventas | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-separador"></div>
+            <div class="det-fila bold-fila">
+              <span class="det-fila-label">Saldo neto</span>
+              <span class="det-fila-val azul-txt">${{ cierreDetalle.saldo_neto | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <!-- ══ FONDO INICIAL ══ -->
+          <div class="det-seccion">
+            <div class="det-seccion-titulo">
+              <div class="det-icono azul"><ion-icon name="cash-outline"></ion-icon></div>
               <span>Fondo inicial</span>
-              <span>${{ cierreDetalle.fondo_inicial | number:'1.2-2' }}</span>
+            </div>
+            <div class="det-fila">
+              <span class="det-fila-label"><ion-icon name="cash-outline"></ion-icon>Fondo al abrir caja</span>
+              <span class="det-fila-val">${{ cierreDetalle.fondo_inicial | number:'1.2-2' }}</span>
             </div>
           </div>
 
-          <!-- CONTEO FÍSICO -->
-          <div class="det-seccion">
-            <p class="det-seccion-titulo">
-              <ion-icon name="wallet-outline"></ion-icon> Conteo físico
-            </p>
-            <div class="det-fila">
-              <span>Billetes</span>
-              <span>${{ cierreDetalle.efectivo_billetes | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila">
-              <span>Monedas</span>
-              <span>${{ cierreDetalle.efectivo_monedas | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila">
-              <span>Total efectivo contado</span>
-              <span>${{ cierreDetalle.total_efectivo | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila">
-              <span>Transferencias contadas</span>
-              <span>${{ cierreDetalle.total_transferencias | number:'1.2-2' }}</span>
-            </div>
-            <div class="det-fila">
-              <span>Cheques contados</span>
-              <span>${{ cierreDetalle.total_cheques | number:'1.2-2' }}</span>
-            </div>
-          </div>
-
-          <!-- EGRESOS -->
-          <div class="det-seccion">
-            <p class="det-seccion-titulo">
-              <ion-icon name="arrow-down-circle-outline"></ion-icon> Egresos
-            </p>
-            <div class="det-fila det-fila-egreso">
-              <span>Total egresos</span>
-              <span>-${{ cierreDetalle.egresos_total | number:'1.2-2' }}</span>
-            </div>
-          </div>
-
-          <!-- NOTAS -->
+          <!-- ══ NOTAS ══ -->
           <div class="det-seccion" *ngIf="cierreDetalle.notas">
-            <p class="det-seccion-titulo">
-              <ion-icon name="document-text-outline"></ion-icon> Notas
-            </p>
+            <div class="det-seccion-titulo">
+              <div class="det-icono azul"><ion-icon name="document-text-outline"></ion-icon></div>
+              <span>Notas</span>
+            </div>
             <p class="det-notas">{{ cierreDetalle.notas }}</p>
           </div>
 
+          <div style="height:30px;"></div>
         </div>
       </ion-content>
     </ng-template>

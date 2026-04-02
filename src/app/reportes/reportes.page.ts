@@ -32,11 +32,14 @@ export interface CierreDetalle extends CierreResumen {
   creditos_ventas: number;
   egresos_total: number;
   abonos_total: number;
+  abonos_efectivo: number;
+  abonos_transferencia: number;
+  abonos_cheques: number;
   ingresos_adicionales: number;
 }
 
 export interface GrupoCierres {
-  etiqueta: string;     // "Marzo 2026"
+  etiqueta: string;
   cierres: CierreResumen[];
 }
 
@@ -73,8 +76,7 @@ export class ReportesPage implements OnInit {
   ionViewWillEnter() { this.cargarCierres(); }
 
   private getHeaders(): HttpHeaders {
-    const token = this.authService.getToken();
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return new HttpHeaders({ Authorization: `Bearer ${this.authService.getToken()}` });
   }
 
   cargarCierres() {
@@ -82,10 +84,9 @@ export class ReportesPage implements OnInit {
     this.http.get<CierreResumen[]>(`${this.API}/cierres`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => {
-          // Ordenar del más antiguo al más reciente
           const ordenados = (data || [])
             .filter(c => c.estado === 'cerrado')
-            .sort((a, b) => new Date(a.fecha_cierre).getTime() - new Date(b.fecha_cierre).getTime());
+            .sort((a, b) => new Date(b.fecha_cierre).getTime() - new Date(a.fecha_cierre).getTime());
           this.grupos = this.agruparPorMes(ordenados);
           this.cargando = false;
         },
@@ -97,14 +98,18 @@ export class ReportesPage implements OnInit {
     const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const mapa = new Map<string, CierreResumen[]>();
-
     cierres.forEach(c => {
-      const fecha = new Date(c.fecha_cierre);
-      const clave = `${meses[fecha.getMonth()]} ${fecha.getFullYear()}`;
+      // fecha_cierre viene como "YYYY-MM-DD" — parsear directamente sin Date()
+      const fechaStr = (c.fecha_cierre || '').split('T')[0];
+      const partes = fechaStr.split('-');
+      if (partes.length !== 3) return;
+      const anio = parseInt(partes[0], 10);
+      const mes  = parseInt(partes[1], 10) - 1; // 0-indexed
+      if (isNaN(anio) || isNaN(mes) || mes < 0 || mes > 11) return;
+      const clave = `${meses[mes]} ${anio}`;
       if (!mapa.has(clave)) mapa.set(clave, []);
       mapa.get(clave)!.push(c);
     });
-
     return Array.from(mapa.entries()).map(([etiqueta, cs]) => ({ etiqueta, cierres: cs }));
   }
 
@@ -112,7 +117,6 @@ export class ReportesPage implements OnInit {
     this.cargandoDetalle = true;
     this.mostrarDetalle = true;
     this.cierreDetalle = null;
-
     this.http.get<CierreDetalle>(`${this.API}/cierres/${cierre.id}`, { headers: this.getHeaders() })
       .subscribe({
         next: (data) => { this.cierreDetalle = data; this.cargandoDetalle = false; },
@@ -120,21 +124,65 @@ export class ReportesPage implements OnInit {
       });
   }
 
-  cerrarDetalle() {
-    this.mostrarDetalle = false;
-    this.cierreDetalle = null;
-  }
+  cerrarDetalle() { this.mostrarDetalle = false; this.cierreDetalle = null; }
 
+  // ── Fecha sin zona horaria (viene como YYYY-MM-DD del backend) ──
   formatearFecha(fecha: string): string {
     if (!fecha) return '—';
-    const f = new Date(fecha);
-    return `${f.getDate().toString().padStart(2,'0')}/${(f.getMonth()+1).toString().padStart(2,'0')}/${f.getFullYear()}`;
+    // Parsear directamente para evitar conversión UTC→local
+    const partes = fecha.split('T')[0].split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+    return fecha;
   }
 
+  // ── Hora en zona horaria Ecuador (UTC-5) ──
   formatearHora(fecha: string): string {
     if (!fecha) return '—';
-    const f = new Date(fecha);
-    return `${f.getHours().toString().padStart(2,'0')}:${f.getMinutes().toString().padStart(2,'0')}`;
+    try {
+      const f = new Date(fecha);
+      return f.toLocaleTimeString('es-EC', {
+        timeZone: 'America/Guayaquil',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+    } catch {
+      return '—';
+    }
+  }
+
+  // ── Total ventas en efectivo (ventas + abonos + ingresos adicionales) ──
+  getTotalIngresosEfectivo(c: CierreDetalle): number {
+    return (parseFloat(c.efectivo_ventas as any) || 0)
+         + (parseFloat(c.abonos_efectivo as any) || 0)
+         + (parseFloat(c.ingresos_adicionales as any) || 0);
+  }
+
+  getTotalIngresosTransferencia(c: CierreDetalle): number {
+    return (parseFloat(c.transferencia_ventas as any) || 0)
+         + (parseFloat(c.abonos_transferencia as any) || 0);
+  }
+
+  getTotalIngresosCheques(c: CierreDetalle): number {
+    return (parseFloat(c.cheques_ventas as any) || 0)
+         + (parseFloat(c.abonos_cheques as any) || 0);
+  }
+
+  getTotalIngresos(c: CierreDetalle): number {
+    return (parseFloat(c.efectivo_ventas as any) || 0)
+         + (parseFloat(c.transferencia_ventas as any) || 0)
+         + (parseFloat(c.cheques_ventas as any) || 0)
+         + (parseFloat(c.abonos_total as any) || 0);
+  }
+
+  tieneIngresosVarios(c: CierreDetalle): boolean {
+    return (parseFloat(c.ingresos_adicionales as any) || 0) > 0;
+  }
+
+  tieneAbonos(c: CierreDetalle): boolean {
+    return (parseFloat(c.abonos_total as any) || 0) > 0;
   }
 
   abrirMenu() { this.menuAbierto = true; }

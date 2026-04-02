@@ -169,6 +169,20 @@
             </div>
           </div>
 
+          <div class="cfg-divider"></div>
+
+          <!-- Porcentaje retención -->
+          <div class="pref-fila">
+            <div class="pref-info">
+              <p class="pref-nombre">Porcentaje de retención (%)</p>
+              <p class="pref-desc">Se aplica al calcular la retención de órdenes en egresos</p>
+            </div>
+            <div class="pref-input-wrap">
+              <input type="number" class="pref-input" [(ngModel)]="prefs.porcentajeRetencion" min="0" max="100" placeholder="2" />
+              <span class="pref-suffix">%</span>
+            </div>
+          </div>
+
         </div>
 
         <!-- ══ PREFERENCIAS DE IMPRESORA ══ -->

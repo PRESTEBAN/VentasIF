@@ -50,7 +50,7 @@ export interface Usuario {
 }
 
 const METODOS_PAGO = ['efectivo', 'transferencia', 'cheques'];
-const PORCENTAJE_RETENCION = 2;
+
 
 @Component({
   selector: 'app-caja',
@@ -220,10 +220,25 @@ export class CajaPage implements OnInit, OnDestroy {
       next: (data) => { this.egresos = data; this.cargando = false; },
       error: () => { if (!silent) this.egresos = []; this.cargando = false; }
     });
-    if (this.esDiaDeHoy) {
+        if (this.esDiaDeHoy) {
       this.http.get<any>(`${this.API}/ingresos`, { headers: this.getHeaders() }).subscribe({
-        next: (data) => { this.fondoInicial = parseFloat(data.fondo_inicial) || 40; this.fondoModificado = data.fondo_modificado || false; this.cierreActivoId = data.cierre_id || 0; this.ingresos = data.ingresos || []; },
-        error: () => { if (!silent) this.ingresos = []; }
+        next: (data) => {
+          this.fondoInicial = parseFloat(data.fondo_inicial) || 40;
+          this.fondoModificado = data.fondo_modificado || false;
+          this.cierreActivoId = data.cierre_id || 0;
+          this.ingresos = data.ingresos || [];
+        },
+        error: () => {
+          this.http.get<any>(`${this.API}/ingresos/fecha/${fechaStr}`, { headers: this.getHeaders() }).subscribe({
+            next: (data) => {
+              this.fondoInicial = parseFloat(data.fondo_inicial) || 40;
+              this.fondoModificado = data.fondo_modificado || false;
+              this.cierreActivoId = 0;
+              this.ingresos = data.ingresos || [];
+            },
+            error: () => { if (!silent) this.ingresos = []; }
+          });
+        }
       });
     } else {
       this.http.get<any>(`${this.API}/ingresos/fecha/${fechaStr}`, { headers: this.getHeaders() }).subscribe({
@@ -265,7 +280,8 @@ export class CajaPage implements OnInit, OnDestroy {
     this.http.get<any>(`${this.API}/ventas-ruta/${num}`, { headers: this.getHeaders() }).subscribe({
       next: (data) => {
         const total = parseFloat(data.total) || 0;
-        const retencion = parseFloat(((total * PORCENTAJE_RETENCION) / 100).toFixed(2));
+        const pct = this.getPorcentajeRetencion();
+        const retencion = parseFloat(((total * pct) / 100).toFixed(2));
         const clienteNombre = data.cliente || `${data.clienteNombre || ''} ${data.clienteApellido || ''}`.trim();
         this.ordenesRetencion = this.ordenesRetencion.map(o =>
           o.numero === num ? { ...o, total, retencion, clienteNombre, buscando: false, error: undefined } : o
@@ -296,11 +312,16 @@ export class CajaPage implements OnInit, OnDestroy {
   }
 
   private sincronizarDetalleRetencion() {
-    if (this.nuevoEgreso.detalle.trim()) return; 
+    if (this.nuevoEgreso.detalle.trim()) return;
 
-    const nums = this.ordenesRetencion.filter(o => !o.error).map(o => `#${o.numero}`).join(', ');
-    if (nums) {
-      this.nuevoEgreso.detalle = `Retención ${PORCENTAJE_RETENCION}% · Órdenes ${nums}`;
+    const pct = this.getPorcentajeRetencion();
+    const partes = this.ordenesRetencion
+      .filter(o => !o.error)
+      .map(o => `#${o.numero}${o.clienteNombre ? ' ' + o.clienteNombre : ''}`)
+      .join(', ');
+
+    if (partes) {
+      this.nuevoEgreso.detalle = `Retención ${pct}% · Órdenes ${partes}`;
     }
   }
 
@@ -465,6 +486,32 @@ export class CajaPage implements OnInit, OnDestroy {
       },
       error: () => { this.borrando = false; this.cancelarBorrar(); }
     });
+  }
+
+  private getPorcentajeRetencion(): number {
+    try {
+      const raw = localStorage.getItem('ventasif_prefs');
+      if (raw) {
+        const prefs = JSON.parse(raw);
+        if (prefs.porcentajeRetencion !== undefined) return prefs.porcentajeRetencion;
+      }
+    } catch { }
+    return 2; // valor por defecto si no hay preferencia guardada
+  }
+
+  esEgresoRetencion(egreso: Egreso): boolean {
+    return egreso.beneficiario === 'Retencion';
+  }
+
+  getOrdenesDeRetencion(detalle: string): { orden: string; cliente: string }[] {
+    const partes = detalle.split(',').map(p => p.trim());
+    return partes
+      .map(p => {
+        const match = p.match(/(#\d+)\s*(.*)/);
+        if (!match) return null;
+        return { orden: match[1], cliente: match[2].trim() };
+      })
+      .filter(Boolean) as { orden: string; cliente: string }[];
   }
 
   // ---- VER DETALLE -------------------------------------------------
