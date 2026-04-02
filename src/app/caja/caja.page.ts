@@ -488,7 +488,7 @@ export class CajaPage implements OnInit, OnDestroy {
     });
   }
 
-  private getPorcentajeRetencion(): number {
+  public getPorcentajeRetencion(): number {
     try {
       const raw = localStorage.getItem('ventasif_prefs');
       if (raw) {
