@@ -12,7 +12,6 @@
 
 .content-wrapper { position: relative; z-index: 2; width: 100%; }
 
-/* HEADER */
 .header-card {
   background: rgb(246,246,246); width: 100%; height: 11vh;
   display: flex; align-items: center; justify-content: space-between;
@@ -35,7 +34,6 @@
   &:active ion-icon { opacity: 0.5; }
 }
 
-/* MAIN */
 .main-content {
   background: #FDF6EE; min-height: calc(100vh - 11vh);
   padding: 0 14px 40px 14px; position: relative; z-index: 4;
@@ -57,18 +55,15 @@
   p { color: #BBB; font-size: 15px; margin: 0; }
 }
 
-/* GRUPO MES */
 .grupo-mes { margin-bottom: 20px; }
 
 .grupo-header {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 4px 8px 4px;
+  display: flex; align-items: center; gap: 8px; padding: 10px 4px 8px 4px;
   ion-icon { font-size: 16px; color: #590F23; }
   span { font-size: 14px; font-weight: 800; color: #2D1B0E; }
   .grupo-count { margin-left: auto; font-size: 11px; color: #AAA; font-weight: 500; }
 }
 
-/* CIERRE CARD LISTA */
 .cierre-card {
   background: #fff; border-radius: 14px; padding: 12px;
   display: flex; align-items: center; gap: 10px;
@@ -89,13 +84,12 @@
 .cierre-info { flex: 1; p { margin: 0; } }
 .cierre-titulo { font-size: 14px; font-weight: 700; color: #2D1B0E; }
 .cierre-fecha  { font-size: 12px; color: #888; margin-top: 2px !important; }
-
 .cierre-derecha { text-align: right; flex-shrink: 0; p { margin: 0; } }
 .cierre-saldo { font-size: 14px; font-weight: 800; color: #590F23; }
 .cierre-label { font-size: 10px; color: #AAA; margin-top: 1px !important; }
 .cierre-arrow { font-size: 16px; color: #CCC; flex-shrink: 0; }
 
-/* ══ MODAL DETALLE ══ */
+/* MODAL */
 .detalle-modal-content { --background: #FDF6EE; }
 
 .loading-detalle {
@@ -105,22 +99,21 @@
 
 .detalle-body { padding: 0 0 40px 0; }
 
-/* HERO igual que tab3 */
+/* HERO */
 .det-hero {
   background: linear-gradient(135deg, #590F23, #8B2020);
-  padding: 28px 24px 24px 24px; text-align: center; margin-bottom: 0;
+  padding: 24px 24px 20px 24px; text-align: center; margin-bottom: 0;
 }
 .det-hero-num  { font-size: 22px; font-weight: 900; color: #fff; margin: 0 0 4px 0; }
 .det-hero-fecha { font-size: 14px; color: rgba(255,255,255,0.8); margin: 0 0 2px 0; }
-.det-hero-hora  { font-size: 12px; color: rgba(255,255,255,0.6); margin: 0 0 16px 0; }
-.det-hero-saldo {
-  display: inline-flex; flex-direction: column; align-items: center;
-  background: rgba(255,255,255,0.15); border-radius: 12px; padding: 10px 24px;
+.det-hero-hora  { font-size: 12px; color: rgba(255,255,255,0.6); margin: 0 0 12px 0; }
+.det-hero-sub { display: flex; justify-content: center; }
+.det-badge-hero {
+  background: rgba(255,255,255,0.2); border-radius: 20px; padding: 4px 14px;
+  font-size: 12px; font-weight: 700; color: #fff;
 }
-.det-saldo-lbl { font-size: 11px; color: rgba(255,255,255,0.7); font-weight: 600; text-transform: uppercase; }
-.det-saldo-val { font-size: 28px; font-weight: 900; color: #fff; }
 
-/* SECCIÓN — igual estructura que cierre-card del tab3 */
+/* SECCIONES */
 .det-seccion {
   background: #fff; border-radius: 16px;
   padding: 14px 16px; margin: 10px 14px 0 14px;
@@ -142,23 +135,22 @@
   &.azul  { background: linear-gradient(135deg, #590F23, #8B2020); }
 }
 
-.det-badge {
-  background: #F0F9F0; border: 1px solid #A5D6A7;
-  color: #2E7D32; font-size: 11px; font-weight: 700;
-  padding: 3px 10px; border-radius: 20px; flex-shrink: 0;
-}
-
-/* Filas — igual que tab3 */
 .det-fila {
   display: flex; justify-content: space-between; align-items: center;
   padding: 7px 0; border-bottom: 1px solid #F5EDE0;
   &:last-child { border-bottom: none; }
 }
 
+.det-sub-fila {
+  padding: 4px 0 4px 14px;
+  .det-fila-label { color: #BBB; font-size: 11px; }
+  .det-fila-val { font-size: 11px; color: #999; font-weight: 500; }
+}
+
 .det-fila-label {
   display: flex; align-items: center; gap: 6px;
   font-size: 13px; color: #666; font-weight: 500;
-  ion-icon { font-size: 14px; color: #AAA; }
+  ion-icon { font-size: 13px; color: #AAA; }
 }
 
 .det-fila-val { font-size: 13px; color: #333; font-weight: 600; }
@@ -168,32 +160,25 @@
   .det-fila-val   { font-size: 14px; font-weight: 800; }
 }
 
-.verde-row .det-fila-label { color: #2E7D32; }
-.rojo-row  .det-fila-label { color: #E53935; }
-.azul-row  .det-fila-label { color: #590F23; }
+.rojo-row .det-fila-label { color: #E53935; }
 
 .verde-txt { color: #2E7D32 !important; }
 .rojo-txt  { color: #E53935 !important; }
 .azul-txt  { color: #590F23 !important; }
 
-.det-separador { height: 1px; background: #EDE0D0; margin: 6px 0; }
+.det-separador { height: 1px; background: #EDE0D0; margin: 4px 0; }
 
-/* TOTAL GENERAL — igual que tab3 */
+/* TOTAL GENERAL */
 .det-total-card {
   background: linear-gradient(135deg, #590F23, #8B2020);
-  border-radius: 16px; padding: 18px 20px; margin: 10px 14px 0 14px;
+  border-radius: 16px; padding: 20px; margin: 10px 14px 0 14px;
   text-align: center; box-shadow: 0 4px 16px rgba(89,15,35,0.3);
 }
 .det-total-label {
   font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7);
   letter-spacing: 2px; text-transform: uppercase; margin: 0 0 4px 0;
 }
-.det-total-val {
-  font-size: 34px; font-weight: 900; color: #fff;
-  margin: 0; letter-spacing: -1px;
-}
+.det-total-val { font-size: 34px; font-weight: 900; color: #fff; margin: 0 0 4px 0; letter-spacing: -1px; }
+.det-total-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin: 0; }
 
-.det-notas {
-  padding: 4px 0; font-size: 13px; color: #666;
-  font-style: italic; margin: 0; line-height: 1.5;
-}
+.det-notas { padding: 4px 0; font-size: 13px; color: #666; font-style: italic; margin: 0; line-height: 1.5; }
