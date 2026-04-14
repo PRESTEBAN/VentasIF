@@ -95,7 +95,6 @@ export class ClientesPage implements OnInit, OnDestroy {
 
   // ── Cobro múltiple ────────────────────────────────────────────────────────
   mostrarCobroMultiple = false;
-  /** ids de órdenes seleccionadas en el modal de cobro múltiple */
   ordenesSeleccionadas = new Set<number>();
   cobroMultipleFormaPago = 'Efectivo';
   cobroMultipleNotas = '';
@@ -103,12 +102,10 @@ export class ClientesPage implements OnInit, OnDestroy {
   mensajeCobroMultiple = '';
   erroresCobroMultiple = '';
 
-  /** Órdenes con saldo > 0 disponibles para cobrar */
   get ordenesPendientes(): OrdenAgrupada[] {
     return this.ordenesAgrupadas.filter(o => o.saldo_orden > 0 && o.estado !== 'cancelado');
   }
 
-  /** Suma de saldos de las órdenes seleccionadas */
   get totalCobroMultiple(): number {
     return this.ordenesPendientes
       .filter(o => this.ordenesSeleccionadas.has(o.venta_id))
@@ -256,17 +253,19 @@ export class ClientesPage implements OnInit, OnDestroy {
       const esAbono = m.estado === 'abono';
 
       if (!mapa.has(id)) {
-        mapa.set(id, {
-          venta_id:    id,
-          num_orden:   m.num_orden,
-          estado:      esAbono ? 'pendiente' : m.estado,
-          valor_total: esAbono ? 0 : Math.abs(+m.valor),
-          saldo_orden: 0,
-          fecha:       m.fecha,
-          forma_pago:  esAbono ? '' : ((m as any).forma_pago ?? ''),
-          notas:       esAbono ? '' : ((m as any).notas ?? ''),
-          abonos:      [],
-        });
+        const entrada: any = {
+          venta_id:         id,
+          num_orden:        m.num_orden,
+          estado:           esAbono ? 'pendiente' : m.estado,
+          valor_total:      esAbono ? 0 : Math.abs(+m.valor),
+          saldo_orden:      0,
+          fecha:            m.fecha,
+          forma_pago:       esAbono ? '' : ((m as any).forma_pago ?? ''),
+          notas:            esAbono ? '' : ((m as any).notas ?? ''),
+          abonos:           [],
+          _saldo_generado:  esAbono ? undefined : +(m as any).saldo_generado,
+        };
+        mapa.set(id, entrada);
       }
 
       const entry = mapa.get(id)!;
@@ -284,17 +283,23 @@ export class ClientesPage implements OnInit, OnDestroy {
         entry.forma_pago  = (m as any).forma_pago ?? entry.forma_pago;
         entry.notas       = (m as any).notas ?? entry.notas;
         entry.num_orden   = m.num_orden;
+        // ── CORRECCIÓN: guardar saldo_generado que viene del backend ──
+        (entry as any)._saldo_generado = +(m as any).saldo_generado;
       }
     }
 
     for (const [, entry] of mapa) {
-      const totalAbonado = entry.abonos.reduce((sum, a) => sum + a.monto, 0);
-      const saldoDesdeDB = (entry as any)._saldo_generado;
-      if (saldoDesdeDB !== undefined && saldoDesdeDB >= 0) {
-        entry.saldo_orden = +saldoDesdeDB;
+      const totalAbonado   = entry.abonos.reduce((sum, a) => sum + a.monto, 0);
+      const saldoDesdeDB   = (entry as any)._saldo_generado;
+
+      // Si el backend envió saldo_generado (incluso 0), usarlo directamente.
+      // Solo calcular manualmente si no viene ese dato.
+      if (saldoDesdeDB !== undefined && saldoDesdeDB !== null && !isNaN(saldoDesdeDB)) {
+        entry.saldo_orden = saldoDesdeDB;
       } else {
         entry.saldo_orden = Math.max(0, entry.valor_total - totalAbonado);
       }
+
       if (entry.estado !== 'cancelado') {
         if (entry.saldo_orden === 0) entry.estado = 'pagado';
         else if (entry.abonos.length > 0 && entry.saldo_orden > 0) entry.estado = 'abono';
@@ -453,7 +458,6 @@ export class ClientesPage implements OnInit, OnDestroy {
   toggleOrdenCobroMultiple(ventaId: number) {
     if (this.ordenesSeleccionadas.has(ventaId)) this.ordenesSeleccionadas.delete(ventaId);
     else this.ordenesSeleccionadas.add(ventaId);
-    // forzar detección de cambio en el Set
     this.ordenesSeleccionadas = new Set(this.ordenesSeleccionadas);
   }
 
@@ -490,7 +494,6 @@ export class ClientesPage implements OnInit, OnDestroy {
           this.cobroMultipleNotas || undefined
         ).toPromise();
 
-        // Imprimir recibo por cada orden cobrada
         await this.printerService.imprimirReciboAbono({
           ventaId:         orden.venta_id,
           clienteNombre:   `${c.nombre} ${c.apellido}`,
@@ -695,4 +698,4 @@ export class ClientesPage implements OnInit, OnDestroy {
   abrirMenu()  { this.menuAbierto = true;  }
   cerrarMenu() { this.menuAbierto = false; }
   cerrarSesion() { this.authService.logout(); this.menuAbierto = false; this.router.navigate(['/login']); }
-}
+} 

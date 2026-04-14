@@ -90,6 +90,8 @@ export class HistorialPage implements OnInit, OnDestroy {
   buscandoOrden = false;
   errorBusqueda = '';
 
+  motivoAnulacion = '';
+
   private pollingInterval: any = null;
   private readonly POLLING_MS = 15000;
 
@@ -99,7 +101,7 @@ export class HistorialPage implements OnInit, OnDestroy {
     private http: HttpClient,
     private alertCtrl: AlertController,
     private printerService: PrinterService
-  ) {}
+  ) { }
 
   ngOnInit() {
     const user = this.authService.getUsuario();
@@ -159,11 +161,11 @@ export class HistorialPage implements OnInit, OnDestroy {
         const idsActuales = new Set(this.ventas.map(v => v.id));
         (data || []).forEach(v => { const venta = this.mapearVenta(v); if (!idsActuales.has(venta.id)) this.ventas = [venta, ...this.ventas]; });
       },
-      error: () => {}
+      error: () => { }
     });
     this.http.get<any[]>(`${this.API}/abonos?fecha=${fechaStr}`, { headers: this.getHeaders() }).subscribe({
       next: (data) => { this.abonos = (data || []).map(a => this.mapearAbono(a)); },
-      error: () => {}
+      error: () => { }
     });
   }
 
@@ -381,15 +383,33 @@ export class HistorialPage implements OnInit, OnDestroy {
   toggleSeleccion(id: number) { if (this.ventasSeleccionadas.has(id)) this.ventasSeleccionadas.delete(id); else this.ventasSeleccionadas.add(id); }
   estaSeleccionada(id: number): boolean { return this.ventasSeleccionadas.has(id); }
 
+
   async confirmarEliminacion() {
     if (this.ventasSeleccionadas.size === 0) return;
     const alert = await this.alertCtrl.create({
-      header: 'Eliminar ventas',
-      message: `¿Estás seguro de eliminar ${this.ventasSeleccionadas.size} venta(s)? Esta acción no se puede deshacer.`,
-      cssClass: 'alert-personalizado',
+      header: 'Anular ventas',
+      message: `Ingresa el motivo para anular ${this.ventasSeleccionadas.size} venta(s)`,
+      cssClass: 'alert-personalizado', 
+      inputs: [
+        {
+          name: 'motivo',
+          type: 'text',
+          placeholder: 'Ej: Nota repetida, error de cliente...',
+        }
+      ],
       buttons: [
-        { text: 'Eliminar', role: 'destructive', handler: () => this.eliminarSeleccionadas() },
         { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Anular',
+          handler: (data: { motivo: string }): boolean => {
+            if (!data.motivo || data.motivo.trim().length < 5) {
+              return false;
+            }
+            this.motivoAnulacion = data.motivo.trim();
+            this.eliminarSeleccionadas();
+            return true;
+          }
+        },
       ],
     });
     await alert.present();
@@ -399,8 +419,17 @@ export class HistorialPage implements OnInit, OnDestroy {
     this.eliminando = true;
     const ids = Array.from(this.ventasSeleccionadas);
     const eliminarUno = (index: number) => {
-      if (index >= ids.length) { this.eliminando = false; this.modoEliminacion = false; this.ventasSeleccionadas.clear(); this.cargarVentas(); return; }
-      this.http.delete(`${this.API}/ventas-ruta/${ids[index]}`, { headers: this.getHeaders() }).subscribe({
+      if (index >= ids.length) {
+        this.eliminando = false;
+        this.modoEliminacion = false;
+        this.ventasSeleccionadas.clear();
+        this.cargarVentas();
+        return;
+      }
+      this.http.delete(`${this.API}/ventas-ruta/${ids[index]}`, {
+        headers: this.getHeaders(),
+        body: { motivo: this.motivoAnulacion }   // ← enviar motivo
+      }).subscribe({
         next: () => eliminarUno(index + 1),
         error: () => eliminarUno(index + 1),
       });
