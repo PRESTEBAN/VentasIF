@@ -327,6 +327,40 @@ export class HistorialPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── Detalle abono ────────────────────────────────────────────────
+  mostrarDetalleAbono = false;
+  abonoDetalle: AbonoHistorial | null = null;
+
+  verAbono(abono: AbonoHistorial) {
+    this.abonoDetalle = abono;
+    this.mostrarDetalleAbono = true;
+  }
+
+  cerrarDetalleAbono() { this.mostrarDetalleAbono = false; this.abonoDetalle = null; }
+
+  async reimprimirAbono() {
+    if (!this.abonoDetalle || this.imprimiendo) return;
+    this.imprimiendo = true;
+    try {
+      await this.printerService.imprimirRecibo({
+        ventaId: this.abonoDetalle.ventaId,
+        clienteNombre: this.abonoDetalle.clienteNombre,
+        clienteCedula: this.abonoDetalle.cedula,
+        clienteTelefono: '',
+        clienteDireccion: '',
+        vendedor: '',
+        items: [{ nombre: `Abono → Orden #${this.abonoDetalle.ventaId}`, cantidad: 1, precio_unitario: this.abonoDetalle.monto, descuento: 0, subtotal: this.abonoDetalle.monto }],
+        subtotal: this.abonoDetalle.monto, descuento: 0, iva: 0, ivaPercent: 0,
+        total: this.abonoDetalle.monto,
+        formaPago: this.abonoDetalle.formaPago,
+        montoRecibido: this.abonoDetalle.monto, vuelto: 0,
+      });
+    } catch (err: any) {
+      const alert = await this.alertCtrl.create({ header: 'Error de impresión', message: err?.message || 'No se pudo imprimir.', buttons: ['OK'] });
+      await alert.present();
+    } finally { this.imprimiendo = false; }
+  }
+
   // ── Detalle venta ────────────────────────────────────────────────
   verVenta(venta: VentaHistorial) {
     if (this.modoEliminacion) { this.toggleSeleccion(venta.id); return; }

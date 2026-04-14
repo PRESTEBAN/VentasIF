@@ -153,9 +153,9 @@
             <div class="det-separador"></div>
 
             <div class="det-fila bold-fila">
-              <span class="det-fila-label"><ion-icon name="calculator-outline"></ion-icon>Diferencia efectivo</span>
-              <span class="det-fila-val" [class.verde-txt]="diferenciasEfectivo(cierreDetalle) === 0" [class.rojo-txt]="diferenciasEfectivo(cierreDetalle) !== 0">
-                ${{ diferenciasEfectivo(cierreDetalle) | number:'1.2-2' }}
+              <span class="det-fila-label"><ion-icon name="cash-outline"></ion-icon>Total efectivo</span>
+              <span class="det-fila-val verde-txt">
+                ${{ r(totalIngresosEfectivo(cierreDetalle) - n(cierreDetalle.egresos_efectivo) - n(cierreDetalle.egresos_cheques)) | number:'1.2-2' }}
               </span>
             </div>
           </div>
@@ -203,9 +203,9 @@
             <div class="det-separador"></div>
 
             <div class="det-fila bold-fila">
-              <span class="det-fila-label"><ion-icon name="calculator-outline"></ion-icon>Diferencia transferencia</span>
-              <span class="det-fila-val" [class.verde-txt]="diferenciaTransferencia(cierreDetalle) === 0" [class.rojo-txt]="diferenciaTransferencia(cierreDetalle) !== 0">
-                ${{ diferenciaTransferencia(cierreDetalle) | number:'1.2-2' }}
+              <span class="det-fila-label"><ion-icon name="phone-portrait-outline"></ion-icon>Total transferencia</span>
+              <span class="det-fila-val verde-txt">
+                ${{ r(totalIngresosTransferencia(cierreDetalle) - n(cierreDetalle.egresos_transferencia)) | number:'1.2-2' }}
               </span>
             </div>
           </div>

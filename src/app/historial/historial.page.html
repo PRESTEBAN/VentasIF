@@ -131,7 +131,7 @@
             </p>
           </div>
 
-          <div class="abono-card" *ngFor="let abono of abonos">
+          <div class="abono-card" *ngFor="let abono of abonos" (click)="verAbono(abono)" style="cursor:pointer">
             <div class="abono-avatar"><ion-icon name="cash-outline"></ion-icon></div>
             <div class="venta-info">
               <p class="venta-nombre">{{ abono.clienteNombre }}</p>
@@ -276,6 +276,64 @@
               {{ imprimiendo ? 'Imprimiendo...' : 'Reimprimir orden' }}
             </button>
           </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+  <!-- MODAL DETALLE ABONO -->
+  <ion-modal
+    [isOpen]="mostrarDetalleAbono"
+    (didDismiss)="cerrarDetalleAbono()"
+    [breakpoints]="[0, 0.6]"
+    [initialBreakpoint]="0.6"
+    [handle]="true">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarDetalleAbono()">
+              <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="detalle-modal-content" *ngIf="abonoDetalle">
+        <div class="detalle-body">
+
+          <div class="detalle-avatar" style="background:#E8F5E9;border-color:#A5D6A7;">
+            <ion-icon name="cash-outline" style="color:#2E7D32;font-size:52px;"></ion-icon>
+          </div>
+
+          <h2 class="detalle-nombre">{{ abonoDetalle.clienteNombre }}</h2>
+          <p class="detalle-orden">Abono → Orden #{{ abonoDetalle.ventaId }}</p>
+          <p class="detalle-negocio">{{ abonoDetalle.clienteNegocio || '—' }}</p>
+          <p class="detalle-cedula">{{ abonoDetalle.cedula }}</p>
+
+          <div class="detalle-pago-row">
+            <span class="pago-label">Método de pago:</span>
+            <span class="pago-badge" style="background:#2E7D32;">{{ abonoDetalle.formaPago }}</span>
+          </div>
+
+          <div class="detalle-totales" style="width:100%;padding-top:8px;">
+            <div class="total-fila total-final">
+              <span class="total-lbl">Monto abonado:</span>
+              <span class="total-val" style="color:#2E7D32;">+${{ abonoDetalle.monto | number:'1.2-2' }}</span>
+            </div>
+            <div class="total-fila" *ngIf="abonoDetalle.notas">
+              <span class="total-lbl">Notas:</span>
+              <span class="total-val" style="font-size:12px;color:#888;">{{ abonoDetalle.notas }}</span>
+            </div>
+          </div>
+
+          <div class="reimprimir-container">
+            <button class="btn-reimprimir" (click)="reimprimirAbono()" [disabled]="imprimiendo">
+              <ion-spinner name="crescent" *ngIf="imprimiendo" style="width:18px;height:18px"></ion-spinner>
+              <ion-icon name="print-outline" *ngIf="!imprimiendo"></ion-icon>
+              {{ imprimiendo ? 'Imprimiendo...' : 'Reimprimir recibo' }}
+            </button>
+          </div>
+
         </div>
       </ion-content>
     </ng-template>

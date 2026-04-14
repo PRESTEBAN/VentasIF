@@ -136,36 +136,49 @@ export class ReportesPage implements OnInit {
   // ── Helpers parseFloat seguros ──────────────────────────────────
   n(v: any): number { return parseFloat(v) || 0; }
 
+  // ── Helper redondeo a 2 decimales (evita errores de punto flotante) ──
+  r(v: number): number { return Math.round(v * 100) / 100; }
+
   // ── Cuadre efectivo ──────────────────────────────────────────────
   totalIngresosEfectivo(c: CierreDetalle): number {
-    return this.n(c.efectivo_ventas) + this.n(c.cheques_ventas)
-         + this.n(c.abonos_efectivo) + this.n(c.abonos_cheques)
-         + this.n(c.ingresos_adicionales_efectivo) + this.n(c.ingresos_adicionales_cheques);
+    return this.r(
+      this.n(c.efectivo_ventas) + this.n(c.cheques_ventas)
+      + this.n(c.abonos_efectivo) + this.n(c.abonos_cheques)
+      + this.n(c.ingresos_adicionales_efectivo) + this.n(c.ingresos_adicionales_cheques)
+    );
   }
 
   diferenciasEfectivo(c: CierreDetalle): number {
-    return (this.n(c.efectivo_billetes) + this.n(c.efectivo_monedas))
-         - this.totalIngresosEfectivo(c)
-         + this.n(c.egresos_efectivo) + this.n(c.egresos_cheques);
+    return this.r(
+      (this.n(c.efectivo_billetes) + this.n(c.efectivo_monedas))
+      - this.totalIngresosEfectivo(c)
+      + this.n(c.egresos_efectivo) + this.n(c.egresos_cheques)
+    );
   }
 
   // ── Cuadre transferencia ────────────────────────────────────────
   totalIngresosTransferencia(c: CierreDetalle): number {
-    return this.n(c.transferencia_ventas)
-         + this.n(c.abonos_transferencia)
-         + this.n(c.ingresos_adicionales_transferencia);
+    return this.r(
+      this.n(c.transferencia_ventas)
+      + this.n(c.abonos_transferencia)
+      + this.n(c.ingresos_adicionales_transferencia)
+    );
   }
 
   diferenciaTransferencia(c: CierreDetalle): number {
-    return this.n(c.total_transferencias)
-         - this.totalIngresosTransferencia(c)
-         + this.n(c.egresos_transferencia);
+    return this.r(
+      this.n(c.total_transferencias)
+      - this.totalIngresosTransferencia(c)
+      + this.n(c.egresos_transferencia)
+    );
   }
 
   // ── Total general ───────────────────────────────────────────────
   totalGeneral(c: CierreDetalle): number {
-    return (this.n(c.efectivo_billetes) + this.n(c.efectivo_monedas))
-         + this.n(c.total_transferencias);
+    return this.r(
+      (this.n(c.efectivo_billetes) + this.n(c.efectivo_monedas))
+      + this.n(c.total_transferencias)
+    );
   }
 
   formatearFecha(fecha: string): string {
